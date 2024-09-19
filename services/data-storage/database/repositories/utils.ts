@@ -2,9 +2,12 @@ import type {
   Block,
   GetTransactionReceiptReturnType,
   GetTransactionReturnType,
+  Hash,
+  Log,
 } from "viem";
 
 import type { BlockCreateInput } from "./block.repository.ts";
+import type { LogCreateInput, LogTopicCreateInput } from "./log.repository.ts";
 import type { TransactionCreateInput } from "./transaction.repository.ts";
 import type { TransactionReceiptCreateInput } from "./transaction-receipt.repository.ts";
 
@@ -56,6 +59,8 @@ export function toTransactionCreateInput(
     value: transaction.value,
     input: transaction.input,
     gas: transaction.gas,
+    gasPrice: transaction.gasPrice,
+    chainId: transaction.chainId,
   };
 }
 
@@ -76,11 +81,53 @@ export function toTransactionReceiptCreateInput(
     cumulativeGasUsed: transaction.cumulativeGasUsed,
     gasUsed: transaction.gasUsed,
     contractAddress: transaction.contractAddress,
-    logs: transaction.logs,
     logsBloom: transaction.logsBloom,
     status: transaction.status === "success",
     effectiveGasPrice: transaction.effectiveGasPrice,
     type: transaction.type,
     root: transaction.root,
+
+    logs: transaction.logs
+      .map((log) => toLogCreateInput(log))
+      .filter((log) => log != null),
+  };
+}
+
+export function toLogCreateInput(log: Log): LogCreateInput | null {
+  if (
+    log.blockNumber == null ||
+    log.transactionHash == null ||
+    log.logIndex == null ||
+    log.transactionIndex == null
+  ) {
+    return null;
+  }
+
+  const logHash = `${log.transactionHash}-${log.transactionIndex}-${log.logIndex}`;
+  return {
+    logHash: logHash,
+    address: log.address,
+    data: log.data,
+    blockNumber: log.blockNumber,
+    transactionHash: log.transactionHash,
+    transactionIndex: log.transactionIndex,
+    index: log.logIndex,
+    removed: log.removed,
+
+    topics: log.topics.map((topic, index) =>
+      toLogTopicCreateInput(logHash, index, topic),
+    ),
+  };
+}
+
+export function toLogTopicCreateInput(
+  logHash: string,
+  index: number,
+  logTopic: Hash,
+): LogTopicCreateInput {
+  return {
+    topicHash: `${logHash}-${index}`,
+    topic: logTopic,
+    index,
   };
 }

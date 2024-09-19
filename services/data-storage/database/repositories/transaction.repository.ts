@@ -1,7 +1,9 @@
+import type { Hash } from "viem";
+
 import prisma from "../prisma.ts";
 
 export type TransactionCreateInput = {
-  hash: string;
+  hash: Hash;
   nonce: bigint | number;
   blockHash?: string | null;
   blockNumber?: bigint | number | null;
@@ -10,7 +12,9 @@ export type TransactionCreateInput = {
   to?: string | null;
   input: string;
   value: bigint | number;
+  chainId?: number;
   gas: bigint | number;
+  gasPrice?: bigint | number | null;
 };
 
 export function createTransaction(transaction: TransactionCreateInput) {

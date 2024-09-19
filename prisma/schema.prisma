@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -30,8 +24,8 @@ model Block {
   size             BigInt
   gasLimit         BigInt
   gasUsed          BigInt
-  transactions     Transaction[]
   createdAt        BigInt
+  transactions     Transaction[]
 
   @@map("block")
 }
@@ -46,7 +40,9 @@ model Transaction {
   to               String?
   input            String
   value            BigInt
+  chainId          Int?
   gas              BigInt
+  gasPrice         BigInt?
   block            Block?              @relation(fields: [blockNumber], references: [number])
   receipt          TransactionReceipt?
 
@@ -54,7 +50,7 @@ model Transaction {
 }
 
 model TransactionReceipt {
-  transactionHash   String  @id @unique
+  transactionHash   String      @id @unique
   transactionIndex  Int
   blockHash         String
   blockNumber       BigInt
@@ -63,18 +59,40 @@ model TransactionReceipt {
   cumulativeGasUsed BigInt
   gasUsed           BigInt
   contractAddress   String?
-  logs              Json
   logsBloom         String
   status            Boolean
   effectiveGasPrice BigInt
   type              String
-  root              String? // For pre-Byzantium transactions
-
-  // Relation to Transaction model
-  transaction Transaction @relation(fields: [transactionHash], references: [hash])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  root              String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  logs              Log[]
+  transaction       Transaction @relation(fields: [transactionHash], references: [hash])
 
   @@map("transaction_receipt")
+}
+
+model Log {
+  logHash            String             @id
+  address            String
+  data               String
+  blockNumber        BigInt
+  transactionHash    String
+  transactionIndex   Int
+  index              Int
+  removed            Boolean
+  transactionReceipt TransactionReceipt @relation(fields: [transactionHash], references: [transactionHash], onDelete: Cascade)
+  topics             LogTopic[]
+
+  @@map("log")
+}
+
+model LogTopic {
+  topicHash String @id
+  topic     String
+  index     Int
+  logHash   String
+  log       Log    @relation(fields: [logHash], references: [logHash], onDelete: Cascade)
+
+  @@map("log_topic")
 }

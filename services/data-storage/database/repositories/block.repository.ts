@@ -1,9 +1,11 @@
+import type { Hash } from "viem";
+
 import prisma from "../prisma.ts";
 
 export type BlockCreateInput = {
   number: bigint;
-  hash: `0x${string}`;
-  parentHash: `0x${string}`;
+  hash: Hash;
+  parentHash: Hash;
   nonce?: string | null;
   sha3Uncles: string;
   logsBloom?: string | null;

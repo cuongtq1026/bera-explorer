@@ -8,9 +8,6 @@ import {
 } from "viem";
 import { berachainTestnetbArtio } from "viem/chains";
 
-console.log("process.env.ALCHEMY_API_KEY", process.env.ALCHEMY_API_KEY);
-console.log("process.env.RPC_URL", process.env.RPC_URL);
-
 const client = createPublicClient({
   chain: berachainTestnetbArtio,
   transport: http(process.env.RPC_URL),
@@ -22,6 +19,8 @@ const client = createPublicClient({
  * @returns A Promise that resolves to the block data or null if the block is not found.
  */
 export async function getBlock(blockNumber?: bigint): Promise<Block | null> {
+  console.log(`[getBlock] blockNumber: ${blockNumber}`);
+
   try {
     if (blockNumber !== undefined) {
       return client.getBlock({

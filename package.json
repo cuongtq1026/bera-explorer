@@ -1,0 +1,26 @@
+{
+  "name": "bera-explorer",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run index.ts",
+    "prisma:generate": "prisma generate"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "eslint": "^9.10.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "prettier": "^3.3.3",
+    "prisma": "^5.19.1",
+    "typescript-eslint": "^8.6.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.19.1",
+    "viem": "^2.21.9"
+  }
+}

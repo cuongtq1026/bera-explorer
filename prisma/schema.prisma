@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Block {
+  number           BigInt        @id @unique
+  hash             String        @unique
+  parentHash       String
+  nonce            String?
+  sha3Uncles       String
+  logsBloom        String?
+  transactionsRoot String
+  stateRoot        String
+  receiptsRoot     String
+  miner            String
+  difficulty       BigInt
+  totalDifficulty  BigInt
+  extraData        String?
+  size             BigInt
+  gasLimit         BigInt
+  gasUsed          BigInt
+  transactions     Transaction[]
+  createdAt        BigInt
+
+  @@map("block")
+}
+
+model Transaction {
+  hash             String              @id @unique
+  nonce            BigInt
+  blockHash        String?
+  blockNumber      BigInt?
+  transactionIndex Int?
+  from             String
+  to               String?
+  input            String
+  value            BigInt
+  gas              BigInt
+  block            Block?              @relation(fields: [blockNumber], references: [number])
+  receipt          TransactionReceipt?
+
+  @@map("transaction")
+}
+
+model TransactionReceipt {
+  transactionHash   String  @id @unique
+  transactionIndex  Int
+  blockHash         String
+  blockNumber       BigInt
+  from              String
+  to                String?
+  cumulativeGasUsed BigInt
+  gasUsed           BigInt
+  contractAddress   String?
+  logs              Json
+  logsBloom         String
+  status            Boolean
+  effectiveGasPrice BigInt
+  type              String
+  root              String? // For pre-Byzantium transactions
+
+  // Relation to Transaction model
+  transaction Transaction @relation(fields: [transactionHash], references: [hash])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("transaction_receipt")
+}

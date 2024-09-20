@@ -2,7 +2,7 @@ import {
   processBlock,
   processTransaction,
   processTransactionReceipt,
-} from "./services/processor";
+} from "./services/processors";
 import { is0xHash, parseToBigInt } from "./services/utils.ts";
 
 /**

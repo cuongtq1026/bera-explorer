@@ -42,15 +42,15 @@ export async function processBlock(blockNumber: bigint) {
   }
 
   await deleteBlock(createBlockInput.number);
-  console.log("[queueBlock] block deleted");
+  console.log("[processBlock] block deleted");
   await createBlock(createBlockInput);
-  console.log("[queueBlock] block created", createBlockInput.number);
+  console.log("[processBlock] block created", createBlockInput.number);
 }
 
 export async function processTransaction(hash: Hash) {
-  console.log("[queueTransaction] queueing transaction", hash);
+  console.log("[processTransaction] queueing transaction", hash);
   const transaction = await getTransaction(hash);
-  console.log("[queueTransaction] raw transaction", transaction);
+  console.log("[processTransaction] raw transaction", transaction);
 
   if (transaction == null) {
     console.error("Transaction is null");
@@ -71,9 +71,12 @@ export async function processTransaction(hash: Hash) {
 }
 
 export async function processTransactionReceipt(hash: Hash) {
-  console.log("[queueTransaction] queueing transaction receipt", hash);
+  console.log("[processTransactionReceipt] queueing transaction receipt", hash);
   const transactionReceipt = await getTransactionReceipt(hash);
-  console.log("[queueTransaction] raw transaction receipt", transactionReceipt);
+  console.log(
+    "[processTransactionReceipt] raw transaction receipt",
+    transactionReceipt,
+  );
 
   if (transactionReceipt == null) {
     console.error("Transaction receipt is null");

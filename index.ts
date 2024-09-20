@@ -3,6 +3,8 @@ import {
   processTransaction,
   processTransactionReceipt,
 } from "./services/processors";
+import { BlockConsumer } from "./services/queues/consumers/block.consumer.ts";
+import { queueBlock } from "./services/queues/producers";
 import { is0xHash, parseToBigInt } from "./services/utils.ts";
 
 /**
@@ -10,8 +12,8 @@ import { is0xHash, parseToBigInt } from "./services/utils.ts";
  * 2. Verify block has all transactions and receipts.
  */
 
-const [modelToFetch, ...restArgs] = process.argv.slice(2);
-switch (modelToFetch) {
+const [command, ...restArgs] = process.argv.slice(2);
+switch (command) {
   case "block": {
     const blockNumber = parseToBigInt(restArgs[0]);
     if (blockNumber == null) {
@@ -57,7 +59,46 @@ switch (modelToFetch) {
     await processTransactionReceipt(transactionHash);
     break;
   }
+  case "queue-block": {
+    const blockNumber = parseToBigInt(restArgs[0]);
+    if (blockNumber == null) {
+      console.log("Invalid block number.");
+      break;
+    }
+
+    await queueBlock(blockNumber);
+    break;
+  }
+  case "queue-blocks": {
+    const from = parseToBigInt(restArgs[0]);
+    const to = parseToBigInt(restArgs[1]);
+    if (from == null || to == null || from > to) {
+      console.log(`Invalid block number. from: ${from} | to: ${to}.`);
+      break;
+    }
+
+    for (let i = from; i <= to; i++) {
+      await queueBlock(i);
+    }
+
+    break;
+  }
+  case "consume": {
+    const modelToConsume = restArgs[0];
+    switch (modelToConsume) {
+      case "block": {
+        const consumer = new BlockConsumer();
+
+        await consumer.consume();
+        break;
+      }
+      default: {
+        console.log(`No model to consume: ${modelToConsume}.`);
+      }
+    }
+    break;
+  }
   default:
-    console.log(`No model to fetch: ${modelToFetch}`);
+    console.log(`No command: ${command}`);
     break;
 }

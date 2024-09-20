@@ -42,7 +42,7 @@ export async function processBlock(blockNumber: bigint) {
   }
 
   await deleteBlock(createBlockInput.number);
-  console.log("[processBlock] block deleted");
+  console.log(`[processBlock] block deleted ${createBlockInput.number}`);
   await createBlock(createBlockInput);
   console.log("[processBlock] block created", createBlockInput.number);
 }

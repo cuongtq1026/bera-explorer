@@ -21,6 +21,10 @@
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
+    "@types/amqplib": "^0.10.5",
+    "amqplib": "^0.10.4",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
     "viem": "^2.21.9"
   }
 }

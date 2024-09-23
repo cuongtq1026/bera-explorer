@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "bun run index.ts",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "consume:block": "bun run index.ts consume block",
+    "queue:blocks": "bun run index.ts queue-blocks 0 10"
   },
   "devDependencies": {
     "@types/bun": "latest",

@@ -9,9 +9,11 @@ export class QueueBlockPayload {
 }
 
 export async function queueBlock(blockNumber: bigint) {
-  await mqConnection.sendToQueue(queues.BLOCK_QUEUE, {
+  await mqConnection.publishToCrawlerExchange(queues.BLOCK_QUEUE.routingKey, {
     blockNumber: String(blockNumber),
   } as QueueBlockPayload);
 
-  console.log(`[Block ${blockNumber}] Queued to ${queues.BLOCK_QUEUE}`);
+  console.log(
+    `[Block ${blockNumber}] Queued to ${queues.BLOCK_QUEUE.routingKey} key`,
+  );
 }

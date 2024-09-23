@@ -24,10 +24,10 @@ import {
 } from "../data-storage/database/repositories/utils.ts";
 
 export async function processBlock(blockNumber: bigint) {
-  console.log("[queueBlock] queueing block", blockNumber);
+  console.log("[processBlock] queueing block", blockNumber);
 
   const block = await getBlock(blockNumber);
-  console.log("[queueBlock] raw block", block);
+  console.log("[processBlock] raw block", block);
 
   if (block == null) {
     console.error("Block is null");

@@ -10,6 +10,7 @@ class RabbitMQConnection {
   connection!: Connection;
   channel!: Channel;
   private connected!: boolean;
+  private readonly crawlerExchangeName = "crawler";
 
   async connect() {
     const connectionUrl = process.env.RABBIT_MQ_CONNECTION;
@@ -23,32 +24,89 @@ class RabbitMQConnection {
     try {
       console.log(`⌛️ Connecting to Rabbit-MQ Server`);
       this.connection = await client.connect(connectionUrl);
-
       console.log(`✅ Rabbit MQ Connection is ready`);
 
       this.channel = await this.connection.createChannel();
-
       console.log(`🛸 Created RabbitMQ Channel successfully`);
 
+      // Configuration
+      {
+        const globalConsumeLimit = process.env.GLOBAL_CONSUME_LIMIT
+          ? parseInt(process.env.GLOBAL_CONSUME_LIMIT!)
+          : 0;
+
+        await this.channel.prefetch(globalConsumeLimit, true);
+        console.log(`Channel global prefetch is set to ${globalConsumeLimit}.`);
+        const individualConsumeLimit = process.env.INDIVIDUAL_CONSUMER_LIMIT
+          ? parseInt(process.env.INDIVIDUAL_CONSUMER_LIMIT!)
+          : 0;
+
+        await this.channel.prefetch(individualConsumeLimit, false);
+        console.log(
+          `Channel individual prefetch is set to ${globalConsumeLimit}.`,
+        );
+      }
+
+      // Dead letter exchange
+      const dlx = await this.channel.assertExchange("dead-letter", "topic");
+      // Create a Dead letter queue
+      const dlq = await this.channel.assertQueue("dead-letter-queue", {
+        durable: true,
+      });
+      await this.channel.bindQueue(dlq.queue, dlx.exchange, "#");
+
+      // Crawler exchange
+      const crawlerExchange = await this.channel.assertExchange(
+        this.crawlerExchangeName,
+        "direct",
+      );
+
+      // Assertion
       await Promise.all(
-        Object.values(queues).map(async (queueName) => {
-          await this.channel.assertQueue(queueName);
+        Object.values(queues).map(async (queueInfo) => {
+          await this.channel.assertQueue(queueInfo.name, {
+            deadLetterExchange: dlx.exchange,
+            deadLetterRoutingKey: queueInfo.routingKey,
+          });
+
+          await this.channel.bindQueue(
+            queueInfo.name,
+            crawlerExchange.exchange,
+            queueInfo.routingKey,
+          );
         }),
       );
       console.log(`Asserted all queues to RabbitMQ.`);
     } catch (error) {
       console.error(error);
       console.error(`Not connected to MQ Server`);
+
+      throw error;
     }
   }
 
-  async sendToQueue(queue: string, message: any) {
+  async sendToQueue(queueName: string, message: any) {
     try {
       await this.checkConnection();
 
-      this.channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)));
+      this.channel.sendToQueue(queueName, Buffer.from(JSON.stringify(message)));
     } catch (error) {
       console.error(error);
+      throw error;
+    }
+  }
+
+  async publishToCrawlerExchange(routingKey: string, message: any) {
+    try {
+      await this.checkConnection();
+
+      this.channel.publish(
+        this.crawlerExchangeName,
+        routingKey,
+        Buffer.from(JSON.stringify(message)),
+      );
+    } catch (error) {
+      console.error(`publishToCrawlerExchange error: ${error}`);
       throw error;
     }
   }
@@ -58,10 +116,6 @@ class RabbitMQConnection {
     handler: (msg: ConsumeMessage | null) => Promise<void>,
   ) {
     await this.checkConnection();
-
-    await this.channel.assertQueue(queueName, {
-      durable: true,
-    });
 
     await this.channel.consume(
       queueName,

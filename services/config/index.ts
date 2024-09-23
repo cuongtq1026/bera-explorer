@@ -1,3 +1,6 @@
 export const queues = {
-  BLOCK_QUEUE: "blocks",
+  BLOCK_QUEUE: {
+    name: "blocks",
+    routingKey: "crawler.block",
+  },
 };

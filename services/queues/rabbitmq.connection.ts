@@ -5,6 +5,7 @@ import client, {
 } from "amqplib";
 
 import { queues } from "../config";
+import logger from "../monitor/logger.ts";
 
 class RabbitMQConnection {
   connection!: Connection;
@@ -22,12 +23,12 @@ class RabbitMQConnection {
     else this.connected = true;
 
     try {
-      console.log(`⌛️ Connecting to Rabbit-MQ Server`);
+      logger.info(`⌛️ Connecting to Rabbit-MQ Server`);
       this.connection = await client.connect(connectionUrl);
-      console.log(`✅ Rabbit MQ Connection is ready`);
+      logger.info(`✅ Rabbit MQ Connection is ready`);
 
       this.channel = await this.connection.createChannel();
-      console.log(`🛸 Created RabbitMQ Channel successfully`);
+      logger.info(`🛸 Created RabbitMQ Channel successfully`);
 
       // Configuration
       {
@@ -36,13 +37,13 @@ class RabbitMQConnection {
           : 0;
 
         await this.channel.prefetch(globalConsumeLimit, true);
-        console.log(`Channel global prefetch is set to ${globalConsumeLimit}.`);
+        logger.info(`Channel global prefetch is set to ${globalConsumeLimit}.`);
         const individualConsumeLimit = process.env.INDIVIDUAL_CONSUMER_LIMIT
           ? parseInt(process.env.INDIVIDUAL_CONSUMER_LIMIT!)
           : 0;
 
         await this.channel.prefetch(individualConsumeLimit, false);
-        console.log(
+        logger.info(
           `Channel individual prefetch is set to ${globalConsumeLimit}.`,
         );
       }
@@ -76,10 +77,10 @@ class RabbitMQConnection {
           );
         }),
       );
-      console.log(`Asserted all queues to RabbitMQ.`);
+      logger.info(`Asserted all queues to RabbitMQ.`);
     } catch (error) {
-      console.error(error);
-      console.error(`Not connected to MQ Server`);
+      logger.error(error);
+      logger.error(`Not connected to MQ Server`);
 
       throw error;
     }
@@ -91,7 +92,7 @@ class RabbitMQConnection {
 
       this.channel.sendToQueue(queueName, Buffer.from(JSON.stringify(message)));
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       throw error;
     }
   }
@@ -106,7 +107,7 @@ class RabbitMQConnection {
         Buffer.from(JSON.stringify(message)),
       );
     } catch (error) {
-      console.error(`publishToCrawlerExchange error: ${error}`);
+      logger.error(`publishToCrawlerExchange error: ${error}`);
       throw error;
     }
   }
@@ -121,7 +122,7 @@ class RabbitMQConnection {
       queueName,
       async (message: ConsumeMessage | null) => {
         if (!message) {
-          return console.error(`Invalid incoming message`);
+          return logger.error(`Invalid incoming message`);
         }
 
         try {
@@ -129,7 +130,7 @@ class RabbitMQConnection {
 
           this.channel.ack(message);
         } catch (e) {
-          console.error(`[${queueName}] Queue consumer error: ${e}`);
+          logger.error(`[${queueName}] Queue consumer error: ${e}`);
 
           this.channel.reject(message, false);
         }

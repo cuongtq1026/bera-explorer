@@ -4,7 +4,7 @@ export function parseToBigInt(str: string): bigint | null {
   try {
     return BigInt(str);
   } catch (error) {
-    console.error("Invalid BigInt string:", error);
+    logger.error("Invalid BigInt string:", error);
     return null;
   }
 }

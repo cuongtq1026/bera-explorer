@@ -24,62 +24,62 @@ import {
 } from "../data-storage/database/repositories/utils.ts";
 
 export async function processBlock(blockNumber: bigint) {
-  console.log("[processBlock] queueing block", blockNumber);
+  logger.info("[processBlock] queueing block", blockNumber);
 
   const block = await getBlock(blockNumber);
-  console.log("[processBlock] raw block", block);
+  logger.info("[processBlock] raw block", block);
 
   if (block == null) {
-    console.error("Block is null");
+    logger.error("Block is null");
     return;
   }
 
   const createBlockInput = toBlockCreateInput(block);
 
   if (!createBlockInput) {
-    console.error("createBlockInput is null");
+    logger.error("createBlockInput is null");
     return;
   }
 
   await deleteBlock(createBlockInput.number);
-  console.log(`[processBlock] block deleted ${createBlockInput.number}`);
+  logger.info(`[processBlock] block deleted ${createBlockInput.number}`);
   await createBlock(createBlockInput);
-  console.log("[processBlock] block created", createBlockInput.number);
+  logger.info("[processBlock] block created", createBlockInput.number);
 }
 
 export async function processTransaction(hash: Hash) {
-  console.log("[processTransaction] queueing transaction", hash);
+  logger.info("[processTransaction] queueing transaction", hash);
   const transaction = await getTransaction(hash);
-  console.log("[processTransaction] raw transaction", transaction);
+  logger.info("[processTransaction] raw transaction", transaction);
 
   if (transaction == null) {
-    console.error("Transaction is null");
+    logger.error("Transaction is null");
     return;
   }
 
   const createTransactionInput = toTransactionCreateInput(transaction);
 
   if (!createTransactionInput) {
-    console.error("createTransactionInput is null");
+    logger.error("createTransactionInput is null");
     return;
   }
 
   await deleteTransaction(createTransactionInput.hash);
-  console.log("transaction deleted");
+  logger.info("transaction deleted");
   await createTransaction(createTransactionInput);
-  console.log("transaction created", createTransactionInput.hash);
+  logger.info("transaction created", createTransactionInput.hash);
 }
 
 export async function processTransactionReceipt(hash: Hash) {
-  console.log("[processTransactionReceipt] queueing transaction receipt", hash);
+  logger.info("[processTransactionReceipt] queueing transaction receipt", hash);
   const transactionReceipt = await getTransactionReceipt(hash);
-  console.log(
+  logger.info(
     "[processTransactionReceipt] raw transaction receipt",
     transactionReceipt,
   );
 
   if (transactionReceipt == null) {
-    console.error("Transaction receipt is null");
+    logger.error("Transaction receipt is null");
     return;
   }
 
@@ -87,17 +87,17 @@ export async function processTransactionReceipt(hash: Hash) {
     toTransactionReceiptCreateInput(transactionReceipt);
 
   if (!createTransactionReceiptInput) {
-    console.error("createTransactionInput is null");
+    logger.error("createTransactionInput is null");
     return;
   }
 
   await deleteTransactionReceipt(createTransactionReceiptInput.transactionHash);
-  console.log(
+  logger.info(
     "transaction receipt deleted",
     createTransactionReceiptInput.transactionHash,
   );
   await createTransactionReceipt(createTransactionReceiptInput);
-  console.log(
+  logger.info(
     "transaction receipt created",
     createTransactionReceiptInput.transactionHash,
   );

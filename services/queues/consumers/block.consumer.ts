@@ -3,6 +3,7 @@ import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
 
 import { queues } from "../../config";
+import logger from "../../monitor/logger.ts";
 import { processBlock } from "../../processors";
 import { QueueBlockPayload } from "../producers";
 import mqConnection from "../rabbitmq.connection.ts";
@@ -14,7 +15,7 @@ abstract class IQueueConsumer {
     : 1;
 
   public async consume(): Promise<void> {
-    console.log(
+    logger.info(
       `Queue ${this.queueName} ${this.consumerCount} consumer started.`,
     );
 
@@ -33,11 +34,11 @@ export class BlockConsumer extends IQueueConsumer {
 
   protected async handler(message: ConsumeMessage | null): Promise<void> {
     if (!message) {
-      return console.error(`Invalid incoming message`);
+      return logger.error(`Invalid incoming message`);
     }
 
     const rawContent = message.content.toString();
-    console.log(`BlockConsumer message rawContent: ${rawContent}.`);
+    logger.info(`BlockConsumer message rawContent: ${rawContent}.`);
 
     // transform
     const contentInstance = plainToInstance(

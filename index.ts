@@ -1,3 +1,4 @@
+import logger from "./services/monitor/logger.ts";
 import {
   processBlock,
   processTransaction,
@@ -13,11 +14,14 @@ import { is0xHash, parseToBigInt } from "./services/utils.ts";
  */
 
 const [command, ...restArgs] = process.argv.slice(2);
+
+logger.info(`Executing command ${command}...`);
+
 switch (command) {
   case "block": {
     const blockNumber = parseToBigInt(restArgs[0]);
     if (blockNumber == null) {
-      console.log("Invalid block number.");
+      logger.info("Invalid block number.");
       break;
     }
 
@@ -28,7 +32,7 @@ switch (command) {
     const from = parseToBigInt(restArgs[0]);
     const to = parseToBigInt(restArgs[1]);
     if (from == null || to == null || from > to) {
-      console.log(`Invalid block number. from: ${from} | to: ${to}.`);
+      logger.info(`Invalid block number. from: ${from} | to: ${to}.`);
       break;
     }
 
@@ -41,7 +45,7 @@ switch (command) {
     const transactionHash = restArgs[0];
 
     if (transactionHash == null || !is0xHash(transactionHash)) {
-      console.log("Invalid transaction hash.");
+      logger.info("Invalid transaction hash.");
       break;
     }
 
@@ -52,7 +56,7 @@ switch (command) {
     const transactionHash = restArgs[0];
 
     if (transactionHash == null || !is0xHash(transactionHash)) {
-      console.log("Invalid transaction hash.");
+      logger.info("Invalid transaction hash.");
       break;
     }
 
@@ -62,7 +66,7 @@ switch (command) {
   case "queue-block": {
     const blockNumber = parseToBigInt(restArgs[0]);
     if (blockNumber == null) {
-      console.log("Invalid block number.");
+      logger.info("Invalid block number.");
       break;
     }
 
@@ -73,7 +77,7 @@ switch (command) {
     const from = parseToBigInt(restArgs[0]);
     const to = parseToBigInt(restArgs[1]);
     if (from == null || to == null || from > to) {
-      console.log(`Invalid block number. from: ${from} | to: ${to}.`);
+      logger.info(`Invalid block number. from: ${from} | to: ${to}.`);
       break;
     }
 
@@ -93,12 +97,12 @@ switch (command) {
         break;
       }
       default: {
-        console.log(`No model to consume: ${modelToConsume}.`);
+        logger.info(`No model to consume: ${modelToConsume}.`);
       }
     }
     break;
   }
   default:
-    console.log(`No command: ${command}`);
+    logger.info(`No command: ${command}`);
     break;
 }

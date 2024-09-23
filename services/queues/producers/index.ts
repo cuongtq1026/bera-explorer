@@ -13,7 +13,7 @@ export async function queueBlock(blockNumber: bigint) {
     blockNumber: String(blockNumber),
   } as QueueBlockPayload);
 
-  console.log(
+  logger.info(
     `[Block ${blockNumber}] Queued to ${queues.BLOCK_QUEUE.routingKey} key`,
   );
 }

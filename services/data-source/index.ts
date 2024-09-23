@@ -19,7 +19,7 @@ const client = createPublicClient({
  * @returns A Promise that resolves to the block data or null if the block is not found.
  */
 export async function getBlock(blockNumber?: bigint): Promise<Block | null> {
-  console.log(`[getBlock] blockNumber: ${blockNumber}`);
+  logger.info(`[getBlock] blockNumber: ${blockNumber}`);
 
   try {
     if (blockNumber !== undefined) {
@@ -34,7 +34,7 @@ export async function getBlock(blockNumber?: bigint): Promise<Block | null> {
       includeTransactions: true,
     });
   } catch (error) {
-    console.error(`Error fetching block: ${error}`);
+    logger.error(`Error fetching block: ${error}`);
     return null;
   }
 }
@@ -52,7 +52,7 @@ export async function getTransaction(
       hash: txHash,
     });
   } catch (error) {
-    console.error(`Error fetching transaction: ${error}`);
+    logger.error(`Error fetching transaction: ${error}`);
     return null;
   }
 }
@@ -70,7 +70,7 @@ export async function getTransactionReceipt(
       hash: txHash,
     });
   } catch (error) {
-    console.error(`Error fetching transaction receipt: ${error}`);
+    logger.error(`Error fetching transaction receipt: ${error}`);
     return null;
   }
 }

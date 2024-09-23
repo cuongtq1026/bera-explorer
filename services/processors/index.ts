@@ -24,28 +24,31 @@ import {
 } from "../data-storage/database/repositories/utils.ts";
 import logger from "../monitor/logger.ts";
 
-export async function processBlock(blockNumber: bigint) {
-  logger.info("[processBlock] queueing block", blockNumber);
+export async function processBlock(blockNumber: bigint): Promise<{
+  transactions: Hash[];
+}> {
+  logger.info("[processBlock] queueing block: " + blockNumber);
 
   const block = await getBlock(blockNumber);
-  logger.info("[processBlock] raw block", block);
 
   if (block == null) {
-    logger.error("Block is null");
-    return;
+    throw Error("Block is null");
   }
 
   const createBlockInput = toBlockCreateInput(block);
 
   if (!createBlockInput) {
-    logger.error("createBlockInput is null");
-    return;
+    throw Error("createBlockInput is null");
   }
 
   await deleteBlock(createBlockInput.number);
   logger.info(`[processBlock] block deleted ${createBlockInput.number}`);
   await createBlock(createBlockInput);
   logger.info("[processBlock] block created", createBlockInput.number);
+
+  return {
+    transactions: block.transactions as Hash[],
+  };
 }
 
 export async function processTransaction(hash: Hash) {

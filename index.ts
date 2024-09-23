@@ -5,7 +5,9 @@ import {
   processTransactionReceipt,
 } from "./services/processors";
 import { BlockConsumer } from "./services/queues/consumers/block.consumer.ts";
-import { queueBlock } from "./services/queues/producers";
+import { TransactionConsumer } from "./services/queues/consumers/transaction.consumer.ts";
+import { TransactionReceiptConsumer } from "./services/queues/consumers/transaction-receipt.consumer.ts";
+import { queueBlock, queueTransaction } from "./services/queues/producers";
 import { is0xHash, parseToBigInt } from "./services/utils.ts";
 
 /**
@@ -87,11 +89,33 @@ switch (command) {
 
     break;
   }
+  case "queue-transaction": {
+    const transactionHash = restArgs[0];
+    if (transactionHash == null || !is0xHash(transactionHash)) {
+      logger.info("Invalid transaction hash.");
+      break;
+    }
+
+    await queueTransaction(transactionHash);
+    break;
+  }
   case "consume": {
     const modelToConsume = restArgs[0];
     switch (modelToConsume) {
       case "block": {
         const consumer = new BlockConsumer();
+
+        await consumer.consume();
+        break;
+      }
+      case "transaction": {
+        const consumer = new TransactionConsumer();
+
+        await consumer.consume();
+        break;
+      }
+      case "transaction-receipt": {
+        const consumer = new TransactionReceiptConsumer();
 
         await consumer.consume();
         break;

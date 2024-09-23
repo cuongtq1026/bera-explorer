@@ -27,13 +27,13 @@ export async function getBlock(blockNumber?: bigint): Promise<Block | null> {
     if (blockNumber !== undefined) {
       return client.getBlock({
         blockNumber: blockNumber,
-        includeTransactions: true,
+        includeTransactions: false,
       });
     }
 
     return await client.getBlock({
       blockTag: "latest",
-      includeTransactions: true,
+      includeTransactions: false,
     });
   } catch (error) {
     logger.error(`Error fetching block: ${error}`);

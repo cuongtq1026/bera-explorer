@@ -1,4 +1,3 @@
-
 import { FlatCompat } from "@eslint/eslintrc";
 import pluginJs from "@eslint/js";
 import path from "path";
@@ -34,6 +33,14 @@ export default [
       "@typescript-eslint/no-explicit-any": "off",
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
     },
   }),
 ];

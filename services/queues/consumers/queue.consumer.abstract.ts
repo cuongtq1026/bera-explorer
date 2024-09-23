@@ -34,7 +34,6 @@ export abstract class IQueueConsumer {
       `[MessageId: ${message.properties.messageId}] Handling message.`,
     );
     await this.handler(message);
-    logger.info(`[MessageId: ${message.properties.messageId}] Finished.`);
   }
 
   private async checkDelay(message: ConsumeMessage): Promise<void> {
@@ -62,4 +61,8 @@ export abstract class IQueueConsumer {
   }
 
   protected abstract handler(message: ConsumeMessage): Promise<void>;
+
+  protected async onFinish(message: ConsumeMessage, _data: any): Promise<void> {
+    logger.info(`[MessageId: ${message.properties.messageId}] Finished.`);
+  }
 }

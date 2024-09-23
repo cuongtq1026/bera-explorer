@@ -3,11 +3,19 @@ type QueueType = {
   routingKey: string;
 };
 
-export const queues: { [key: string]: QueueType } = {
+export const queues = {
   BLOCK_QUEUE: {
     name: "blocks",
     routingKey: "crawler.block",
-  },
+  } as QueueType,
+  TRANSACTION_QUEUE: {
+    name: "transactions",
+    routingKey: "crawler.transaction",
+  } as QueueType,
+  TRANSACTION_RECEIPT_QUEUE: {
+    name: "transaction_receipts",
+    routingKey: "crawler.transaction_receipt",
+  } as QueueType,
 };
 
 export const DEAD_LETTER_EXCHANGE_NAME = "dead-letter";

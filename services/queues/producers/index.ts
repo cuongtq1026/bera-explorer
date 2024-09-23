@@ -1,4 +1,5 @@
 import { IsNotEmpty } from "class-validator";
+import type { Hash } from "viem";
 
 import { queues } from "../../config";
 import logger from "../../monitor/logger.ts";
@@ -16,5 +17,28 @@ export async function queueBlock(blockNumber: bigint) {
 
   logger.info(
     `[Block ${blockNumber}] Queued to ${queues.BLOCK_QUEUE.routingKey} key`,
+  );
+}
+
+export class QueueTransactionPayload {
+  @IsNotEmpty()
+  transactionHash: string;
+}
+
+export class QueueTransactionReceiptPayload {
+  @IsNotEmpty()
+  transactionHash: string;
+}
+
+export async function queueTransaction(transactionHash: Hash) {
+  await mqConnection.publishToCrawlerExchange(
+    queues.TRANSACTION_QUEUE.routingKey,
+    {
+      transactionHash,
+    } as QueueTransactionPayload,
+  );
+
+  logger.info(
+    `[Transaction ${transactionHash}] Queued to ${queues.TRANSACTION_QUEUE.routingKey} key`,
   );
 }

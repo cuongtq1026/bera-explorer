@@ -6,6 +6,8 @@
     "dev": "bun run index.ts",
     "prisma:generate": "prisma generate",
     "consume:block": "bun run index.ts consume block",
+    "consume:transaction": "bun run index.ts consume transaction",
+    "consume:transaction-receipt": "bun run index.ts consume transaction-receipt",
     "queue:blocks": "bun run index.ts queue-blocks 0 10"
   },
   "devDependencies": {

@@ -104,18 +104,7 @@ class RabbitMQConnection {
     }
   }
 
-  async sendToQueue(queueName: string, message: any) {
-    try {
-      await this.checkConnection();
-
-      this.channel.sendToQueue(queueName, Buffer.from(JSON.stringify(message)));
-    } catch (error) {
-      logger.error(error);
-      throw error;
-    }
-  }
-
-  async publishToCrawlerExchange(
+  public async publishToCrawlerExchange(
     routingKey: string,
     message: any,
     options?: PublishOptions,

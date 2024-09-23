@@ -22,6 +22,7 @@ import {
   toTransactionCreateInput,
   toTransactionReceiptCreateInput,
 } from "../data-storage/database/repositories/utils.ts";
+import logger from "../monitor/logger.ts";
 
 export async function processBlock(blockNumber: bigint) {
   logger.info("[processBlock] queueing block", blockNumber);

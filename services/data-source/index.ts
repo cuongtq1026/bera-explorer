@@ -8,6 +8,8 @@ import {
 } from "viem";
 import { berachainTestnetbArtio } from "viem/chains";
 
+import logger from "../monitor/logger.ts";
+
 const client = createPublicClient({
   chain: berachainTestnetbArtio,
   transport: http(process.env.RPC_URL),

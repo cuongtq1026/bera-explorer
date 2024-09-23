@@ -3,9 +3,21 @@ import client, {
   type Connection,
   type ConsumeMessage,
 } from "amqplib";
+import { v4 as uuidv4 } from "uuid";
 
-import { queues } from "../config";
+import {
+  DEAD_LETTER_EXCHANGE_NAME,
+  DEAD_LETTER_QUEUE_NAME,
+  queues,
+} from "../config";
 import logger from "../monitor/logger.ts";
+import {
+  EXPONENTIAL_BACKOFF,
+  EXPONENTIAL_BACKOFF_IN_SECONDS,
+  MAX_RETRIES,
+  type PublishOptions,
+  RETRY_COUNT,
+} from "./index.ts";
 
 class RabbitMQConnection {
   connection!: Connection;
@@ -49,9 +61,12 @@ class RabbitMQConnection {
       }
 
       // Dead letter exchange
-      const dlx = await this.channel.assertExchange("dead-letter", "topic");
+      const dlx = await this.channel.assertExchange(
+        DEAD_LETTER_EXCHANGE_NAME,
+        "topic",
+      );
       // Create a Dead letter queue
-      const dlq = await this.channel.assertQueue("dead-letter-queue", {
+      const dlq = await this.channel.assertQueue(DEAD_LETTER_QUEUE_NAME, {
         durable: true,
       });
       await this.channel.bindQueue(dlq.queue, dlx.exchange, "#");
@@ -68,6 +83,9 @@ class RabbitMQConnection {
           await this.channel.assertQueue(queueInfo.name, {
             deadLetterExchange: dlx.exchange,
             deadLetterRoutingKey: queueInfo.routingKey,
+            arguments: {
+              "x-queue-type": "quorum",
+            },
           });
 
           await this.channel.bindQueue(
@@ -97,7 +115,11 @@ class RabbitMQConnection {
     }
   }
 
-  async publishToCrawlerExchange(routingKey: string, message: any) {
+  async publishToCrawlerExchange(
+    routingKey: string,
+    message: any,
+    options?: PublishOptions,
+  ) {
     try {
       await this.checkConnection();
 
@@ -105,6 +127,14 @@ class RabbitMQConnection {
         this.crawlerExchangeName,
         routingKey,
         Buffer.from(JSON.stringify(message)),
+        {
+          messageId: uuidv4(),
+          headers: {
+            [RETRY_COUNT]: MAX_RETRIES,
+            [EXPONENTIAL_BACKOFF]: EXPONENTIAL_BACKOFF_IN_SECONDS,
+          },
+          ...options,
+        },
       );
     } catch (error) {
       logger.error(`publishToCrawlerExchange error: ${error}`);
@@ -114,7 +144,7 @@ class RabbitMQConnection {
 
   async consume(
     queueName: string,
-    handler: (msg: ConsumeMessage | null) => Promise<void>,
+    handler: (msg: ConsumeMessage) => Promise<void>,
   ) {
     await this.checkConnection();
 
@@ -132,7 +162,51 @@ class RabbitMQConnection {
         } catch (e) {
           logger.error(`[${queueName}] Queue consumer error: ${e}`);
 
-          this.channel.reject(message, false);
+          // in dlx, just ack if processing successfully
+          if (message.fields.exchange === DEAD_LETTER_EXCHANGE_NAME) {
+            this.channel.nack(message, true);
+            return;
+          }
+
+          // re-deliver at least once
+          if (!message.fields.redelivered) {
+            this.channel.nack(message, true);
+            return;
+          }
+
+          /** check retry count **/
+          // If "headers" is not present, retry is not supported
+          const { headers } = message.properties;
+          if (!headers) {
+            this.channel.reject(message, false);
+            return;
+          }
+          const deliveryCount: number = headers["x-delivery-count"] ?? 0;
+
+          // check retries
+          {
+            const maxRetries: number = headers[RETRY_COUNT] ?? MAX_RETRIES;
+
+            if (deliveryCount >= maxRetries) {
+              this.channel.reject(message, false);
+              return;
+            }
+          }
+
+          // handle exponential backoff
+          {
+            const delayRate: number =
+              headers[EXPONENTIAL_BACKOFF] ?? EXPONENTIAL_BACKOFF_IN_SECONDS;
+            const delay = Math.pow(delayRate, deliveryCount);
+
+            if (delay) {
+              await new Promise<void>((resolve) => {
+                setTimeout(() => resolve(), delay * 1000);
+              });
+            }
+          }
+
+          this.channel.nack(message, true);
         }
       },
     );

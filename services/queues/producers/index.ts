@@ -1,6 +1,7 @@
 import { IsNotEmpty } from "class-validator";
 
 import { queues } from "../../config";
+import logger from "../../monitor/logger.ts";
 import mqConnection from "../rabbitmq.connection.ts";
 
 export class QueueBlockPayload {

@@ -177,3 +177,5 @@ dist
 # postgres data
 data
 
+# Built files
+build

@@ -56,7 +56,7 @@ export function toTransactionCreateInput(
     blockNumber: transaction.blockNumber,
     from: transaction.from,
     to: transaction.to,
-    value: transaction.value,
+    value: transaction.value.toString(),
     input: transaction.input,
     gas: transaction.gas,
     gasPrice: transaction.gasPrice,

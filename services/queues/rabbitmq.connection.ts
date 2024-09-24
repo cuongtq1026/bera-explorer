@@ -37,7 +37,7 @@ class RabbitMQConnection {
     try {
       logger.info(`⌛️ Connecting to Rabbit-MQ Server`);
       this.connection = await client.connect(connectionUrl);
-      logger.info(`✅ Rabbit MQ Connection is ready`);
+      logger.info(`✅  Rabbit MQ Connection is ready`);
 
       this.channel = await this.connection.createChannel();
       logger.info(`🛸 Created RabbitMQ Channel successfully`);

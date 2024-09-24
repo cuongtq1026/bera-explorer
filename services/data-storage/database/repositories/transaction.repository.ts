@@ -6,12 +6,12 @@ export type TransactionCreateInput = {
   hash: Hash;
   nonce: bigint | number;
   blockHash?: string | null;
-  blockNumber?: bigint | number | null;
+  blockNumber: bigint | number;
   transactionIndex?: number | null;
   from: string;
   to?: string | null;
   input: string;
-  value: bigint | number;
+  value: string;
   chainId?: number;
   gas: bigint | number;
   gasPrice?: bigint | number | null;

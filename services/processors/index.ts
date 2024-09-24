@@ -31,10 +31,6 @@ export async function processBlock(blockNumber: bigint): Promise<{
 
   const block = await getBlock(blockNumber);
 
-  if (block == null) {
-    throw Error("Block is null");
-  }
-
   const createBlockInput = toBlockCreateInput(block);
 
   if (!createBlockInput) {
@@ -56,11 +52,6 @@ export async function processTransaction(hash: Hash) {
   const transaction = await getTransaction(hash);
   logger.info("[processTransaction] raw transaction", transaction);
 
-  if (transaction == null) {
-    logger.error("Transaction is null");
-    return;
-  }
-
   const createTransactionInput = toTransactionCreateInput(transaction);
 
   if (!createTransactionInput) {
@@ -81,11 +72,6 @@ export async function processTransactionReceipt(hash: Hash) {
     "[processTransactionReceipt] raw transaction receipt",
     transactionReceipt,
   );
-
-  if (transactionReceipt == null) {
-    logger.error("Transaction receipt is null");
-    return;
-  }
 
   const createTransactionReceiptInput =
     toTransactionReceiptCreateInput(transactionReceipt);

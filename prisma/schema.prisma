@@ -34,7 +34,7 @@ model Transaction {
   hash             String              @id @unique
   nonce            BigInt
   blockHash        String?
-  blockNumber      BigInt?
+  blockNumber      BigInt
   transactionIndex Int?
   from             String
   to               String?
@@ -43,7 +43,7 @@ model Transaction {
   chainId          Int?
   gas              BigInt
   gasPrice         BigInt?
-  block            Block?              @relation(fields: [blockNumber], references: [number])
+  block            Block               @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
   receipt          TransactionReceipt?
 
   @@map("transaction")
@@ -67,7 +67,7 @@ model TransactionReceipt {
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   logs              Log[]
-  transaction       Transaction @relation(fields: [transactionHash], references: [hash])
+  transaction       Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
 
   @@map("transaction_receipt")
 }

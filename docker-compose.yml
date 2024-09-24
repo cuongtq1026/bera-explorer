@@ -26,5 +26,12 @@ services:
     restart: always
     ports:
       - "6379:6379"
+  prometheus:
+    image: prom/prometheus
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
 volumes:
   data:

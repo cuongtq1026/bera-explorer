@@ -13,6 +13,10 @@ import { IQueueConsumer } from "./queue.consumer.abstract.ts";
 export class BlockConsumer extends IQueueConsumer {
   protected queueName = queues.BLOCK_QUEUE.name;
 
+  constructor() {
+    super();
+  }
+
   protected async handler(message: ConsumeMessage): Promise<void> {
     const rawContent = message.content.toString();
     logger.info(`BlockConsumer message rawContent: ${rawContent}.`);

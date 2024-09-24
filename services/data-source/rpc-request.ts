@@ -2,6 +2,7 @@ import { createPublicClient, http, type PublicClient } from "viem";
 import { berachainTestnetbArtio } from "viem/chains";
 
 import logger from "../monitor/logger.ts";
+import { rpcBlacklistCounter } from "../monitor/prometheus.ts";
 import redisClient from "./redis-client.ts";
 
 type Client = {
@@ -36,6 +37,10 @@ export class RpcRequest {
   async blacklist(url: string) {
     await redisClient.set(this.getBlacklistKey(url), "1", {
       EX: 60,
+    });
+
+    rpcBlacklistCounter.inc({
+      url,
     });
 
     logger.info("RPC URL blacklisted: " + url);

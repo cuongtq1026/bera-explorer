@@ -56,7 +56,7 @@ class RabbitMQConnection {
 
         await this.channel.prefetch(individualConsumeLimit, false);
         logger.info(
-          `Channel individual prefetch is set to ${globalConsumeLimit}.`,
+          `Channel individual prefetch is set to ${individualConsumeLimit}.`,
         );
       }
 

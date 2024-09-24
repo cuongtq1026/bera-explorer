@@ -17,6 +17,10 @@ import { IQueueConsumer } from "./queue.consumer.abstract.ts";
 export class TransactionConsumer extends IQueueConsumer {
   protected queueName = queues.TRANSACTION_QUEUE.name;
 
+  constructor() {
+    super();
+  }
+
   protected async handler(message: ConsumeMessage): Promise<void> {
     const rawContent = message.content.toString();
     logger.info(`TransactionConsumer message rawContent: ${rawContent}.`);

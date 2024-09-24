@@ -6,6 +6,7 @@ import {
 } from "viem";
 
 import logger from "../monitor/logger.ts";
+import { rpcRequestCounter } from "../monitor/prometheus.ts";
 import rpcRequest from "./rpc-request.ts";
 
 /**
@@ -18,6 +19,10 @@ export async function getBlock(blockNumber?: bigint): Promise<Block> {
 
   const client = await rpcRequest.getClient();
   try {
+    rpcRequestCounter.inc({
+      url: client.url,
+    });
+
     if (blockNumber !== undefined) {
       return client.instance.getBlock({
         blockNumber: blockNumber,

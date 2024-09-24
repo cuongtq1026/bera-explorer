@@ -1,11 +1,7 @@
 import type { ConsumeMessage } from "amqplib";
-import http from "http";
 
 import logger from "../../monitor/logger.ts";
-import {
-  prometheusRegistry,
-  queueMessageProcessedCounter,
-} from "../../monitor/prometheus.ts";
+import { queueMessageProcessedCounter } from "../../monitor/prometheus.ts";
 import { DELAY } from "../index.ts";
 import mqConnection from "../rabbitmq.connection.ts";
 
@@ -15,30 +11,7 @@ export abstract class IQueueConsumer {
     ? +process.env.CONSUMER_PER_CHANNEL
     : 1;
 
-  protected constructor() {
-    this.setupPrometheus();
-  }
-
-  private setupPrometheus() {
-    const server = http.createServer(async (req, res) => {
-      if (!req.url) {
-        res.end();
-        return;
-      }
-
-      const route = req.url;
-      if (route === "/metrics") {
-        res.setHeader("Content-Type", prometheusRegistry.contentType);
-        res.end(await prometheusRegistry.metrics());
-      }
-    });
-
-    const exporterPort = process.env.EXPORTER_PORT
-      ? +process.env.EXPORTER_PORT
-      : 4000;
-    server.listen(exporterPort);
-    logger.info(`✅  [Prometheus] Server is running on port ${exporterPort}`);
-  }
+  protected constructor() {}
 
   public async consume(): Promise<void> {
     logger.info(

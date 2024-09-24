@@ -6,6 +6,7 @@
     "dev": "bun run index.ts",
     "prisma:generate": "prisma generate",
     "prisma:deploy": "prisma migrate deploy",
+    "consume:all": "bun run index.ts consume all",
     "consume:block": "bun run index.ts consume block",
     "consume:transaction": "bun run index.ts consume transaction",
     "consume:transaction-receipt": "bun run index.ts consume transaction-receipt",

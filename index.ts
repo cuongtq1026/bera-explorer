@@ -1,4 +1,5 @@
 import logger from "./services/monitor/logger.ts";
+import { setupPrometheus } from "./services/monitor/prometheus.ts";
 import {
   processBlock,
   processTransaction,
@@ -103,21 +104,39 @@ switch (command) {
     const modelToConsume = restArgs[0];
     switch (modelToConsume) {
       case "block": {
+        setupPrometheus();
+
         const consumer = new BlockConsumer();
 
         await consumer.consume();
         break;
       }
       case "transaction": {
+        setupPrometheus();
+
         const consumer = new TransactionConsumer();
 
         await consumer.consume();
         break;
       }
       case "transaction-receipt": {
+        setupPrometheus();
+
         const consumer = new TransactionReceiptConsumer();
 
         await consumer.consume();
+        break;
+      }
+      case "all": {
+        setupPrometheus();
+
+        const blockConsumer = new BlockConsumer();
+        const transactionConsumer = new TransactionConsumer();
+        const transactionReceiptConsumer = new TransactionReceiptConsumer();
+
+        await blockConsumer.consume();
+        await transactionConsumer.consume();
+        await transactionReceiptConsumer.consume();
         break;
       }
       default: {

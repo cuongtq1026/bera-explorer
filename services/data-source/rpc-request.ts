@@ -3,17 +3,20 @@ import { berachainTestnetbArtio } from "viem/chains";
 
 import logger from "../monitor/logger.ts";
 import { rpcBlacklistCounter } from "../monitor/prometheus.ts";
+import { getHostFromUrl } from "../utils.ts";
 import redisClient from "./redis-client.ts";
 
 type Client = {
   instance: PublicClient;
   url: string;
+  key: string;
 };
 
 const BLACKLIST_KEY = "rpc_url:blacklist";
 
 export class RpcRequest {
   private readonly clients: Client[];
+  private nextClientIndex = 0;
 
   constructor() {
     const envRpcUrls = process.env.RPC_URLS;
@@ -21,12 +24,16 @@ export class RpcRequest {
       throw new Error("No RPC URLs provided");
     }
 
-    this.clients = envRpcUrls.split(",").map((url) => ({
+    const rpcUrls = envRpcUrls.split(",");
+    logger.info(`Number of RPC URLs provided: ${rpcUrls.length}`);
+
+    this.clients = rpcUrls.map((url, index) => ({
       url,
       instance: createPublicClient({
         chain: berachainTestnetbArtio,
         transport: http(url),
       }),
+      key: `${index}|${getHostFromUrl(url)}`,
     }));
   }
 
@@ -34,16 +41,16 @@ export class RpcRequest {
     return BLACKLIST_KEY + ":" + url;
   }
 
-  async blacklist(url: string) {
-    await redisClient.set(this.getBlacklistKey(url), "1", {
+  async blacklist(client: Client) {
+    await redisClient.set(this.getBlacklistKey(client.key), "1", {
       EX: 60,
     });
 
     rpcBlacklistCounter.inc({
-      url,
+      rpc: client.key,
     });
 
-    logger.info("RPC URL blacklisted: " + url);
+    logger.info("RPC URL blacklisted: " + client.key);
   }
 
   async isBlacklisted(url: string) {
@@ -52,7 +59,21 @@ export class RpcRequest {
   }
 
   async getClient(): Promise<Client> {
+    const nextClient = this.clients[this.nextClientIndex];
+    this.nextClientIndex = (this.nextClientIndex + 1) % this.clients.length;
+
+    // if the next client isn't blacklisted, return it
+    const isNextClientBlacklisted = await this.isBlacklisted(nextClient.url);
+    if (!isNextClientBlacklisted) {
+      return nextClient;
+    }
+
     for (const client of this.clients) {
+      if (client.url === nextClient.url) {
+        // no need to check blacklisted since we already did
+        continue;
+      }
+
       const { url } = client;
       const isBlacklisted = await this.isBlacklisted(url);
 

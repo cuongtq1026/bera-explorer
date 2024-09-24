@@ -7,6 +7,7 @@ import {
 
 import logger from "../monitor/logger.ts";
 import { rpcRequestCounter } from "../monitor/prometheus.ts";
+import { getHostFromUrl } from "../utils.ts";
 import rpcRequest from "./rpc-request.ts";
 
 /**
@@ -20,7 +21,7 @@ export async function getBlock(blockNumber?: bigint): Promise<Block> {
   const client = await rpcRequest.getClient();
   try {
     rpcRequestCounter.inc({
-      url: client.url,
+      rpc: client.key,
     });
 
     if (blockNumber !== undefined) {
@@ -54,6 +55,10 @@ export async function getTransaction(
 
   const client = await rpcRequest.getClient();
   try {
+    rpcRequestCounter.inc({
+      rpc: client.key,
+    });
+
     return await client.instance.getTransaction({
       hash: txHash,
     });
@@ -77,6 +82,10 @@ export async function getTransactionReceipt(
 
   const client = await rpcRequest.getClient();
   try {
+    rpcRequestCounter.inc({
+      rpc: client.key,
+    });
+
     return client.instance.getTransactionReceipt({
       hash: txHash,
     });

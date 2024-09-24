@@ -1,5 +1,7 @@
 import type { Hash } from "viem";
 
+import logger from "./monitor/logger.ts";
+
 export function parseToBigInt(str: string): bigint | null {
   try {
     return BigInt(str);
@@ -11,4 +13,9 @@ export function parseToBigInt(str: string): bigint | null {
 
 export function is0xHash(hash: string): hash is Hash {
   return hash.startsWith("0x");
+}
+
+export function getHostFromUrl(url: string) {
+  const parsed = new URL(url);
+  return parsed.host;
 }

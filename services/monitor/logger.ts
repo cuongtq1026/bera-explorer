@@ -9,12 +9,12 @@ const logger = createLogger({
       filename: "logs/error-%DATE%.log",
       level: "error",
       datePattern: "YYYY-MM-DD",
-      maxSize: "20MB",
+      maxSize: "100m",
     }),
     new DailyRotateFile({
       filename: "logs/info-%DATE%.log",
       datePattern: "YYYY-MM-DD",
-      maxSize: "20MB",
+      maxSize: "100m",
     }),
   ],
 });

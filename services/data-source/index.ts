@@ -89,7 +89,7 @@ export async function getTransactionReceipt(
       rpc: client.key,
     });
 
-    return client.instance.getTransactionReceipt({
+    return await client.instance.getTransactionReceipt({
       hash: txHash,
     });
   } catch (error) {

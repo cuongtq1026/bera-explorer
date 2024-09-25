@@ -64,6 +64,9 @@ class RabbitMQConnection {
       const dlx = await this.channel.assertExchange(
         DEAD_LETTER_EXCHANGE_NAME,
         "topic",
+        {
+          durable: true,
+        },
       );
       // Create a Dead letter queue
       const dlq = await this.channel.assertQueue(DEAD_LETTER_QUEUE_NAME, {
@@ -75,6 +78,9 @@ class RabbitMQConnection {
       const crawlerExchange = await this.channel.assertExchange(
         this.crawlerExchangeName,
         "direct",
+        {
+          durable: true,
+        },
       );
 
       // Assertion
@@ -86,6 +92,7 @@ class RabbitMQConnection {
             arguments: {
               "x-queue-type": "quorum",
             },
+            durable: true,
           });
 
           await this.channel.bindQueue(
@@ -149,17 +156,19 @@ class RabbitMQConnection {
 
           this.channel.ack(message);
         } catch (e) {
-          logger.error(`[${queueName}] Queue consumer error: ${e}`);
+          logger.error(
+            `[MessageId: ${message.properties.messageId}} | ${queueName}] Queue consumer error: ${e}`,
+          );
 
           // in dlx, just ack if processing successfully
           if (message.fields.exchange === DEAD_LETTER_EXCHANGE_NAME) {
-            this.channel.nack(message, true);
+            this.channel.nack(message, false, true);
             return;
           }
 
           // re-deliver at least once
           if (!message.fields.redelivered) {
-            this.channel.nack(message, true);
+            this.channel.nack(message, false, true);
             return;
           }
 
@@ -195,9 +204,10 @@ class RabbitMQConnection {
             }
           }
 
-          this.channel.nack(message, true);
+          this.channel.nack(message, false, true);
         }
       },
+      { noAck: false },
     );
   }
 

@@ -53,8 +53,8 @@ export class RpcRequest {
     logger.info("RPC URL blacklisted: " + client.key);
   }
 
-  async isBlacklisted(url: string) {
-    const result = await redisClient.get(this.getBlacklistKey(url));
+  async isBlacklisted(key: string) {
+    const result = await redisClient.get(this.getBlacklistKey(key));
     return result === "1";
   }
 
@@ -63,7 +63,7 @@ export class RpcRequest {
     this.nextClientIndex = (this.nextClientIndex + 1) % this.clients.length;
 
     // if the next client isn't blacklisted, return it
-    const isNextClientBlacklisted = await this.isBlacklisted(nextClient.url);
+    const isNextClientBlacklisted = await this.isBlacklisted(nextClient.key);
     if (!isNextClientBlacklisted) {
       return nextClient;
     }
@@ -74,8 +74,8 @@ export class RpcRequest {
         continue;
       }
 
-      const { url } = client;
-      const isBlacklisted = await this.isBlacklisted(url);
+      const { key } = client;
+      const isBlacklisted = await this.isBlacklisted(key);
 
       if (isBlacklisted) {
         continue;

@@ -40,8 +40,16 @@ export class TransactionConsumer extends IQueueConsumer {
       );
     }
 
+    logger.info(
+      `[MessageId: ${message.properties.messageId}] Processing transaction.`,
+    );
+
     // process
     await processTransaction(transactionHash);
+
+    logger.info(
+      `[MessageId: ${message.properties.messageId}] Process transaction successful.`,
+    );
 
     // onFinish
     await this.onFinish(message, transactionHash);

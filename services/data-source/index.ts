@@ -7,7 +7,6 @@ import {
 
 import logger from "../monitor/logger.ts";
 import { rpcRequestCounter } from "../monitor/prometheus.ts";
-import { getHostFromUrl } from "../utils.ts";
 import rpcRequest from "./rpc-request.ts";
 
 /**
@@ -36,9 +35,11 @@ export async function getBlock(blockNumber?: bigint): Promise<Block> {
       includeTransactions: false,
     });
   } catch (error) {
-    logger.error(`Error fetching block: ${error}`);
+    logger.error(
+      `[Block: ${blockNumber} | RpcClient: ${client.key}] Error fetching block: ${error}`,
+    );
 
-    await rpcRequest.blacklist(client.url);
+    await rpcRequest.blacklist(client);
     throw error;
   }
 }
@@ -63,9 +64,11 @@ export async function getTransaction(
       hash: txHash,
     });
   } catch (error) {
-    logger.error(`Error fetching transaction: ${error}`);
+    logger.error(
+      `[TxHash: ${txHash} | RpcClient: ${client.key}] Error fetching transaction: ${error}`,
+    );
 
-    await rpcRequest.blacklist(client.url);
+    await rpcRequest.blacklist(client);
     throw error;
   }
 }
@@ -90,9 +93,11 @@ export async function getTransactionReceipt(
       hash: txHash,
     });
   } catch (error) {
-    logger.error(`Error fetching transaction receipt: ${error}`);
+    logger.error(
+      `[TxHash: ${txHash} | RpcClient: ${client.key}] Error fetching transaction receipt: ${error}`,
+    );
 
-    await rpcRequest.blacklist(client.url);
+    await rpcRequest.blacklist(client);
     throw error;
   }
 }

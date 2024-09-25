@@ -55,14 +55,13 @@ export async function processTransaction(hash: Hash) {
   const createTransactionInput = toTransactionCreateInput(transaction);
 
   if (!createTransactionInput) {
-    logger.error("createTransactionInput is null");
-    return;
+    throw Error("createTransactionInput is null");
   }
 
   await deleteTransaction(createTransactionInput.hash);
-  logger.info("transaction deleted");
+  logger.info("transaction deleted: " + createTransactionInput.hash);
   await createTransaction(createTransactionInput);
-  logger.info("transaction created", createTransactionInput.hash);
+  logger.info("transaction created: " + createTransactionInput.hash);
 }
 
 export async function processTransactionReceipt(hash: Hash) {
@@ -77,8 +76,7 @@ export async function processTransactionReceipt(hash: Hash) {
     toTransactionReceiptCreateInput(transactionReceipt);
 
   if (!createTransactionReceiptInput) {
-    logger.error("createTransactionInput is null");
-    return;
+    throw Error("createTransactionInput is null");
   }
 
   await deleteTransactionReceipt(createTransactionReceiptInput.transactionHash);

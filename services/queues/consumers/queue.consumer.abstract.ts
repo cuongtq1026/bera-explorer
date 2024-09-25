@@ -33,6 +33,9 @@ export abstract class IQueueConsumer {
       `[MessageId: ${message.properties.messageId}] Handling message.`,
     );
     await this.handler(message);
+    logger.info(
+      `[MessageId: ${message.properties.messageId}] Handle message successfully.`,
+    );
   }
 
   private async checkDelay(message: ConsumeMessage): Promise<void> {

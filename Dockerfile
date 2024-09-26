@@ -20,4 +20,4 @@ WORKDIR /app
 COPY --from=builder /app/node_modules/.prisma/client/libquery_engine-linux-arm64-openssl-1.1.x.so.node ./
 COPY --from=builder /app/build ./build
 
-CMD ["bun", "run", "./build/index.js", "consume", "block"]
+CMD ["bun", "run", "./build/index.js", "consume", "all"]

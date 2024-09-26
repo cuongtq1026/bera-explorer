@@ -1,14 +1,7 @@
 import type { Hash } from "viem";
 
-import logger from "./monitor/logger.ts";
-
-export function parseToBigInt(str: string): bigint | null {
-  try {
-    return BigInt(str);
-  } catch (error) {
-    logger.error("Invalid BigInt string:", error);
-    return null;
-  }
+export function parseToBigInt(str: string): bigint {
+  return BigInt(str);
 }
 
 export function is0xHash(hash: string): hash is Hash {

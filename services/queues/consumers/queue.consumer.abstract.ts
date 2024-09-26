@@ -25,17 +25,19 @@ export abstract class IQueueConsumer {
     }
   }
 
-  private async execute(message: ConsumeMessage): Promise<void> {
+  private async execute(message: ConsumeMessage): Promise<boolean> {
     logger.info(`[MessageId: ${message.properties.messageId}] Check delay.`);
     await this.checkDelay(message);
 
     logger.info(
       `[MessageId: ${message.properties.messageId}] Handling message.`,
     );
-    await this.handler(message);
+    const handled = await this.handler(message);
     logger.info(
       `[MessageId: ${message.properties.messageId}] Handle message successfully.`,
     );
+
+    return handled;
   }
 
   private async checkDelay(message: ConsumeMessage): Promise<void> {
@@ -62,7 +64,7 @@ export abstract class IQueueConsumer {
     });
   }
 
-  protected abstract handler(message: ConsumeMessage): Promise<void>;
+  protected abstract handler(message: ConsumeMessage): Promise<boolean>;
 
   protected async onFinish(message: ConsumeMessage, _data: any): Promise<void> {
     // Increase prometheus counter

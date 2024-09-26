@@ -17,7 +17,7 @@ export class BlockConsumer extends IQueueConsumer {
     super();
   }
 
-  protected async handler(message: ConsumeMessage): Promise<void> {
+  protected async handler(message: ConsumeMessage): Promise<boolean> {
     const rawContent = message.content.toString();
     logger.info(`BlockConsumer message rawContent: ${rawContent}.`);
 
@@ -36,6 +36,8 @@ export class BlockConsumer extends IQueueConsumer {
 
     // onFinish
     await this.onFinish(message, block);
+
+    return true;
   }
 
   protected async onFinish(

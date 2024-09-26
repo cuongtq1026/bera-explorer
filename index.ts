@@ -6,6 +6,7 @@ import {
   processTransactionReceipt,
 } from "./services/processors";
 import { BlockConsumer } from "./services/queues/consumers/block.consumer.ts";
+import { DlxConsumer } from "./services/queues/consumers/dlx.consumer.ts";
 import { TransactionConsumer } from "./services/queues/consumers/transaction.consumer.ts";
 import { TransactionReceiptConsumer } from "./services/queues/consumers/transaction-receipt.consumer.ts";
 import { queueBlock, queueTransaction } from "./services/queues/producers";
@@ -143,6 +144,12 @@ switch (command) {
         logger.info(`No model to consume: ${modelToConsume}.`);
       }
     }
+    break;
+  }
+  case "retry-queue-all": {
+    const dlxConsumer = new DlxConsumer();
+
+    await dlxConsumer.consume();
     break;
   }
   default:

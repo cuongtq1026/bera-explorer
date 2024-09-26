@@ -140,7 +140,7 @@ class RabbitMQConnection {
 
   async consume(
     queueName: string,
-    handler: (msg: ConsumeMessage) => Promise<void>,
+    handler: (msg: ConsumeMessage) => Promise<boolean>,
   ) {
     await this.checkConnection();
 
@@ -152,8 +152,12 @@ class RabbitMQConnection {
         }
 
         try {
-          await handler(message);
+          const handled = await handler(message);
 
+          if (!handled) {
+            this.channel.nack(message, false, true);
+            return;
+          }
           this.channel.ack(message);
         } catch (e) {
           logger.error(

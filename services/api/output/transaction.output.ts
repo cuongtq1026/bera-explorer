@@ -1,4 +1,8 @@
 import type { TransactionDto } from "../../data-storage/database/dto.ts";
+import {
+  toTransactionReceiptOutput,
+  TransactionReceiptOutput,
+} from "./transaction-receipt.output.ts";
 
 export class TransactionOutput {
   hash: string;
@@ -13,6 +17,8 @@ export class TransactionOutput {
   chainId: number | null;
   gas: string;
   gasPrice: string | null;
+
+  receipt?: TransactionReceiptOutput;
 }
 
 export function toTransactionOutput(
@@ -31,5 +37,9 @@ export function toTransactionOutput(
     chainId: transaction.chainId,
     gas: transaction.gas.toString(),
     gasPrice: transaction.gasPrice ? transaction.gasPrice.toString() : null,
+
+    receipt: transaction.receipt
+      ? toTransactionReceiptOutput(transaction.receipt)
+      : undefined,
   };
 }

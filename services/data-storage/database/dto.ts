@@ -1,4 +1,9 @@
-import type { Block, Transaction } from "@prisma/client";
+import type {
+  Block,
+  Log,
+  Transaction,
+  TransactionReceipt,
+} from "@prisma/client";
 
 import { parseToBigInt } from "../../utils.ts";
 
@@ -36,6 +41,37 @@ export type TransactionDto = {
   chainId: number | null;
   gas: bigint;
   gasPrice: bigint | null;
+
+  receipt?: TransactionReceiptDto;
+};
+export type TransactionReceiptDto = {
+  transactionHash: string;
+  transactionIndex: number;
+  blockHash: string;
+  blockNumber: bigint;
+  from: string;
+  to: string | null;
+  cumulativeGasUsed: bigint;
+  gasUsed: bigint;
+  contractAddress: string | null;
+  logsBloom: string;
+  status: boolean;
+  effectiveGasPrice: bigint;
+  type: string;
+  root: string | null;
+  createdAt: Date;
+
+  logs: LogDto[];
+};
+export type LogDto = {
+  logHash: string;
+  address: string;
+  data: string;
+  blockNumber: bigint;
+  transactionHash: string;
+  transactionIndex: number;
+  index: number;
+  removed: boolean;
 };
 
 export function toBlockDto(
@@ -68,7 +104,15 @@ export function toBlockDto(
   };
 }
 
-export function toTransactionDto(transaction: Transaction): TransactionDto {
+export function toTransactionDto(
+  transaction: Transaction & {
+    receipt?:
+      | (TransactionReceipt & {
+          logs: Log[];
+        })
+      | null;
+  },
+): TransactionDto {
   return {
     hash: transaction.hash,
     nonce: transaction.nonce,
@@ -82,5 +126,48 @@ export function toTransactionDto(transaction: Transaction): TransactionDto {
     chainId: transaction.chainId,
     gas: transaction.gas,
     gasPrice: transaction.gasPrice,
+
+    receipt: transaction.receipt
+      ? toTransactionReceiptDto(transaction.receipt)
+      : undefined,
+  };
+}
+
+export function toTransactionReceiptDto(
+  receipt: TransactionReceipt & {
+    logs: Log[];
+  },
+): TransactionReceiptDto {
+  return {
+    transactionHash: receipt.transactionHash,
+    transactionIndex: receipt.transactionIndex,
+    blockHash: receipt.blockHash,
+    blockNumber: receipt.blockNumber,
+    from: receipt.from,
+    to: receipt.to,
+    cumulativeGasUsed: receipt.cumulativeGasUsed,
+    gasUsed: receipt.gasUsed,
+    contractAddress: receipt.contractAddress,
+    logsBloom: receipt.logsBloom,
+    status: receipt.status,
+    effectiveGasPrice: receipt.effectiveGasPrice,
+    type: receipt.type,
+    root: receipt.root,
+    createdAt: receipt.createdAt,
+
+    logs: receipt.logs.map(toLogDto),
+  };
+}
+
+export function toLogDto(log: Log): LogDto {
+  return {
+    logHash: log.logHash,
+    address: log.address,
+    data: log.data,
+    blockNumber: log.blockNumber,
+    transactionHash: log.transactionHash,
+    transactionIndex: log.transactionIndex,
+    index: log.index,
+    removed: log.removed,
   };
 }

@@ -36,11 +36,36 @@ export async function deleteTransaction(hash: `0x${string}`): Promise<void> {
 
 export async function findTransaction(
   hash: Hash,
+  withReceipt: boolean,
 ): Promise<TransactionDto | null> {
+  if (!withReceipt) {
+    return prisma.transaction
+      .findUnique({
+        where: {
+          hash,
+        },
+      })
+      .then((transaction) => {
+        if (!transaction) return null;
+        return toTransactionDto(transaction);
+      });
+  }
+
   return prisma.transaction
     .findUnique({
       where: {
         hash,
+      },
+      include: {
+        receipt: {
+          include: {
+            logs: {
+              orderBy: {
+                index: "asc",
+              },
+            },
+          },
+        },
       },
     })
     .then((transaction) => {

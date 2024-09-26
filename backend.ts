@@ -85,7 +85,11 @@ app.get("/transaction/:hash", async (req, res) => {
     );
   }
 
-  const transaction = await findTransaction(transactionHash);
+  const { withReceipt } = req.query;
+  const transaction = await findTransaction(
+    transactionHash,
+    withReceipt === "true",
+  );
   if (!transaction) {
     throw new ItemNotFoundException("Transaction not found");
   }

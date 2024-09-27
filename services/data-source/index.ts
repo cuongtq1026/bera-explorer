@@ -7,7 +7,7 @@ import {
 
 import logger from "../monitor/logger.ts";
 import { rpcRequestCounter } from "../monitor/prometheus.ts";
-import rpcRequest from "./rpc-request.ts";
+import rpcRequest from "./rpc-request";
 
 /**
  * Retrieves a block from the Ethereum blockchain using viem.

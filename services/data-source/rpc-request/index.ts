@@ -1,21 +1,18 @@
-import { createPublicClient, http, type PublicClient } from "viem";
+import { createClient, createPublicClient, http } from "viem";
 import { berachainTestnetbArtio } from "viem/chains";
 
-import logger from "../monitor/logger.ts";
-import { rpcBlacklistCounter } from "../monitor/prometheus.ts";
-import { getHostFromUrl } from "../utils.ts";
-import redisClient from "./redis-client.ts";
-
-type Client = {
-  instance: PublicClient;
-  url: string;
-  key: string;
-};
+import logger from "../../monitor/logger.ts";
+import { rpcBlacklistCounter } from "../../monitor/prometheus.ts";
+import { getHostFromUrl } from "../../utils.ts";
+import redisClient from "../redis-client.ts";
+import { extendDebugClient } from "./extends.ts";
+import type { RpcClient, RpcDebugClient } from "./types.ts";
 
 const BLACKLIST_KEY = "rpc_url:blacklist";
 
 export class RpcRequest {
-  private readonly clients: Client[];
+  private readonly clients: RpcClient[];
+  private readonly debugClients: RpcDebugClient[];
   private nextClientIndex = 0;
 
   constructor() {
@@ -35,13 +32,31 @@ export class RpcRequest {
       }),
       key: `${index}|${getHostFromUrl(url)}`,
     }));
+
+    const envDebugRpcUrls = process.env.DEBUG_RPC_URLS;
+    if (envDebugRpcUrls) {
+      const debugRpcUrls = envDebugRpcUrls.split(",");
+      logger.info(`Number of Debug RPC URLs provided: ${debugRpcUrls.length}`);
+
+      this.debugClients = debugRpcUrls.map((url, index) => ({
+        url,
+        instance: createClient({
+          chain: berachainTestnetbArtio,
+          transport: http(url),
+        }).extend(extendDebugClient),
+        key: `${index}|${getHostFromUrl(url)}`,
+      }));
+    }
+    if (!envDebugRpcUrls) {
+      logger.warn("No Debug RPC URLs provided");
+    }
   }
 
   private getBlacklistKey(url: string) {
     return BLACKLIST_KEY + ":" + url;
   }
 
-  async blacklist(client: Client) {
+  async blacklist(client: RpcClient) {
     await redisClient.set(this.getBlacklistKey(client.key), "1", {
       EX: 60,
     });
@@ -58,7 +73,11 @@ export class RpcRequest {
     return result === "1";
   }
 
-  async getClient(): Promise<Client> {
+  async getDebugClient(): Promise<RpcDebugClient> {
+    return this.debugClients[0];
+  }
+
+  async getClient(): Promise<RpcClient> {
     const nextClient = this.clients[this.nextClientIndex];
     this.nextClientIndex = (this.nextClientIndex + 1) % this.clients.length;
 

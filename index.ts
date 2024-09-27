@@ -1,3 +1,4 @@
+import rpcRequest from "./services/data-source/rpc-request";
 import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
 import {
@@ -150,6 +151,26 @@ switch (command) {
     const dlxConsumer = new DlxConsumer();
 
     await dlxConsumer.consume();
+    break;
+  }
+  case "trace-transaction": {
+    const transactionHash = restArgs[0];
+    if (transactionHash == null || !is0xHash(transactionHash)) {
+      logger.info("Invalid transaction hash.");
+      break;
+    }
+
+    const debugClient = await rpcRequest.getDebugClient();
+    const result = await debugClient.instance.traceTransaction(
+      transactionHash,
+      {
+        tracer: "callTracer",
+      },
+    );
+    logger.info(
+      `[Tx: ${transactionHash}] calls: ` +
+        JSON.stringify(result.calls, null, 2),
+    );
     break;
   }
   default:

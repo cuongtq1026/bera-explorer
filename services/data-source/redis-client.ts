@@ -13,8 +13,5 @@ redisClient.on("error", (err) => {
 logger.info("⌛️ Connecting to Redis");
 await redisClient.connect();
 logger.info("✅  Connected to Redis");
-await redisClient.set("test3", "1", {
-  EX: 60,
-});
 
 export default redisClient;

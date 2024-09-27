@@ -8,6 +8,7 @@ import {
 import logger from "../monitor/logger.ts";
 import { rpcRequestCounter } from "../monitor/prometheus.ts";
 import rpcRequest from "./rpc-request";
+import type { TraceCallNested } from "./rpc-request/types.ts";
 
 /**
  * Retrieves a block from the Ethereum blockchain using viem.
@@ -98,6 +99,30 @@ export async function getTransactionReceipt(
     );
 
     await rpcRequest.blacklist(client);
+    throw error;
+  }
+}
+
+export async function getAllTracerCallsTransaction(
+  txHash: Hash,
+): Promise<TraceCallNested> {
+  logger.info(`[getDebugTraceTransaction] hash: ${txHash}`);
+
+  const debugClient = await rpcRequest.getDebugClient();
+  try {
+    rpcRequestCounter.inc({
+      rpc: debugClient.key,
+    });
+
+    return await debugClient.instance.traceTransaction(txHash, {
+      tracer: "callTracer",
+    });
+  } catch (error) {
+    logger.error(
+      `[TxHash: ${txHash} | RpcClient: ${debugClient.key}] Error fetching internal transaction: ${error}`,
+    );
+
+    await rpcRequest.blacklist(debugClient);
     throw error;
   }
 }

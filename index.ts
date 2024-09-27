@@ -3,6 +3,7 @@ import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
 import {
   processBlock,
+  processInternalTransaction,
   processTransaction,
   processTransactionReceipt,
 } from "./services/processors";
@@ -160,17 +161,7 @@ switch (command) {
       break;
     }
 
-    const debugClient = await rpcRequest.getDebugClient();
-    const result = await debugClient.instance.traceTransaction(
-      transactionHash,
-      {
-        tracer: "callTracer",
-      },
-    );
-    logger.info(
-      `[Tx: ${transactionHash}] calls: ` +
-        JSON.stringify(result.calls, null, 2),
-    );
+    await processInternalTransaction(transactionHash);
     break;
   }
   default:

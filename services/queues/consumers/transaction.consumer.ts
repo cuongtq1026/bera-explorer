@@ -8,6 +8,7 @@ import logger from "../../monitor/logger.ts";
 import { processTransaction } from "../../processors";
 import { is0xHash } from "../../utils.ts";
 import {
+  QueueInternalTransactionPayload,
   QueueTransactionPayload,
   QueueTransactionReceiptPayload,
 } from "../producers";
@@ -67,6 +68,13 @@ export class TransactionConsumer extends IQueueConsumer {
       {
         transactionHash,
       } as QueueTransactionReceiptPayload,
+    );
+    // Queue to internal transaction queue
+    await mqConnection.publishToCrawlerExchange(
+      queues.INTERNAL_TRANSACTION_QUEUE.routingKey,
+      {
+        transactionHash,
+      } as QueueInternalTransactionPayload,
     );
 
     return super.onFinish(message, transactionHash);

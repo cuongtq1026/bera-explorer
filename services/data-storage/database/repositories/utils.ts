@@ -6,7 +6,9 @@ import type {
   Log,
 } from "viem";
 
+import type { TraceCallNested } from "../../../data-source/rpc-request/types.ts";
 import type { BlockCreateInput } from "./block.repository.ts";
+import type { InternalTransactionCreateInput } from "./internal-transaction.repository.ts";
 import type { LogCreateInput, LogTopicCreateInput } from "./log.repository.ts";
 import type { TransactionCreateInput } from "./transaction.repository.ts";
 import type { TransactionReceiptCreateInput } from "./transaction-receipt.repository.ts";
@@ -129,5 +131,35 @@ export function toLogTopicCreateInput(
     topicHash: `${logHash}-${index}`,
     topic: logTopic,
     index,
+  };
+}
+
+export function toInternalTransactionCreateInput(
+  transactionHash: Hash,
+  parentHash: string | null,
+  index: number,
+  internalTransaction: TraceCallNested,
+): InternalTransactionCreateInput {
+  const hash = parentHash == null ? transactionHash : `${parentHash}-${index}`;
+  console.log("internalTransaction", internalTransaction);
+  return {
+    hash,
+    parentHash,
+    transactionHash,
+    from: internalTransaction.from,
+    gas: BigInt(internalTransaction.gas).toString(),
+    gasUsed: BigInt(internalTransaction.gasUsed).toString(),
+    input: internalTransaction.input,
+    to: internalTransaction.to,
+    type: internalTransaction.type,
+    value: internalTransaction.value
+      ? BigInt(internalTransaction.value).toString()
+      : "0",
+
+    calls: internalTransaction.calls
+      ? internalTransaction.calls.map((call, index) =>
+          toInternalTransactionCreateInput(transactionHash, hash, index, call),
+        )
+      : undefined,
   };
 }

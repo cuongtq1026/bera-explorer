@@ -1,6 +1,7 @@
 import type { Hash } from "viem";
 
 import {
+  getAllTracerCallsTransaction,
   getBlock,
   getTransaction,
   getTransactionReceipt,
@@ -9,6 +10,10 @@ import {
   createBlock,
   deleteBlock,
 } from "../data-storage/database/repositories/block.repository.ts";
+import {
+  createInternalTransaction,
+  deleteInternalTransaction,
+} from "../data-storage/database/repositories/internal-transaction.repository.ts";
 import {
   createTransaction,
   deleteTransaction,
@@ -19,6 +24,7 @@ import {
 } from "../data-storage/database/repositories/transaction-receipt.repository.ts";
 import {
   toBlockCreateInput,
+  toInternalTransactionCreateInput,
   toTransactionCreateInput,
   toTransactionReceiptCreateInput,
 } from "../data-storage/database/repositories/utils.ts";
@@ -27,7 +33,7 @@ import logger from "../monitor/logger.ts";
 export async function processBlock(blockNumber: bigint): Promise<{
   transactions: Hash[];
 }> {
-  logger.info("[processBlock] queueing block: " + blockNumber);
+  logger.info("[processBlock] processing block: " + blockNumber);
 
   const block = await getBlock(blockNumber);
 
@@ -48,7 +54,7 @@ export async function processBlock(blockNumber: bigint): Promise<{
 }
 
 export async function processTransaction(hash: Hash) {
-  logger.info("[processTransaction] queueing transaction", hash);
+  logger.info("[processTransaction] processing transaction", hash);
   const transaction = await getTransaction(hash);
   logger.info("[processTransaction] raw transaction", transaction);
 
@@ -65,7 +71,10 @@ export async function processTransaction(hash: Hash) {
 }
 
 export async function processTransactionReceipt(hash: Hash) {
-  logger.info("[processTransactionReceipt] queueing transaction receipt", hash);
+  logger.info(
+    "[processTransactionReceipt] processing transaction receipt",
+    hash,
+  );
   const transactionReceipt = await getTransactionReceipt(hash);
   logger.info(
     "[processTransactionReceipt] raw transaction receipt",
@@ -76,7 +85,7 @@ export async function processTransactionReceipt(hash: Hash) {
     toTransactionReceiptCreateInput(transactionReceipt);
 
   if (!createTransactionReceiptInput) {
-    throw Error("createTransactionInput is null");
+    throw Error("createTransactionReceiptInput is null");
   }
 
   await deleteTransactionReceipt(createTransactionReceiptInput.transactionHash);
@@ -88,5 +97,41 @@ export async function processTransactionReceipt(hash: Hash) {
   logger.info(
     "transaction receipt created",
     createTransactionReceiptInput.transactionHash,
+  );
+}
+
+export async function processInternalTransaction(hash: Hash) {
+  logger.info(
+    "[processInternalTransaction] processing internal transaction",
+    hash,
+  );
+  const internalTransaction = await getAllTracerCallsTransaction(hash);
+  logger.info(
+    "[processInternalTransaction] raw internal transaction",
+    internalTransaction,
+  );
+
+  const createInternalTransactionInput = toInternalTransactionCreateInput(
+    hash,
+    null,
+    0,
+    internalTransaction,
+  );
+
+  if (!createInternalTransactionInput) {
+    throw Error("createInternalTransactionInput is null");
+  }
+
+  await deleteInternalTransaction(
+    createInternalTransactionInput.transactionHash,
+  );
+  logger.info(
+    "internal transaction deleted",
+    createInternalTransactionInput.transactionHash,
+  );
+  await createInternalTransaction(createInternalTransactionInput);
+  logger.info(
+    "internal transaction created",
+    createInternalTransactionInput.transactionHash,
   );
 }

@@ -16,6 +16,10 @@ export const queues = {
     name: "transaction_receipts",
     routingKey: "crawler.transaction_receipt",
   } as QueueType,
+  INTERNAL_TRANSACTION_QUEUE: {
+    name: "internal_transactions",
+    routingKey: "crawler.internal_transaction",
+  } as QueueType,
 };
 
 export const DEAD_LETTER_EXCHANGE_NAME = "dead-letter";

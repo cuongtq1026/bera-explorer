@@ -30,6 +30,11 @@ export class QueueTransactionReceiptPayload {
   transactionHash: string;
 }
 
+export class QueueInternalTransactionPayload {
+  @IsNotEmpty()
+  transactionHash: string;
+}
+
 export async function queueTransaction(transactionHash: Hash) {
   await mqConnection.publishToCrawlerExchange(
     queues.TRANSACTION_QUEUE.routingKey,

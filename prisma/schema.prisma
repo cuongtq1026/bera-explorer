@@ -32,20 +32,21 @@ model Block {
 }
 
 model Transaction {
-  hash             String              @id @unique
-  nonce            BigInt
-  blockHash        String?
-  blockNumber      BigInt
-  transactionIndex Int?
-  from             String
-  to               String?
-  input            String
-  value            Decimal             @db.Decimal(78, 0)
-  chainId          Int?
-  gas              BigInt
-  gasPrice         BigInt?
-  block            Block               @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
-  receipt          TransactionReceipt?
+  hash                String                @id @unique
+  nonce               BigInt
+  blockHash           String?
+  blockNumber         BigInt
+  transactionIndex    Int?
+  from                String
+  to                  String?
+  input               String
+  value               Decimal               @db.Decimal(78, 0)
+  chainId             Int?
+  gas                 BigInt
+  gasPrice            BigInt?
+  block               Block                 @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
+  receipt             TransactionReceipt?
+  InternalTransaction InternalTransaction[]
 
   @@map("transaction")
 }
@@ -95,4 +96,24 @@ model LogTopic {
   log       Log    @relation(fields: [logHash], references: [logHash], onDelete: Cascade)
 
   @@map("log_topic")
+}
+
+model InternalTransaction {
+  hash            String  @id @unique
+  parentHash      String?
+  transactionHash String
+  from            String
+  to              String
+  input           String
+  type            String
+  value           Decimal @db.Decimal(78, 0)
+  gas             Decimal @db.Decimal(78, 0)
+  gasUsed         Decimal @db.Decimal(78, 0)
+
+  calls InternalTransaction[] @relation("InternalCalls")
+
+  transaction Transaction          @relation(fields: [transactionHash], references: [hash])
+  parent      InternalTransaction? @relation("InternalCalls", fields: [parentHash], references: [hash])
+
+  @@map("internal_transaction")
 }

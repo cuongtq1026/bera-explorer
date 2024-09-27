@@ -56,7 +56,7 @@ export class RpcRequest {
     return BLACKLIST_KEY + ":" + url;
   }
 
-  async blacklist(client: RpcClient) {
+  async blacklist(client: RpcClient | RpcDebugClient) {
     await redisClient.set(this.getBlacklistKey(client.key), "1", {
       EX: 60,
     });

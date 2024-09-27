@@ -59,3 +59,14 @@ export async function deleteTransactionReceipt(hash: Hash): Promise<void> {
     },
   });
 }
+
+export async function getTransactionReceipts(page: number, size: number) {
+  return prisma.transactionReceipt.findMany({
+    take: size,
+    skip: page * size,
+  });
+}
+
+export async function countTransactionReceipts() {
+  return prisma.transactionReceipt.count({});
+}

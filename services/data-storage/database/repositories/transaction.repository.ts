@@ -75,10 +75,12 @@ export async function findTransaction(
 }
 
 export async function findTransactions(
-  blockNumber: number | bigint,
+  blockNumber: number | bigint | undefined,
+  options?: { withReceipts?: boolean; withLogs?: boolean },
   pagination?: TransactionPaginationDto,
 ): Promise<TransactionDto[]> {
   const { page = 0, size = 20, order = "asc", cursor } = pagination ?? {};
+  const { withReceipts, withLogs } = options ?? {};
   const skip = size * page;
   const cursorObject:
     | {
@@ -88,7 +90,7 @@ export async function findTransactions(
     cursor == null
       ? {}
       : {
-          cursor: { hash: cursor },
+          cursor: { hash: cursor } as Prisma.TransactionWhereUniqueInput,
         };
   return prisma.transaction
     .findMany({
@@ -100,9 +102,30 @@ export async function findTransactions(
       orderBy: {
         transactionIndex: order,
       },
+      include: {
+        receipt: withReceipts
+          ? {
+              include: {
+                logs: withLogs
+                  ? {
+                      orderBy: {
+                        index: "asc",
+                      },
+                    }
+                  : false,
+              },
+            }
+          : false,
+      },
       ...cursorObject,
     })
     .then((transactions) =>
+      // TODO: Fix me
+      // @ts-ignore
       transactions.map((transaction) => toTransactionDto(transaction)),
     );
+}
+
+export async function countTransactions() {
+  return prisma.transaction.count({});
 }

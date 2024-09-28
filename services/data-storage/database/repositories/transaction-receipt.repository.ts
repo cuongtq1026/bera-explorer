@@ -1,5 +1,8 @@
+import { Prisma } from "@prisma/client";
 import type { Hash } from "viem";
 
+import { TransactionPaginationDto } from "../../../api/pagination.ts";
+import { toTransactionReceiptDto } from "../dto.ts";
 import prisma from "../prisma.ts";
 import type { LogCreateInput } from "./log.repository.ts";
 
@@ -60,11 +63,33 @@ export async function deleteTransactionReceipt(hash: Hash): Promise<void> {
   });
 }
 
-export async function getTransactionReceipts(page: number, size: number) {
-  return prisma.transactionReceipt.findMany({
-    take: size,
-    skip: page * size,
-  });
+export async function getTransactionReceipts(
+  pagination?: TransactionPaginationDto,
+) {
+  const { page = 0, size = 20, cursor } = pagination ?? {};
+  const skip = size * page;
+  const cursorObject:
+    | {
+        cursor: Prisma.TransactionReceiptWhereUniqueInput;
+      }
+    | object =
+    cursor == null
+      ? {}
+      : {
+          cursor: {
+            transactionHash: cursor,
+          } as Prisma.TransactionReceiptWhereUniqueInput,
+        };
+  return prisma.transactionReceipt
+    .findMany({
+      take: size,
+      skip: cursor == null ? skip : skip + 1,
+      ...cursorObject,
+      orderBy: {
+        transactionHash: "asc",
+      },
+    })
+    .then((receipts) => receipts.map((r) => toTransactionReceiptDto(r)));
 }
 
 export async function countTransactionReceipts() {

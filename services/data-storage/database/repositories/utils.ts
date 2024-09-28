@@ -141,7 +141,6 @@ export function toInternalTransactionCreateInput(
   internalTransaction: TraceCallNested,
 ): InternalTransactionCreateInput {
   const hash = parentHash == null ? transactionHash : `${parentHash}-${index}`;
-  console.log("internalTransaction", internalTransaction);
   return {
     hash,
     parentHash,

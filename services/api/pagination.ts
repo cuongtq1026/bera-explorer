@@ -42,5 +42,5 @@ export class TransactionPaginationDto {
   page?: number;
   size?: number;
   order?: "asc" | "desc";
-  cursor?: Hash;
+  cursor?: Hash | null;
 }

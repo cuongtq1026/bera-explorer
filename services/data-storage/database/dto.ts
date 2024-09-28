@@ -4,6 +4,7 @@ import type {
   Transaction,
   TransactionReceipt,
 } from "@prisma/client";
+import type { Hash } from "viem";
 
 import { parseToBigInt } from "../../utils.ts";
 
@@ -29,7 +30,7 @@ export type BlockDto = {
   transactions: TransactionDto[];
 };
 export type TransactionDto = {
-  hash: string;
+  hash: Hash;
   nonce: bigint;
   blockHash: string | null;
   blockNumber: bigint;
@@ -45,7 +46,7 @@ export type TransactionDto = {
   receipt?: TransactionReceiptDto;
 };
 export type TransactionReceiptDto = {
-  transactionHash: string;
+  transactionHash: Hash;
   transactionIndex: number;
   blockHash: string;
   blockNumber: bigint;
@@ -61,7 +62,7 @@ export type TransactionReceiptDto = {
   root: string | null;
   createdAt: Date;
 
-  logs: LogDto[];
+  logs?: LogDto[];
 };
 export type LogDto = {
   logHash: string;
@@ -114,7 +115,7 @@ export function toTransactionDto(
   },
 ): TransactionDto {
   return {
-    hash: transaction.hash,
+    hash: transaction.hash as Hash,
     nonce: transaction.nonce,
     blockHash: transaction.blockHash,
     blockNumber: transaction.blockNumber,
@@ -122,7 +123,7 @@ export function toTransactionDto(
     from: transaction.from,
     to: transaction.to,
     input: transaction.input,
-    value: parseToBigInt(transaction.value.toString()),
+    value: parseToBigInt(transaction.value.toFixed()),
     chainId: transaction.chainId,
     gas: transaction.gas,
     gasPrice: transaction.gasPrice,
@@ -135,11 +136,11 @@ export function toTransactionDto(
 
 export function toTransactionReceiptDto(
   receipt: TransactionReceipt & {
-    logs: Log[];
+    logs?: Log[];
   },
 ): TransactionReceiptDto {
   return {
-    transactionHash: receipt.transactionHash,
+    transactionHash: receipt.transactionHash as Hash,
     transactionIndex: receipt.transactionIndex,
     blockHash: receipt.blockHash,
     blockNumber: receipt.blockNumber,
@@ -155,7 +156,7 @@ export function toTransactionReceiptDto(
     root: receipt.root,
     createdAt: receipt.createdAt,
 
-    logs: receipt.logs.map(toLogDto),
+    logs: receipt.logs ? receipt.logs.map(toLogDto) : undefined,
   };
 }
 

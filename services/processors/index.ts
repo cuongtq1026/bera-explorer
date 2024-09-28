@@ -56,7 +56,6 @@ export async function processBlock(blockNumber: bigint): Promise<{
 export async function processTransaction(hash: Hash) {
   logger.info("[processTransaction] processing transaction", hash);
   const transaction = await getTransaction(hash);
-  logger.info("[processTransaction] raw transaction", transaction);
 
   const createTransactionInput = toTransactionCreateInput(transaction);
 
@@ -76,10 +75,6 @@ export async function processTransactionReceipt(hash: Hash) {
     hash,
   );
   const transactionReceipt = await getTransactionReceipt(hash);
-  logger.info(
-    "[processTransactionReceipt] raw transaction receipt",
-    transactionReceipt,
-  );
 
   const createTransactionReceiptInput =
     toTransactionReceiptCreateInput(transactionReceipt);
@@ -106,10 +101,6 @@ export async function processInternalTransaction(hash: Hash) {
     hash,
   );
   const internalTransaction = await getAllTracerCallsTransaction(hash);
-  logger.info(
-    "[processInternalTransaction] raw internal transaction",
-    internalTransaction,
-  );
 
   const createInternalTransactionInput = toInternalTransactionCreateInput(
     hash,

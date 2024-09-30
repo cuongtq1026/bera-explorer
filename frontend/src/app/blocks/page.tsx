@@ -1,3 +1,11 @@
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@components/ui/breadcrumb.tsx";
 import { Progress } from "@components/ui/progress.tsx";
 import { findBlocksWithGas } from "@database/repositories/block.repository.ts";
 import dayjs from "dayjs";
@@ -14,16 +22,25 @@ import {
 } from "@/components/ui/table";
 
 async function getBlocks() {
-  return findBlocksWithGas({
-    cursor: 7323,
-  });
+  return findBlocksWithGas();
 }
 
 const BlockPage = async () => {
   const blocks = await getBlocks();
 
   return (
-    <div>
+    <div className={"grid gap-2"}>
+      <Breadcrumb>
+        <BreadcrumbList className={"text-2xl font-bold"}>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">Home</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/blocks">Blocks</BreadcrumbLink>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
       <Table>
         <TableHeader>
           <TableRow>

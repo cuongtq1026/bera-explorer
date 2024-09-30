@@ -1,5 +1,13 @@
 import "express-async-errors";
 
+import {
+  findBlock,
+  findBlocks,
+} from "@database/repositories/block.repository.ts";
+import {
+  findTransaction,
+  findTransactions,
+} from "@database/repositories/transaction.repository.ts";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import express from "express";
@@ -17,14 +25,6 @@ import {
   TransactionPaginationDto,
   TransactionPaginationQuery,
 } from "./services/api/pagination.ts";
-import {
-  findBlock,
-  findBlocks,
-} from "./services/data-storage/database/repositories/block.repository.ts";
-import {
-  findTransaction,
-  findTransactions,
-} from "./services/data-storage/database/repositories/transaction.repository.ts";
 import { is0xHash, parseToBigInt } from "./services/utils.ts";
 
 const app = express();
@@ -40,7 +40,9 @@ app.get("/block/:blockNumber", async (req, res) => {
   const { withTransactions: withTransactionsRaw } = req.query;
   const withTransactions = Boolean(withTransactionsRaw === "true");
 
-  const block = await findBlock(blockNumber, withTransactions);
+  const block = await findBlock(blockNumber, {
+    withTransactions: withTransactions,
+  });
   if (!block) {
     throw new ItemNotFoundException("Block not found");
   }
@@ -86,10 +88,9 @@ app.get("/transaction/:hash", async (req, res) => {
   }
 
   const { withReceipt } = req.query;
-  const transaction = await findTransaction(
-    transactionHash,
-    withReceipt === "true",
-  );
+  const transaction = await findTransaction(transactionHash, {
+    withReceipt: withReceipt === "true",
+  });
   if (!transaction) {
     throw new ItemNotFoundException("Transaction not found");
   }

@@ -41,15 +41,26 @@ export async function deleteBlock(number: bigint): Promise<void> {
 
 export async function findBlock(
   number: bigint,
-  withTransactions?: boolean,
+  options?: {
+    withTransactions?: boolean;
+    count?: boolean;
+  },
 ): Promise<BlockDto | null> {
+  const { withTransactions = false, count = false } = options ?? {};
   return prisma.block
     .findUnique({
       where: {
         number,
       },
       include: {
-        transactions: withTransactions,
+        transactions: withTransactions
+          ? {
+              include: {
+                receipt: true,
+              },
+            }
+          : false,
+        _count: count,
       },
     })
     .then((block) => {

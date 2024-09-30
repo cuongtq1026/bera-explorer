@@ -29,6 +29,12 @@
       ],
       "@database/*": [
         "../../services/data-storage/database/*"
+      ],
+      "@utils/*": [
+        "../../services/utils/*"
+      ],
+      "@utils": [
+        "../../services/utils"
       ]
     }
   },

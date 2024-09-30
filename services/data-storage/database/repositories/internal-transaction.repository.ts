@@ -1,3 +1,4 @@
+import { toInternalTransactionDto } from "@database/dto.ts";
 import { Prisma } from "@prisma/client";
 import type { Hash } from "viem";
 
@@ -67,4 +68,16 @@ export async function deleteInternalTransaction(
       transactionHash,
     },
   });
+}
+
+export async function findInternalTransactions(transactionHash: Hash) {
+  return prisma.internalTransaction
+    .findMany({
+      where: {
+        transactionHash,
+      },
+    })
+    .then((internalTransactions) => {
+      return internalTransactions.map((t) => toInternalTransactionDto(t));
+    });
 }

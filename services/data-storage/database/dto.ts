@@ -1,6 +1,8 @@
 import type {
   Block,
+  InternalTransaction,
   Log,
+  LogTopic,
   Transaction,
   TransactionReceipt,
 } from "@prisma/client";
@@ -46,6 +48,7 @@ export type TransactionDto = {
   gas: bigint;
   gasPrice: bigint | null;
 
+  block?: BlockDto;
   receipt?: TransactionReceiptDto;
 };
 export type TransactionReceiptDto = {
@@ -67,6 +70,12 @@ export type TransactionReceiptDto = {
 
   logs?: LogDto[];
 };
+export type LogTopicDto = {
+  topicHash: string;
+  topic: string;
+  index: number;
+  logHash: string;
+};
 export type LogDto = {
   logHash: string;
   address: string;
@@ -76,6 +85,20 @@ export type LogDto = {
   transactionIndex: number;
   index: number;
   removed: boolean;
+
+  topics?: LogTopicDto[];
+};
+export type InternalTransactionDto = {
+  hash: string;
+  parentHash: string | null;
+  transactionHash: string;
+  from: string;
+  to: string;
+  input: string;
+  type: string;
+  value: bigint;
+  gas: bigint;
+  gasUsed: bigint;
 };
 
 export function toBlockDto(
@@ -118,12 +141,13 @@ export function toTransactionDto(
   transaction: Transaction & {
     receipt?:
       | (TransactionReceipt & {
-          logs: Log[];
+          logs?: Log[];
         })
       | null;
+    block?: Block | null;
   },
 ): TransactionDto {
-  return {
+  const dto: TransactionDto = {
     hash: transaction.hash as Hash,
     nonce: transaction.nonce,
     blockHash: transaction.blockHash,
@@ -138,11 +162,16 @@ export function toTransactionDto(
     chainId: transaction.chainId,
     gas: transaction.gas,
     gasPrice: transaction.gasPrice,
-
-    receipt: transaction.receipt
-      ? toTransactionReceiptDto(transaction.receipt)
-      : undefined,
   };
+
+  if (transaction.receipt) {
+    dto.receipt = toTransactionReceiptDto(transaction.receipt);
+  }
+  if (transaction.block) {
+    dto.block = toBlockDto(transaction.block);
+  }
+
+  return dto;
 }
 
 export function toTransactionReceiptDto(
@@ -150,7 +179,7 @@ export function toTransactionReceiptDto(
     logs?: Log[];
   },
 ): TransactionReceiptDto {
-  return {
+  const dto: TransactionReceiptDto = {
     transactionHash: receipt.transactionHash as Hash,
     transactionIndex: receipt.transactionIndex,
     blockHash: receipt.blockHash,
@@ -166,13 +195,21 @@ export function toTransactionReceiptDto(
     type: receipt.type,
     root: receipt.root,
     createdAt: receipt.createdAt,
-
-    logs: receipt.logs ? receipt.logs.map(toLogDto) : undefined,
   };
+
+  if (receipt.logs) {
+    dto.logs = receipt.logs.map(toLogDto);
+  }
+
+  return dto;
 }
 
-export function toLogDto(log: Log): LogDto {
-  return {
+export function toLogDto(
+  log: Log & {
+    topics?: LogTopic[];
+  },
+): LogDto {
+  const dto: LogDto = {
     logHash: log.logHash,
     address: log.address,
     data: log.data,
@@ -181,5 +218,37 @@ export function toLogDto(log: Log): LogDto {
     transactionIndex: log.transactionIndex,
     index: log.index,
     removed: log.removed,
+  };
+
+  if (log.topics) {
+    dto.topics = log.topics.map((topic) => toLogTopicDto(topic));
+  }
+
+  return dto;
+}
+
+export function toLogTopicDto(topic: LogTopic): LogTopicDto {
+  return {
+    topicHash: topic.topicHash,
+    topic: topic.topic,
+    index: topic.index,
+    logHash: topic.logHash,
+  };
+}
+
+export function toInternalTransactionDto(
+  internalTransaction: InternalTransaction,
+): InternalTransactionDto {
+  return {
+    hash: internalTransaction.hash,
+    parentHash: internalTransaction.parentHash,
+    transactionHash: internalTransaction.transactionHash,
+    from: internalTransaction.from,
+    to: internalTransaction.to,
+    input: internalTransaction.input,
+    type: internalTransaction.type,
+    value: parseToBigInt(internalTransaction.value.toFixed()),
+    gas: parseToBigInt(internalTransaction.gas.toFixed()),
+    gasUsed: parseToBigInt(internalTransaction.gasUsed.toFixed()),
   };
 }

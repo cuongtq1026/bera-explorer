@@ -46,7 +46,7 @@ model Transaction {
   gasPrice            BigInt?
   block               Block                 @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
   receipt             TransactionReceipt?
-  InternalTransaction InternalTransaction[]
+  internalTransaction InternalTransaction[]
 
   @@map("transaction")
 }

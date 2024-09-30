@@ -36,36 +36,27 @@ export async function deleteTransaction(hash: `0x${string}`): Promise<void> {
 
 export async function findTransaction(
   hash: Hash,
-  withReceipt: boolean,
+  options?: { withReceipt?: boolean; withBlock?: boolean },
 ): Promise<TransactionDto | null> {
-  if (!withReceipt) {
-    return prisma.transaction
-      .findUnique({
-        where: {
-          hash,
-        },
-      })
-      .then((transaction) => {
-        if (!transaction) return null;
-        return toTransactionDto(transaction);
-      });
-  }
-
+  const { withReceipt = false, withBlock = false } = options ?? {};
   return prisma.transaction
     .findUnique({
       where: {
         hash,
       },
       include: {
-        receipt: {
-          include: {
-            logs: {
-              orderBy: {
-                index: "asc",
+        receipt: withReceipt
+          ? {
+              include: {
+                logs: {
+                  orderBy: {
+                    index: "asc",
+                  },
+                },
               },
-            },
-          },
-        },
+            }
+          : false,
+        block: withBlock,
       },
     })
     .then((transaction) => {
@@ -120,8 +111,6 @@ export async function findTransactions(
       ...cursorObject,
     })
     .then((transactions) =>
-      // TODO: Fix me
-      // @ts-ignore
       transactions.map((transaction) => toTransactionDto(transaction)),
     );
 }

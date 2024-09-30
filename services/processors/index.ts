@@ -1,3 +1,25 @@
+import {
+  createBlock,
+  deleteBlock,
+} from "@database/repositories/block.repository.ts";
+import {
+  createInternalTransaction,
+  deleteInternalTransaction,
+} from "@database/repositories/internal-transaction.repository.ts";
+import {
+  createTransaction,
+  deleteTransaction,
+} from "@database/repositories/transaction.repository.ts";
+import {
+  createTransactionReceipt,
+  deleteTransactionReceipt,
+} from "@database/repositories/transaction-receipt.repository.ts";
+import {
+  toBlockCreateInput,
+  toInternalTransactionCreateInput,
+  toTransactionCreateInput,
+  toTransactionReceiptCreateInput,
+} from "@database/repositories/utils.ts";
 import type { Hash } from "viem";
 
 import {
@@ -6,28 +28,6 @@ import {
   getTransaction,
   getTransactionReceipt,
 } from "../data-source";
-import {
-  createBlock,
-  deleteBlock,
-} from "../data-storage/database/repositories/block.repository.ts";
-import {
-  createInternalTransaction,
-  deleteInternalTransaction,
-} from "../data-storage/database/repositories/internal-transaction.repository.ts";
-import {
-  createTransaction,
-  deleteTransaction,
-} from "../data-storage/database/repositories/transaction.repository.ts";
-import {
-  createTransactionReceipt,
-  deleteTransactionReceipt,
-} from "../data-storage/database/repositories/transaction-receipt.repository.ts";
-import {
-  toBlockCreateInput,
-  toInternalTransactionCreateInput,
-  toTransactionCreateInput,
-  toTransactionReceiptCreateInput,
-} from "../data-storage/database/repositories/utils.ts";
 import logger from "../monitor/logger.ts";
 
 export async function processBlock(blockNumber: bigint): Promise<{

@@ -27,7 +27,10 @@ export type BlockDto = {
   gasUsed: bigint;
   createdAt: bigint;
 
-  transactions: TransactionDto[];
+  _count?: {
+    transactions?: number;
+  };
+  transactions?: TransactionDto[];
 };
 export type TransactionDto = {
   hash: Hash;
@@ -38,7 +41,7 @@ export type TransactionDto = {
   from: string;
   to: string | null;
   input: string;
-  value: bigint;
+  value: bigint | null;
   chainId: number | null;
   gas: bigint;
   gasPrice: bigint | null;
@@ -77,10 +80,13 @@ export type LogDto = {
 
 export function toBlockDto(
   block: Block & {
+    _count?: {
+      transactions?: number;
+    };
     transactions?: Transaction[];
   },
 ): BlockDto {
-  return {
+  const dto: BlockDto = {
     number: block.number,
     hash: block.hash,
     parentHash: block.parentHash,
@@ -98,11 +104,14 @@ export function toBlockDto(
     gasLimit: block.gasLimit,
     gasUsed: block.gasUsed,
     createdAt: block.createdAt,
-
-    transactions: block.transactions
-      ? block.transactions.map(toTransactionDto)
-      : [],
   };
+  if (block.transactions) {
+    dto.transactions = block.transactions.map(toTransactionDto);
+  }
+  if (block._count) {
+    dto._count = block._count;
+  }
+  return dto;
 }
 
 export function toTransactionDto(
@@ -123,7 +132,9 @@ export function toTransactionDto(
     from: transaction.from,
     to: transaction.to,
     input: transaction.input,
-    value: parseToBigInt(transaction.value.toFixed()),
+    value: transaction.value
+      ? parseToBigInt(transaction.value.toFixed())
+      : null,
     chainId: transaction.chainId,
     gas: transaction.gas,
     gasPrice: transaction.gasPrice,

@@ -131,7 +131,11 @@ app.get("/block/:blockNumber/transactions", async (req, res) => {
         : undefined,
   };
 
-  const transactions = await findTransactions(blockNumber, pagination);
+  const transactions = await findTransactions(
+    blockNumber,
+    undefined,
+    pagination,
+  );
   const transactionOutputs = transactions.map(toTransactionOutput);
   res.send(transactionOutputs);
 });

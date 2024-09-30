@@ -84,3 +84,39 @@ export async function findBlocks(
     })
     .then((blocks) => blocks.map((block) => toBlockDto(block)));
 }
+
+export async function findBlocksWithGas(pagination?: BlockPaginationDto) {
+  const { page = 0, size = 20, order = "desc", cursor } = pagination ?? {};
+  const skip = size * page;
+  const cursorObject:
+    | {
+        cursor: Prisma.BlockWhereUniqueInput;
+      }
+    | object =
+    cursor == null
+      ? {}
+      : {
+          cursor: { number: cursor },
+        };
+  return prisma.block.findMany({
+    skip: cursor == null ? skip : skip + 1,
+    take: size,
+    orderBy: {
+      number: order,
+    },
+    include: {
+      _count: true,
+      transactions: {
+        select: {
+          gasPrice: true,
+          receipt: {
+            select: {
+              gasUsed: true,
+            },
+          },
+        },
+      },
+    },
+    ...cursorObject,
+  });
+}

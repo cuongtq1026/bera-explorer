@@ -43,6 +43,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased container mx-auto grid gap-6`}
       >
+        <title>Bera Explorer</title>
         <h1 className={"text-3xl font-bold text-center mt-4"}>
           <Link href={"/"} className={"px-4 py-2"}>
             Bera Explorer

@@ -1,8 +1,9 @@
 # Bera Explorer
 
-**Bera Explorer** is a blockchain explorer composed of two main services:
+**Bera Explorer** is a blockchain explorer composed of three main services:
 - **Crawler**: Retrieves data from RPC nodes and stores it in a relational database (Postgres).
-- **API Server**: Serves the stored data through a REST API.
+- **API Server**: Serves the stored data through a REST API (Express).
+- **Web Client**: Provides a user interface to interact with the API (Next).
 
 ## Technologies
 The project uses the following technologies:
@@ -15,12 +16,17 @@ The project uses the following technologies:
 - Postgres (Database)
 - Redis (Caching)
 - Viem (Ethereum tools)
+- Next (React)
 
 ## Setup
 ### 1. Install dependencies
 Install the project dependencies using [Bun](https://bun.sh):
 ```bash
 bun install
+```
+Install dependencies in frontend directory:
+```bash
+cd frontend && bun install
 ```
 
 ### 2. Run docker-compose:
@@ -94,6 +100,12 @@ Query Params: `page?: number, size?: number, cursor?: number, order?: "asc" | "d
 - `GET /block/:blockNumber/transactions`: Fetch transactions within a block.
 Query Params: `page?: number, size?: number, cursor?: number, order?: "asc" | "desc"`
 
+## UI
+To start the UI server:
+```bash
+cd frontend && bun run dev
+```
+
 ## Monitoring
 ### RabbitMQ:
 Access the RabbitMQ management interface:
@@ -105,7 +117,11 @@ Access the Prometheus dashboard:
 All logs are stored in the logs directory.
 
 # Docker
-To build the Docker image for the project:
+To build the Docker image for the root project (Includes crawler and API server):
 ```bash
 docker build -t bera-explorer .
+```
+To build frontend image:
+```bash
+docker build -t bera-explorer-frontend -f frontend.Dockerfile --build-arg DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public" .
 ```

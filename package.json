@@ -11,7 +11,8 @@
     "consume:transaction": "bun run index.ts consume transaction",
     "consume:transaction-receipt": "bun run index.ts consume transaction-receipt",
     "consume:internal-transaction": "bun run index.ts consume internal-transaction",
-    "queue:blocks": "bun run index.ts queue-blocks 0 10"
+    "queue:blocks": "bun run index.ts queue-blocks 0 10",
+    "retry-queue-all": "bun run index.ts retry-queue-all"
   },
   "devDependencies": {
     "@types/bun": "latest",

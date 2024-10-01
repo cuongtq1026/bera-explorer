@@ -5,6 +5,20 @@
 - **API Server**: Serves the stored data through a REST API (Express).
 - **Web Client**: Provides a user interface to interact with the API (Next).
 
+## Data Model
+- [x] **Block**
+- [x] **Transaction**
+- [x] **Transaction Receipt**
+- [x] **Log**
+- [x] **Log Topic**
+- [x] **Internal Transaction**
+- [x] **Transfer**
+- [ ] **Balance**
+- [ ] **Balance history**
+- [ ] **Token**
+- [ ] **Pool**
+
+
 ## Technologies
 The project uses the following technologies:
 - [Bun](https://bun.sh) (JavaScript runtime)

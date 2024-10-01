@@ -1,3 +1,4 @@
+import { TransactionProcessor } from "@processors/transaction.processor.ts";
 import type { ConsumeMessage } from "amqplib";
 import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
@@ -5,7 +6,6 @@ import type { Hash } from "viem";
 
 import { queues } from "../../config";
 import logger from "../../monitor/logger.ts";
-import { processTransaction } from "../../processors";
 import { is0xHash } from "../../utils.ts";
 import {
   QueueInternalTransactionPayload,
@@ -46,7 +46,8 @@ export class TransactionConsumer extends IQueueConsumer {
     );
 
     // process
-    await processTransaction(transactionHash);
+    const processor = new TransactionProcessor();
+    await processor.process(transactionHash);
 
     logger.info(
       `[MessageId: ${message.properties.messageId}] Process transaction successful.`,

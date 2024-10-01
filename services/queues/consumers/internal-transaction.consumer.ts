@@ -1,13 +1,10 @@
+import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
 import type { ConsumeMessage } from "amqplib";
 import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
 
 import { queues } from "../../config";
 import logger from "../../monitor/logger.ts";
-import {
-  processInternalTransaction,
-  processTransactionReceipt,
-} from "../../processors";
 import { is0xHash } from "../../utils.ts";
 import { QueueInternalTransactionPayload } from "../producers";
 import { IQueueConsumer } from "./queue.consumer.abstract.ts";
@@ -41,7 +38,8 @@ export class InternalTransactionConsumer extends IQueueConsumer {
     }
 
     // process
-    await processInternalTransaction(transactionHash);
+    const processor = new InternalTransactionProcessor();
+    await processor.process(transactionHash);
 
     // onFinish
     await this.onFinish(message, transactionHash);

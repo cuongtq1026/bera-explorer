@@ -1,27 +1,25 @@
-import type { Hash } from "viem";
-
-import { queues } from "./services/config";
+import { BlockConsumer } from "@consumers/block.consumer.ts";
+import { DlxConsumer } from "@consumers/dlx.consumer.ts";
+import { InternalTransactionConsumer } from "@consumers/internal-transaction.consumer.ts";
+import { TransactionConsumer } from "@consumers/transaction.consumer.ts";
+import { TransactionReceiptConsumer } from "@consumers/transaction-receipt.consumer.ts";
 import {
   countTransactions,
   findTransactions,
-} from "./services/data-storage/database/repositories/transaction.repository.ts";
+} from "@database/repositories/transaction.repository.ts";
 import {
   countTransactionReceipts,
   getTransactionReceipts,
-} from "./services/data-storage/database/repositories/transaction-receipt.repository.ts";
+} from "@database/repositories/transaction-receipt.repository.ts";
+import { BlockProcessor } from "@processors/block.processor.ts";
+import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
+import { TransactionProcessor } from "@processors/transaction.processor.ts";
+import { TransactionReceiptProcessor } from "@processors/transaction-receipt.processor.ts";
+import type { Hash } from "viem";
+
+import { queues } from "./services/config";
 import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
-import {
-  processBlock,
-  processInternalTransaction,
-  processTransaction,
-  processTransactionReceipt,
-} from "./services/processors";
-import { BlockConsumer } from "./services/queues/consumers/block.consumer.ts";
-import { DlxConsumer } from "./services/queues/consumers/dlx.consumer.ts";
-import { InternalTransactionConsumer } from "./services/queues/consumers/internal-transaction.consumer.ts";
-import { TransactionConsumer } from "./services/queues/consumers/transaction.consumer.ts";
-import { TransactionReceiptConsumer } from "./services/queues/consumers/transaction-receipt.consumer.ts";
 import {
   queueBlock,
   QueueInternalTransactionPayload,
@@ -48,7 +46,8 @@ switch (command) {
       break;
     }
 
-    await processBlock(blockNumber);
+    const processor = new BlockProcessor();
+    await processor.process(blockNumber);
     break;
   }
   case "blocks": {
@@ -59,8 +58,9 @@ switch (command) {
       break;
     }
 
+    const processor = new BlockProcessor();
     for (let i = from; i <= to; i++) {
-      await processBlock(i);
+      await processor.process(i);
     }
     break;
   }
@@ -72,7 +72,8 @@ switch (command) {
       break;
     }
 
-    await processTransaction(transactionHash);
+    const processor = new TransactionProcessor();
+    await processor.process(transactionHash);
     break;
   }
   case "transaction-receipt": {
@@ -83,7 +84,8 @@ switch (command) {
       break;
     }
 
-    await processTransactionReceipt(transactionHash);
+    const processor = new TransactionReceiptProcessor();
+    await processor.process(transactionHash);
     break;
   }
   case "internal-transaction": {
@@ -94,7 +96,8 @@ switch (command) {
       break;
     }
 
-    await processInternalTransaction(transactionHash);
+    const processor = new InternalTransactionProcessor();
+    await processor.process(transactionHash);
     break;
   }
   case "queue-block": {
@@ -190,16 +193,6 @@ switch (command) {
     const dlxConsumer = new DlxConsumer();
 
     await dlxConsumer.consume();
-    break;
-  }
-  case "trace-transaction": {
-    const transactionHash = restArgs[0];
-    if (transactionHash == null || !is0xHash(transactionHash)) {
-      logger.info("Invalid transaction hash.");
-      break;
-    }
-
-    await processInternalTransaction(transactionHash);
     break;
   }
   /**

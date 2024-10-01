@@ -33,6 +33,12 @@
       "@database/*": [
         "./services/data-storage/database/*"
       ],
+      "@processors/*": [
+        "./services/processors/*"
+      ],
+      "@consumers/*": [
+        "./services/queues/consumers/*"
+      ],
     }
   }
 }

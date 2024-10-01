@@ -1,3 +1,4 @@
+import { BlockProcessor } from "@processors/block.processor.ts";
 import type { ConsumeMessage } from "amqplib";
 import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
@@ -5,7 +6,6 @@ import type { Hash } from "viem";
 
 import { queues } from "../../config";
 import logger from "../../monitor/logger.ts";
-import { processBlock } from "../../processors";
 import { QueueBlockPayload, QueueTransactionPayload } from "../producers";
 import mqConnection from "../rabbitmq.connection.ts";
 import { IQueueConsumer } from "./queue.consumer.abstract.ts";
@@ -32,7 +32,8 @@ export class BlockConsumer extends IQueueConsumer {
     const blockNumber = BigInt(contentInstance.blockNumber);
 
     // process
-    const block = await processBlock(blockNumber);
+    const processor = new BlockProcessor();
+    const block = await processor.process(blockNumber);
 
     // onFinish
     await this.onFinish(message, block);

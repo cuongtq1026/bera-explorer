@@ -1,10 +1,10 @@
+import { TransactionReceiptProcessor } from "@processors/transaction-receipt.processor.ts";
 import type { ConsumeMessage } from "amqplib";
 import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
 
 import { queues } from "../../config";
 import logger from "../../monitor/logger.ts";
-import { processTransactionReceipt } from "../../processors";
 import { is0xHash } from "../../utils.ts";
 import { QueueTransactionPayload } from "../producers";
 import { IQueueConsumer } from "./queue.consumer.abstract.ts";
@@ -38,7 +38,8 @@ export class TransactionReceiptConsumer extends IQueueConsumer {
     }
 
     // process
-    await processTransactionReceipt(transactionHash);
+    const processor = new TransactionReceiptProcessor();
+    await processor.process(transactionHash);
 
     // onFinish
     await this.onFinish(message, transactionHash);

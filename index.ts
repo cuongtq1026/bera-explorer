@@ -12,6 +12,10 @@ import {
   countTransactionReceipts,
   findTransactionReceipts,
 } from "@database/repositories/transaction-receipt.repository.ts";
+import {
+  countTransfer,
+  findTransfers,
+} from "@database/repositories/transfer.repository.ts";
 import { BlockProcessor } from "@processors/block.processor.ts";
 import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
 import { TransactionProcessor } from "@processors/transaction.processor.ts";
@@ -23,6 +27,7 @@ import { queues } from "./services/config";
 import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
 import {
+  QueueBalancePayload,
   queueBlock,
   QueueInternalTransactionPayload,
   queueTransaction,
@@ -239,12 +244,12 @@ switch (command) {
     break;
   }
   /**
-   * This command is created after "Internal transaction task" is created.
-   * So you don't need this command to do anything
+     * This command is created after "Internal transaction task" is created.
+     * So you don't need this command to do anything
 
-   * Queue all transaction receipts to internal transaction queue
-   * Using cursor pagination
-   */
+     * Queue all transaction receipts to internal transaction queue
+     * Using cursor pagination
+     */
   case "queue-internal-transaction": {
     const SIZE = 5000;
     const totalTransactionReceipts = await countTransactionReceipts();
@@ -315,6 +320,36 @@ switch (command) {
       cursor = receipts[SIZE - 1].transactionHash;
     }
     logger.info("Publish to aggregator exchange finished.");
+    break;
+  }
+  case "queue-balance": {
+    const SIZE = 5000;
+    const totalTransfers = await countTransfer();
+
+    for (let i = 0, cursor: Hash | null = null, processed = 0; ; i++) {
+      const transfers = await findTransfers({
+        size: SIZE,
+        cursor,
+      });
+
+      for (const transfer of transfers) {
+        await mqConnection.sendToQueue(queues.BALANCE.name, {
+          transferHash: transfer.hash,
+        } as QueueBalancePayload);
+      }
+
+      processed += transfers.length;
+      logger.info(
+        `Publish page ${i + 1}. Total transfers: ${transfers.length}. Processed: ${processed}/${totalTransfers}`,
+      );
+
+      if (transfers.length < SIZE) {
+        break;
+      }
+
+      cursor = transfers[SIZE - 1].hash;
+    }
+    logger.info("Queue balance finished.");
     break;
   }
   case "find-missing-receipt": {

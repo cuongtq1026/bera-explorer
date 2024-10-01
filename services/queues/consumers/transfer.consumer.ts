@@ -1,4 +1,7 @@
-import { TransferProcessor } from "@processors/transfer.processor.ts";
+import {
+  type CreatedHash,
+  TransferProcessor,
+} from "@processors/transfer.processor.ts";
 import type { ConsumeMessage } from "amqplib";
 import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
@@ -6,7 +9,11 @@ import { validateOrReject } from "class-validator";
 import { queues } from "../../config";
 import logger from "../../monitor/logger.ts";
 import { is0xHash } from "../../utils.ts";
-import { QueueTransactionAggregatorPayload } from "../producers";
+import {
+  QueueBalancePayload,
+  QueueTransactionAggregatorPayload,
+} from "../producers";
+import mqConnection from "../rabbitmq.connection.ts";
 import { IQueueConsumer } from "./queue.consumer.abstract.ts";
 
 export class TransferConsumer extends IQueueConsumer {
@@ -41,15 +48,30 @@ export class TransferConsumer extends IQueueConsumer {
 
     // process
     const processor = new TransferProcessor();
-    await processor.process(transactionHash);
+    const result = await processor.process(transactionHash);
 
     logger.info(
       `[MessageId: ${message.properties.messageId}] Process transfer successful.`,
     );
 
     // onFinish
-    await this.onFinish(message, transactionHash);
+    await this.onFinish(message, result);
 
     return true;
+  }
+
+  protected async onFinish(
+    message: ConsumeMessage,
+    createdHashes: CreatedHash[],
+  ): Promise<void> {
+    // Queue to balance queue
+    createdHashes.sort((a, b) => a.index - b.index);
+    for (const createdHash of createdHashes) {
+      await mqConnection.sendToQueue(queues.BALANCE.name, {
+        transferHash: createdHash.hash,
+      } as QueueBalancePayload);
+    }
+
+    return super.onFinish(message, createdHashes);
   }
 }

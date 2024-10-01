@@ -1,5 +1,4 @@
 import type {
-  BlockDto,
   LogDto,
   LogTopicDto,
   TransactionReceiptDto,
@@ -10,8 +9,7 @@ import {
   deleteTransfer,
   type TransferCreateInput,
 } from "@database/repositories/transfer.repository.ts";
-import { erc20Abi } from "viem";
-import { decodeEventLog, type Hash, type Hex, hexToBigInt } from "viem";
+import { decodeEventLog, erc20Abi, type Hash, type Hex } from "viem";
 
 import { ERC20_TRANSFER_TOPIC } from "../config/constants.ts";
 import logger from "../monitor/logger.ts";
@@ -20,10 +18,18 @@ import type { InterfaceProcessor } from "./interface.processor.ts";
 type ToInputArgType = TransactionReceiptDto & {
   logs: LogDto[];
 };
+export type CreatedHash = { hash: Hash; index: number };
 
 export class TransferProcessor
   implements
-    InterfaceProcessor<Hash, ToInputArgType, TransferCreateInput[], void>
+    InterfaceProcessor<
+      Hash,
+      ToInputArgType,
+      TransferCreateInput[],
+      CreatedHash[],
+      void,
+      CreatedHash[]
+    >
 {
   async get(id: Hash): Promise<ToInputArgType> {
     const receipt = await findTransactionReceipt(id, {
@@ -84,7 +90,7 @@ export class TransferProcessor
           timestamp: input.createdAt,
           transactionHash: log.transactionHash,
           blockNumber: log.blockNumber,
-          hash: `${log.logHash}`,
+          hash: log.logHash,
         };
       });
   }
@@ -93,11 +99,16 @@ export class TransferProcessor
     await deleteTransfer(id);
   }
 
-  async createInDb(inputs: TransferCreateInput[]): Promise<void> {
+  async createInDb(inputs: TransferCreateInput[]): Promise<CreatedHash[]> {
     await createTransfers(inputs);
+
+    return inputs.map((input) => ({
+      hash: input.hash,
+      index: input.logIndex,
+    }));
   }
 
-  async process(id: Hash): Promise<void> {
+  async process(id: Hash): Promise<CreatedHash[]> {
     logger.info("[TransferProcessor] processing: " + id);
 
     const obj = await this.get(id);
@@ -106,7 +117,9 @@ export class TransferProcessor
 
     await this.deleteFromDb(id);
     logger.info(`[TransferProcessor] deleted ${id}`);
-    await this.createInDb(inputs);
+    const result = await this.createInDb(inputs);
     logger.info(`[TransferProcessor] created ${id}`);
+
+    return result;
   }
 }

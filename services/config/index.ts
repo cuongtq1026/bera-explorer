@@ -4,7 +4,11 @@ export const aggregatorExchangeName = "aggregator";
 type QueueType = {
   name: string;
   routingKey: string;
-  bindExchangeName: typeof crawlerExchangeName | typeof aggregatorExchangeName;
+  bindExchangeName:
+    | typeof crawlerExchangeName
+    | typeof aggregatorExchangeName
+    | null;
+  dlx: boolean;
 };
 
 export const queues = {
@@ -13,21 +17,25 @@ export const queues = {
     name: "blocks",
     routingKey: "crawler.block",
     bindExchangeName: crawlerExchangeName,
+    dlx: true,
   } as QueueType,
   TRANSACTION_QUEUE: {
     name: "transactions",
     routingKey: "crawler.transaction",
     bindExchangeName: crawlerExchangeName,
+    dlx: true,
   } as QueueType,
   TRANSACTION_RECEIPT_QUEUE: {
     name: "transaction_receipts",
     routingKey: "crawler.transaction_receipt",
     bindExchangeName: crawlerExchangeName,
+    dlx: true,
   } as QueueType,
   INTERNAL_TRANSACTION_QUEUE: {
     name: "internal_transactions",
     routingKey: "crawler.internal_transaction",
     bindExchangeName: crawlerExchangeName,
+    dlx: true,
   } as QueueType,
 
   // Aggregator exchange
@@ -35,6 +43,15 @@ export const queues = {
     name: "transfer",
     routingKey: "aggregator.transfer",
     bindExchangeName: aggregatorExchangeName,
+    dlx: true,
+  } as QueueType,
+
+  // Default exchange
+  BALANCE: {
+    name: "balance",
+    routingKey: "default.balance",
+    bindExchangeName: null,
+    dlx: false,
   } as QueueType,
 };
 

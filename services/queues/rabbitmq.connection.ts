@@ -89,19 +89,23 @@ class RabbitMQConnection {
       await Promise.all(
         Object.values(queues).map(async (queueInfo) => {
           await this.channel.assertQueue(queueInfo.name, {
-            deadLetterExchange: dlx.exchange,
-            deadLetterRoutingKey: queueInfo.routingKey,
+            deadLetterExchange: queueInfo.dlx ? dlx.exchange : undefined,
+            deadLetterRoutingKey: queueInfo.dlx
+              ? queueInfo.routingKey
+              : undefined,
             arguments: {
               "x-queue-type": "quorum",
             },
             durable: true,
           });
 
-          await this.channel.bindQueue(
-            queueInfo.name,
-            queueInfo.bindExchangeName,
-            queueInfo.routingKey,
-          );
+          if (queueInfo.bindExchangeName) {
+            await this.channel.bindQueue(
+              queueInfo.name,
+              queueInfo.bindExchangeName,
+              queueInfo.routingKey,
+            );
+          }
         }),
       );
       logger.info(`Asserted all queues to RabbitMQ.`);
@@ -109,6 +113,32 @@ class RabbitMQConnection {
       logger.error(error);
       logger.error(`Not connected to MQ Server`);
 
+      throw error;
+    }
+  }
+
+  public async sendToQueue(
+    queueName: string,
+    message: any,
+    options?: PublishOptions,
+  ) {
+    try {
+      await this.checkConnection();
+
+      this.channel.sendToQueue(
+        queueName,
+        Buffer.from(JSON.stringify(message)),
+        {
+          messageId: uuidv4(),
+          headers: {
+            [RETRY_COUNT]: MAX_RETRIES,
+            [EXPONENTIAL_BACKOFF]: EXPONENTIAL_BACKOFF_IN_SECONDS,
+          },
+          ...options,
+        },
+      );
+    } catch (error) {
+      logger.error(`sendToQueue error: ${error}`);
       throw error;
     }
   }

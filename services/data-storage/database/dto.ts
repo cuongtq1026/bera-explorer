@@ -5,6 +5,7 @@ import type {
   LogTopic,
   Transaction,
   TransactionReceipt,
+  Transfer,
 } from "@prisma/client";
 import type { Hash } from "viem";
 
@@ -78,7 +79,7 @@ export type LogTopicDto = {
   logHash: string;
 };
 export type LogDto = {
-  logHash: string;
+  logHash: Hash;
   address: string;
   data: string;
   blockNumber: bigint;
@@ -102,13 +103,13 @@ export type InternalTransactionDto = {
   gasUsed: bigint;
 };
 export type TransferDto = {
-  hash: string;
-  blockNumber: number;
+  hash: Hash;
+  blockNumber: bigint;
   transactionHash: string;
   from: string;
   to: string;
   tokenAddress: string;
-  amount: string;
+  amount: bigint;
   logIndex: number;
   timestamp: Date;
 };
@@ -226,7 +227,7 @@ export function toLogDto(
   },
 ): LogDto {
   const dto: LogDto = {
-    logHash: log.logHash,
+    logHash: log.logHash as Hash,
     address: log.address,
     data: log.data,
     blockNumber: log.blockNumber,
@@ -266,5 +267,19 @@ export function toInternalTransactionDto(
     value: parseToBigInt(internalTransaction.value.toFixed()),
     gas: parseToBigInt(internalTransaction.gas.toFixed()),
     gasUsed: parseToBigInt(internalTransaction.gasUsed.toFixed()),
+  };
+}
+
+export function toTransferDto(transfer: Transfer): TransferDto {
+  return {
+    hash: transfer.hash as Hash,
+    blockNumber: transfer.blockNumber,
+    transactionHash: transfer.transactionHash,
+    from: transfer.from,
+    to: transfer.to,
+    tokenAddress: transfer.tokenAddress,
+    amount: parseToBigInt(transfer.amount.toFixed()),
+    logIndex: transfer.logIndex,
+    timestamp: transfer.timestamp,
   };
 }

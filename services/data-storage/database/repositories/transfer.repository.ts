@@ -1,9 +1,12 @@
+import { toTransferDto } from "@database/dto.ts";
+import { Prisma } from "@prisma/client";
 import type { Hash } from "viem";
 
+import { TransactionPaginationDto } from "../../../api/pagination.ts";
 import prisma from "../prisma.ts";
 
 export type TransferCreateInput = {
-  hash: string;
+  hash: Hash;
   blockNumber: bigint;
   transactionHash: string;
   from: string;
@@ -26,4 +29,33 @@ export async function deleteTransfer(transactionHash: Hash): Promise<void> {
       transactionHash,
     },
   });
+}
+
+export async function findTransfers(pagination?: TransactionPaginationDto) {
+  const { page = 0, size = 20, cursor } = pagination ?? {};
+  const skip = size * page;
+  const cursorObject:
+    | {
+        cursor: Prisma.TransferWhereUniqueInput;
+      }
+    | object =
+    cursor == null
+      ? {}
+      : {
+          cursor: {
+            hash: cursor,
+          } as Prisma.TransferWhereUniqueInput,
+        };
+  return prisma.transfer
+    .findMany({
+      take: size,
+      skip: cursor == null ? skip : skip + 1,
+      ...cursorObject,
+      orderBy: [{ transactionHash: "asc" }, { logIndex: "asc" }],
+    })
+    .then((transfers) => transfers.map((t) => toTransferDto(t)));
+}
+
+export async function countTransfer() {
+  return prisma.transfer.count({});
 }

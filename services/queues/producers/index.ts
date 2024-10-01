@@ -34,6 +34,11 @@ export class QueueTransactionReceiptPayload {
   transactionHash: string;
 }
 
+export class QueueBalancePayload {
+  @IsNotEmpty()
+  transferHash: string;
+}
+
 export class QueueInternalTransactionPayload {
   @IsNotEmpty()
   transactionHash: string;

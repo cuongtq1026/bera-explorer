@@ -1,7 +1,11 @@
 import { IsNotEmpty } from "class-validator";
 import type { Hash } from "viem";
 
-import { queues } from "../../config";
+import {
+  AGGREGATOR_TRANSACTION_ROUTING_KEY,
+  aggregatorExchangeName,
+  queues,
+} from "../../config";
 import logger from "../../monitor/logger.ts";
 import mqConnection from "../rabbitmq.connection.ts";
 
@@ -35,6 +39,11 @@ export class QueueInternalTransactionPayload {
   transactionHash: string;
 }
 
+export class QueueTransactionAggregatorPayload {
+  @IsNotEmpty()
+  transactionHash: string;
+}
+
 export async function queueTransaction(transactionHash: Hash) {
   await mqConnection.publishToCrawlerExchange(
     queues.TRANSACTION_QUEUE.routingKey,
@@ -46,4 +55,17 @@ export async function queueTransaction(transactionHash: Hash) {
   logger.info(
     `[Transaction ${transactionHash}] Queued to ${queues.TRANSACTION_QUEUE.routingKey} key`,
   );
+}
+
+export async function queueTransactionAggregator(transactionHash: Hash) {
+  const routingKey = AGGREGATOR_TRANSACTION_ROUTING_KEY;
+  await mqConnection.publishFanoutExchange(
+    aggregatorExchangeName,
+    AGGREGATOR_TRANSACTION_ROUTING_KEY,
+    {
+      transactionHash,
+    } as QueueTransactionAggregatorPayload,
+  );
+
+  logger.info(`[Transaction ${transactionHash}] Queued to ${routingKey} key`);
 }

@@ -1,3 +1,5 @@
+import type { LogDto } from "@database/dto.ts";
+import type { TransferCreateInput } from "@database/repositories/transfer.repository.ts";
 import type {
   Block,
   GetTransactionReceiptReturnType,

@@ -3,18 +3,20 @@ import { DlxConsumer } from "@consumers/dlx.consumer.ts";
 import { InternalTransactionConsumer } from "@consumers/internal-transaction.consumer.ts";
 import { TransactionConsumer } from "@consumers/transaction.consumer.ts";
 import { TransactionReceiptConsumer } from "@consumers/transaction-receipt.consumer.ts";
+import { TransferConsumer } from "@consumers/transfer.consumer.ts";
 import {
   countTransactions,
   findTransactions,
 } from "@database/repositories/transaction.repository.ts";
 import {
   countTransactionReceipts,
-  getTransactionReceipts,
+  findTransactionReceipts,
 } from "@database/repositories/transaction-receipt.repository.ts";
 import { BlockProcessor } from "@processors/block.processor.ts";
 import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
 import { TransactionProcessor } from "@processors/transaction.processor.ts";
 import { TransactionReceiptProcessor } from "@processors/transaction-receipt.processor.ts";
+import { TransferProcessor } from "@processors/transfer.processor.ts";
 import type { Hash } from "viem";
 
 import { queues } from "./services/config";
@@ -24,6 +26,7 @@ import {
   queueBlock,
   QueueInternalTransactionPayload,
   queueTransaction,
+  queueTransactionAggregator,
   QueueTransactionReceiptPayload,
 } from "./services/queues/producers";
 import mqConnection from "./services/queues/rabbitmq.connection.ts";
@@ -100,38 +103,68 @@ switch (command) {
     await processor.process(transactionHash);
     break;
   }
-  case "queue-block": {
-    const blockNumber = parseToBigInt(restArgs[0]);
-    if (blockNumber == null) {
-      logger.info("Invalid block number.");
-      break;
-    }
-
-    await queueBlock(blockNumber);
-    break;
-  }
-  case "queue-blocks": {
-    const from = parseToBigInt(restArgs[0]);
-    const to = parseToBigInt(restArgs[1]);
-    if (from == null || to == null || from > to) {
-      logger.info(`Invalid block number. from: ${from} | to: ${to}.`);
-      break;
-    }
-
-    for (let i = from; i <= to; i++) {
-      await queueBlock(i);
-    }
-
-    break;
-  }
-  case "queue-transaction": {
+  case "transfer": {
     const transactionHash = restArgs[0];
+
     if (transactionHash == null || !is0xHash(transactionHash)) {
       logger.info("Invalid transaction hash.");
       break;
     }
 
-    await queueTransaction(transactionHash);
+    const processor = new TransferProcessor();
+    await processor.process(transactionHash);
+    break;
+  }
+  case "queue": {
+    const modelToQueue = restArgs[0];
+    switch (modelToQueue) {
+      case "block": {
+        const blockNumber = parseToBigInt(restArgs[1]);
+        if (blockNumber == null) {
+          logger.info("Invalid block number.");
+          break;
+        }
+
+        await queueBlock(blockNumber);
+        break;
+      }
+      case "blocks": {
+        const from = parseToBigInt(restArgs[1]);
+        const to = parseToBigInt(restArgs[2]);
+        if (from == null || to == null || from > to) {
+          logger.info(`Invalid block number. from: ${from} | to: ${to}.`);
+          break;
+        }
+
+        for (let i = from; i <= to; i++) {
+          await queueBlock(i);
+        }
+        break;
+      }
+      case "transaction": {
+        const transactionHash = restArgs[1];
+        if (transactionHash == null || !is0xHash(transactionHash)) {
+          logger.info("Invalid transaction hash.");
+          break;
+        }
+
+        await queueTransaction(transactionHash);
+        break;
+      }
+      case "transaction-aggregator": {
+        const transactionHash = restArgs[1];
+        if (transactionHash == null || !is0xHash(transactionHash)) {
+          logger.info("Invalid transaction hash.");
+          break;
+        }
+
+        await queueTransactionAggregator(transactionHash);
+        break;
+      }
+      default: {
+        logger.info(`No model to queue: ${modelToQueue}.`);
+      }
+    }
     break;
   }
   case "consume": {
@@ -169,6 +202,14 @@ switch (command) {
         await consumer.consume();
         break;
       }
+      case "transfer": {
+        setupPrometheus();
+
+        const consumer = new TransferConsumer();
+
+        await consumer.consume();
+        break;
+      }
       case "all": {
         setupPrometheus();
 
@@ -176,11 +217,13 @@ switch (command) {
         const transactionConsumer = new TransactionConsumer();
         const transactionReceiptConsumer = new TransactionReceiptConsumer();
         const internalTransactionConsumer = new InternalTransactionConsumer();
+        const transferConsumer = new TransferConsumer();
 
         await blockConsumer.consume();
         await transactionConsumer.consume();
         await transactionReceiptConsumer.consume();
         await internalTransactionConsumer.consume();
+        await transferConsumer.consume();
         break;
       }
       default: {
@@ -196,6 +239,9 @@ switch (command) {
     break;
   }
   /**
+   * This command is created after "Internal transaction task" is created.
+   * So you don't need this command to do anything
+
    * Queue all transaction receipts to internal transaction queue
    * Using cursor pagination
    */
@@ -204,7 +250,7 @@ switch (command) {
     const totalTransactionReceipts = await countTransactionReceipts();
 
     for (let i = 0, cursor: Hash | null = null, processed = 0; ; i++) {
-      const receipts = await getTransactionReceipts({
+      const receipts = await findTransactionReceipts({
         size: SIZE,
         cursor,
       });
@@ -230,6 +276,45 @@ switch (command) {
       cursor = receipts[SIZE - 1].transactionHash;
     }
     logger.info("Queue internal transactions finished.");
+    break;
+  }
+  /**
+   * This command is created after "Aggregating erc20 transfer task" is created.
+   * So you don't need this command to do anything
+   *
+   * Aggregator exchange is a fanout exchange which is used
+   * to publish transactions after transaction receipt its logs are created
+   * Queue published by exchange: Transfer
+   *
+   * Queue all transaction receipts to transaction aggregator exchange
+   * Using cursor pagination
+   */
+  case "publish-transaction-aggregator": {
+    const SIZE = 5000;
+    const totalTransactionReceipts = await countTransactionReceipts();
+
+    for (let i = 0, cursor: Hash | null = null, processed = 0; ; i++) {
+      const receipts = await findTransactionReceipts({
+        size: SIZE,
+        cursor,
+      });
+
+      for (const receipt of receipts) {
+        await queueTransactionAggregator(receipt.transactionHash);
+      }
+
+      processed += receipts.length;
+      logger.info(
+        `Publish page ${i + 1}. Total receipts: ${receipts.length}. Processed: ${processed}/${totalTransactionReceipts}`,
+      );
+
+      if (receipts.length < SIZE) {
+        break;
+      }
+
+      cursor = receipts[SIZE - 1].transactionHash;
+    }
+    logger.info("Publish to aggregator exchange finished.");
     break;
   }
   case "find-missing-receipt": {

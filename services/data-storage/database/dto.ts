@@ -68,6 +68,7 @@ export type TransactionReceiptDto = {
   root: string | null;
   createdAt: Date;
 
+  block?: BlockDto;
   logs?: LogDto[];
 };
 export type LogTopicDto = {
@@ -99,6 +100,17 @@ export type InternalTransactionDto = {
   value: bigint;
   gas: bigint;
   gasUsed: bigint;
+};
+export type TransferDto = {
+  hash: string;
+  blockNumber: number;
+  transactionHash: string;
+  from: string;
+  to: string;
+  tokenAddress: string;
+  amount: string;
+  logIndex: number;
+  timestamp: Date;
 };
 
 export function toBlockDto(
@@ -177,6 +189,7 @@ export function toTransactionDto(
 export function toTransactionReceiptDto(
   receipt: TransactionReceipt & {
     logs?: Log[];
+    block?: Block;
   },
 ): TransactionReceiptDto {
   const dto: TransactionReceiptDto = {
@@ -199,6 +212,9 @@ export function toTransactionReceiptDto(
 
   if (receipt.logs) {
     dto.logs = receipt.logs.map(toLogDto);
+  }
+  if (receipt.block) {
+    dto.block = receipt.block;
   }
 
   return dto;

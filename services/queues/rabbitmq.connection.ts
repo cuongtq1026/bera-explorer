@@ -6,6 +6,8 @@ import client, {
 import { v4 as uuidv4 } from "uuid";
 
 import {
+  aggregatorExchangeName,
+  crawlerExchangeName,
   DEAD_LETTER_EXCHANGE_NAME,
   DEAD_LETTER_QUEUE_NAME,
   queues,
@@ -23,7 +25,6 @@ class RabbitMQConnection {
   connection!: Connection;
   channel!: Channel;
   private connected!: boolean;
-  private readonly crawlerExchangeName = "crawler";
 
   async connect() {
     const connectionUrl = process.env.RABBIT_MQ_CONNECTION;
@@ -75,13 +76,14 @@ class RabbitMQConnection {
       await this.channel.bindQueue(dlq.queue, dlx.exchange, "#");
 
       // Crawler exchange
-      const crawlerExchange = await this.channel.assertExchange(
-        this.crawlerExchangeName,
-        "direct",
-        {
-          durable: true,
-        },
-      );
+      await this.channel.assertExchange(crawlerExchangeName, "direct", {
+        durable: true,
+      });
+
+      // Aggregator exchange
+      await this.channel.assertExchange(aggregatorExchangeName, "fanout", {
+        durable: true,
+      });
 
       // Assertion
       await Promise.all(
@@ -97,7 +99,7 @@ class RabbitMQConnection {
 
           await this.channel.bindQueue(
             queueInfo.name,
-            crawlerExchange.exchange,
+            queueInfo.bindExchangeName,
             queueInfo.routingKey,
           );
         }),
@@ -120,7 +122,35 @@ class RabbitMQConnection {
       await this.checkConnection();
 
       this.channel.publish(
-        this.crawlerExchangeName,
+        crawlerExchangeName,
+        routingKey,
+        Buffer.from(JSON.stringify(message)),
+        {
+          messageId: uuidv4(),
+          headers: {
+            [RETRY_COUNT]: MAX_RETRIES,
+            [EXPONENTIAL_BACKOFF]: EXPONENTIAL_BACKOFF_IN_SECONDS,
+          },
+          ...options,
+        },
+      );
+    } catch (error) {
+      logger.error(`publishToCrawlerExchange error: ${error}`);
+      throw error;
+    }
+  }
+
+  public async publishFanoutExchange(
+    exchangeName: string,
+    routingKey: string,
+    message: any,
+    options?: PublishOptions,
+  ) {
+    try {
+      await this.checkConnection();
+
+      this.channel.publish(
+        exchangeName,
         routingKey,
         Buffer.from(JSON.stringify(message)),
         {

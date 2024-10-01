@@ -9,24 +9,27 @@ datasource db {
 }
 
 model Block {
-  number           BigInt        @id @unique
-  hash             String        @unique
-  parentHash       String
-  nonce            String?
-  sha3Uncles       String
-  logsBloom        String?
-  transactionsRoot String
-  stateRoot        String
-  receiptsRoot     String
-  miner            String
-  difficulty       BigInt
-  totalDifficulty  BigInt
-  extraData        String?
-  size             BigInt
-  gasLimit         BigInt
-  gasUsed          BigInt
-  createdAt        BigInt
-  transactions     Transaction[]
+  number             BigInt               @id @unique
+  hash               String               @unique
+  parentHash         String
+  nonce              String?
+  sha3Uncles         String
+  logsBloom          String?
+  transactionsRoot   String
+  stateRoot          String
+  receiptsRoot       String
+  miner              String
+  difficulty         BigInt
+  totalDifficulty    BigInt
+  extraData          String?
+  size               BigInt
+  gasLimit           BigInt
+  gasUsed            BigInt
+  createdAt          BigInt
+  transactions       Transaction[]
+  Transfer           Transfer[]
+  Log                Log[]
+  TransactionReceipt TransactionReceipt[]
 
   @@map("block")
 }
@@ -47,12 +50,13 @@ model Transaction {
   block               Block                 @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
   receipt             TransactionReceipt?
   internalTransaction InternalTransaction[]
+  Transfer            Transfer[]
 
   @@map("transaction")
 }
 
 model TransactionReceipt {
-  transactionHash   String      @id @unique
+  transactionHash   String   @id @unique
   transactionIndex  Int
   blockHash         String
   blockNumber       BigInt
@@ -66,9 +70,11 @@ model TransactionReceipt {
   effectiveGasPrice BigInt
   type              String
   root              String?
-  createdAt         DateTime    @default(now())
+  createdAt         DateTime @default(now())
   logs              Log[]
-  transaction       Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
+
+  block       Block       @relation(fields: [blockNumber], references: [number])
+  transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
 
   @@map("transaction_receipt")
 }
@@ -84,6 +90,7 @@ model Log {
   removed            Boolean
   transactionReceipt TransactionReceipt @relation(fields: [transactionHash], references: [transactionHash], onDelete: Cascade)
   topics             LogTopic[]
+  Block              Block              @relation(fields: [blockNumber], references: [number])
 
   @@map("log")
 }
@@ -116,4 +123,25 @@ model InternalTransaction {
   parent      InternalTransaction? @relation("InternalCalls", fields: [parentHash], references: [hash])
 
   @@map("internal_transaction")
+}
+
+model Transfer {
+  hash            String   @id
+  blockNumber     BigInt
+  transactionHash String
+  from            String
+  to              String
+  tokenAddress    String
+  amount          Decimal  @db.Decimal(78, 0)
+  logIndex        Int
+  timestamp       DateTime
+
+  transaction Transaction @relation(fields: [transactionHash], references: [hash])
+  block       Block       @relation(fields: [blockNumber], references: [number])
+
+  @@index([from, to])
+  @@index([tokenAddress])
+  @@index([timestamp])
+  @@index([transactionHash])
+  @@map("transfer")
 }

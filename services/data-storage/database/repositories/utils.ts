@@ -1,5 +1,5 @@
-import type { LogDto } from "@database/dto.ts";
-import type { TransferCreateInput } from "@database/repositories/transfer.repository.ts";
+import type { BalanceCreateInput } from "@database/repositories/balance.repository.ts";
+import type { Balance } from "@prisma/client";
 import type {
   Block,
   GetTransactionReceiptReturnType,
@@ -162,5 +162,14 @@ export function toInternalTransactionCreateInput(
           toInternalTransactionCreateInput(transactionHash, hash, index, call),
         )
       : undefined,
+  };
+}
+
+export function toBalanceCreateInput(balance: Balance): BalanceCreateInput {
+  return {
+    address: balance.address,
+    tokenAddress: balance.tokenAddress,
+    amount: balance.amount.toString(),
+    transferHash: balance.transferHash,
   };
 }

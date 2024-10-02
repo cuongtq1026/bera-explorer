@@ -15,7 +15,7 @@ export class BlockProcessor
     InterfaceProcessor<
       bigint,
       Block,
-      BlockCreateInput,
+      BlockCreateInput | null,
       {
         transactions: Hash[];
       }

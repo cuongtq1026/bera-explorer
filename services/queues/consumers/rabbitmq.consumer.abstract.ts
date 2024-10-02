@@ -1,3 +1,4 @@
+import { AbstractConsumer } from "@consumers/consumer.abstract.ts";
 import type { ConsumeMessage } from "amqplib";
 
 import logger from "../../monitor/logger.ts";
@@ -5,13 +6,18 @@ import { queueMessageProcessedCounter } from "../../monitor/prometheus.ts";
 import { DELAY } from "../index.ts";
 import mqConnection from "../rabbitmq.connection.ts";
 
-export abstract class IQueueConsumer {
+export abstract class AbstractRabbitMQConsumer extends AbstractConsumer<
+  boolean,
+  ConsumeMessage
+> {
   protected abstract queueName: string;
   protected consumerCount = process.env.CONSUMER_PER_CHANNEL
     ? +process.env.CONSUMER_PER_CHANNEL
     : 1;
 
-  protected constructor() {}
+  protected constructor() {
+    super();
+  }
 
   public async consume(): Promise<void> {
     logger.info(
@@ -25,7 +31,7 @@ export abstract class IQueueConsumer {
     }
   }
 
-  private async execute(message: ConsumeMessage): Promise<boolean> {
+  protected async execute(message: ConsumeMessage): Promise<boolean> {
     logger.info(`[MessageId: ${message.properties.messageId}] Check delay.`);
     await this.checkDelay(message);
 

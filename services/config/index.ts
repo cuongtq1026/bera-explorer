@@ -45,14 +45,6 @@ export const queues = {
     bindExchangeName: aggregatorExchangeName,
     dlx: true,
   } as QueueType,
-
-  // Default exchange
-  BALANCE: {
-    name: "balance",
-    routingKey: "default.balance",
-    bindExchangeName: null,
-    dlx: false,
-  } as QueueType,
 };
 
 export const AGGREGATOR_TRANSACTION_ROUTING_KEY = "aggregator.transaction";

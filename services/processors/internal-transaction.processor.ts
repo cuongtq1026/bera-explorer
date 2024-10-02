@@ -21,7 +21,7 @@ export class InternalTransactionProcessor
     InterfaceProcessor<
       Hash,
       ToInputArgType,
-      InternalTransactionCreateInput,
+      InternalTransactionCreateInput | null,
       void
     >
 {

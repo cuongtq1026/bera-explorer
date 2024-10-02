@@ -1,3 +1,4 @@
+import { AbstractRabbitMQConsumer } from "@consumers/rabbitmq.consumer.abstract.ts";
 import {
   type CreatedHash,
   TransferProcessor,
@@ -9,14 +10,10 @@ import { validateOrReject } from "class-validator";
 import { queues } from "../../config";
 import logger from "../../monitor/logger.ts";
 import { is0xHash } from "../../utils.ts";
-import {
-  QueueBalancePayload,
-  QueueTransactionAggregatorPayload,
-} from "../producers";
-import mqConnection from "../rabbitmq.connection.ts";
-import { IQueueConsumer } from "./queue.consumer.abstract.ts";
+import { sendToBalanceTopic } from "../kafka/kafka.producer.ts";
+import { QueueTransactionAggregatorPayload } from "../producers";
 
-export class TransferConsumer extends IQueueConsumer {
+export class TransferConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.TRANSFER.name;
 
   constructor() {
@@ -64,12 +61,9 @@ export class TransferConsumer extends IQueueConsumer {
     message: ConsumeMessage,
     createdHashes: CreatedHash[],
   ): Promise<void> {
-    // Queue to balance queue
-    createdHashes.sort((a, b) => a.index - b.index);
+    // Queue to balance kafka topic
     for (const createdHash of createdHashes) {
-      await mqConnection.sendToQueue(queues.BALANCE.name, {
-        transferHash: createdHash.hash,
-      } as QueueBalancePayload);
+      await sendToBalanceTopic(createdHash.hash);
     }
 
     return super.onFinish(message, createdHashes);

@@ -1,3 +1,4 @@
+import { BalanceConsumer } from "@consumers/balance.consumer.ts";
 import { BlockConsumer } from "@consumers/block.consumer.ts";
 import { DlxConsumer } from "@consumers/dlx.consumer.ts";
 import { InternalTransactionConsumer } from "@consumers/internal-transaction.consumer.ts";
@@ -12,10 +13,7 @@ import {
   countTransactionReceipts,
   findTransactionReceipts,
 } from "@database/repositories/transaction-receipt.repository.ts";
-import {
-  countTransfer,
-  findTransfers,
-} from "@database/repositories/transfer.repository.ts";
+import { BalanceProcessor } from "@processors/balance.processor.ts";
 import { BlockProcessor } from "@processors/block.processor.ts";
 import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
 import { TransactionProcessor } from "@processors/transaction.processor.ts";
@@ -27,7 +25,6 @@ import { queues } from "./services/config";
 import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
 import {
-  QueueBalancePayload,
   queueBlock,
   QueueInternalTransactionPayload,
   queueTransaction,
@@ -118,6 +115,19 @@ switch (command) {
 
     const processor = new TransferProcessor();
     await processor.process(transactionHash);
+    break;
+  }
+  case "balance": {
+    const transferHash = restArgs[0];
+
+    if (transferHash == null || !is0xHash(transferHash)) {
+      logger.info("Invalid transaction hash.");
+      break;
+    }
+
+    const processor = new BalanceProcessor();
+
+    await processor.process(transferHash);
     break;
   }
   case "queue": {
@@ -215,6 +225,14 @@ switch (command) {
         await consumer.consume();
         break;
       }
+      case "balance": {
+        setupPrometheus();
+
+        const balanceConsumer = new BalanceConsumer();
+
+        await balanceConsumer.consume();
+        break;
+      }
       case "all": {
         setupPrometheus();
 
@@ -223,12 +241,14 @@ switch (command) {
         const transactionReceiptConsumer = new TransactionReceiptConsumer();
         const internalTransactionConsumer = new InternalTransactionConsumer();
         const transferConsumer = new TransferConsumer();
+        const balanceConsumer = new BalanceConsumer();
 
         await blockConsumer.consume();
         await transactionConsumer.consume();
         await transactionReceiptConsumer.consume();
         await internalTransactionConsumer.consume();
         await transferConsumer.consume();
+        await balanceConsumer.consume();
         break;
       }
       default: {
@@ -320,36 +340,6 @@ switch (command) {
       cursor = receipts[SIZE - 1].transactionHash;
     }
     logger.info("Publish to aggregator exchange finished.");
-    break;
-  }
-  case "queue-balance": {
-    const SIZE = 5000;
-    const totalTransfers = await countTransfer();
-
-    for (let i = 0, cursor: Hash | null = null, processed = 0; ; i++) {
-      const transfers = await findTransfers({
-        size: SIZE,
-        cursor,
-      });
-
-      for (const transfer of transfers) {
-        await mqConnection.sendToQueue(queues.BALANCE.name, {
-          transferHash: transfer.hash,
-        } as QueueBalancePayload);
-      }
-
-      processed += transfers.length;
-      logger.info(
-        `Publish page ${i + 1}. Total transfers: ${transfers.length}. Processed: ${processed}/${totalTransfers}`,
-      );
-
-      if (transfers.length < SIZE) {
-        break;
-      }
-
-      cursor = transfers[SIZE - 1].hash;
-    }
-    logger.info("Queue balance finished.");
     break;
   }
   case "find-missing-receipt": {

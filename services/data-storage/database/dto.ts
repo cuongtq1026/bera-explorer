@@ -1,4 +1,5 @@
 import type {
+  Balance,
   Block,
   InternalTransaction,
   Log,
@@ -112,6 +113,13 @@ export type TransferDto = {
   amount: bigint;
   logIndex: number;
   timestamp: Date;
+};
+export type BalanceDto = {
+  address: string;
+  tokenAddress: string;
+  amount: string;
+  transferHash: string;
+  lastUpdatedAt: Date;
 };
 
 export function toBlockDto(
@@ -281,5 +289,15 @@ export function toTransferDto(transfer: Transfer): TransferDto {
     amount: parseToBigInt(transfer.amount.toFixed()),
     logIndex: transfer.logIndex,
     timestamp: transfer.timestamp,
+  };
+}
+
+export function toBalanceDto(balance: Balance): BalanceDto {
+  return {
+    address: balance.address,
+    tokenAddress: balance.tokenAddress,
+    amount: balance.amount.toString(),
+    transferHash: balance.transferHash,
+    lastUpdatedAt: balance.lastUpdatedAt,
   };
 }

@@ -1,3 +1,5 @@
-export default function Home() {
-  return <div>Hello world</div>;
+import LatestBlockCard from "@/app/LatestBlockCard.tsx";
+
+export default async function Home() {
+  return <LatestBlockCard />;
 }

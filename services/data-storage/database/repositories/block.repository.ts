@@ -116,7 +116,6 @@ export async function findBlocksWithGas(pagination?: BlockPaginationDto) {
       number: order,
     },
     include: {
-      _count: true,
       transactions: {
         select: {
           gasPrice: true,

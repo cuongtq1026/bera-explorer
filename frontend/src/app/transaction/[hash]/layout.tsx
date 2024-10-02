@@ -6,7 +6,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@components/ui/breadcrumb.tsx";
-import { Button } from "@components/ui/button.tsx";
 import { findTransaction } from "@database/repositories/transaction.repository.ts";
 import Link from "next/link";
 import { notFound } from "next/navigation";

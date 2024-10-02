@@ -3,7 +3,6 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@components/ui/breadcrumb.tsx";
 import { Progress } from "@components/ui/progress.tsx";
@@ -22,7 +21,9 @@ import {
 } from "@/components/ui/table";
 
 async function getBlocks() {
-  return findBlocksWithGas();
+  return findBlocksWithGas({
+    cursor: 7300
+  });
 }
 
 const BlockPage = async () => {
@@ -76,9 +77,9 @@ const BlockPage = async () => {
                 <TableCell>
                   <Link
                     className={"hover:text-blue-500"}
-                    href={`/block/${block.number.toString()}`}
+                    href={`/block/${block.number.toString()}/transactions`}
                   >
-                    {block._count?.transactions}
+                    {block.transactions.length}
                   </Link>
                 </TableCell>
                 <TableCell>

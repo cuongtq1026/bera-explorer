@@ -78,7 +78,7 @@ const BlockPage = async ({ params }: { params: { number: string } }) => {
             <TableCell>
               <Link href={`/block/${params.number}/transactions`}>
                 <Button variant={"secondary"}>
-                  {block._count?.transactions?.toString() ?? 0} transactions
+                  {block?.transactions?.length ?? 0} transactions
                 </Button>
               </Link>
             </TableCell>

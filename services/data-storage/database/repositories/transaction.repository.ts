@@ -36,9 +36,17 @@ export async function deleteTransaction(hash: `0x${string}`): Promise<void> {
 
 export async function findTransaction(
   hash: Hash,
-  options?: { withReceipt?: boolean; withBlock?: boolean },
+  options?: {
+    withReceipt?: boolean;
+    withBlock?: boolean;
+    withTransfers?: boolean;
+  },
 ): Promise<TransactionDto | null> {
-  const { withReceipt = false, withBlock = false } = options ?? {};
+  const {
+    withReceipt = false,
+    withBlock = false,
+    withTransfers = false,
+  } = options ?? {};
   return prisma.transaction
     .findUnique({
       where: {
@@ -57,6 +65,7 @@ export async function findTransaction(
             }
           : false,
         block: withBlock,
+        transfers: withTransfers,
       },
     })
     .then((transaction) => {

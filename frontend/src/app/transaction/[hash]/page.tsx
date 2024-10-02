@@ -5,6 +5,8 @@ import {
   TableRow,
 } from "@components/ui/table.tsx";
 import { findTransaction } from "@database/repositories/transaction.repository.ts";
+import { ChevronRightIcon } from "@radix-ui/react-icons";
+import { shortenEthAddress } from "@utils";
 import dayjs from "dayjs";
 import { CheckCircle } from "lucide-react";
 import Link from "next/link";
@@ -15,6 +17,7 @@ async function getTransaction(transactionHash: Hash) {
   return findTransaction(transactionHash, {
     withReceipt: true,
     withBlock: true,
+    withTransfers: true,
   });
 }
 
@@ -78,9 +81,38 @@ const TransactionPage = async ({ params }: { params: { hash: string } }) => {
             <TableCell>To</TableCell>
             <TableCell>{transaction.to}</TableCell>
           </TableRow>
+          {transaction.transfers ? (
+            <TableRow>
+              <TableCell>ERC-20 Tokens Transferred</TableCell>
+              <TableCell>
+                {transaction.transfers.map((transfer) => {
+                  return (
+                    <div
+                      className={"flex gap-1 items-center"}
+                      key={transfer.hash}
+                    >
+                      <ChevronRightIcon />
+                      From{" "}
+                      <span className={"font-semibold"}>
+                        {shortenEthAddress(transfer.from)}
+                      </span>{" "}
+                      To{" "}
+                      <span className={"font-semibold"}>
+                        {shortenEthAddress(transfer.to)}
+                      </span>{" "}
+                      For {formatUnits(transfer.amount, 18)}
+                      <span className={"font-semibold"}>
+                        ({shortenEthAddress(transfer.tokenAddress)})
+                      </span>
+                    </div>
+                  );
+                })}
+              </TableCell>
+            </TableRow>
+          ) : undefined}
           <TableRow>
             <TableCell>Value</TableCell>
-            <TableCell>{transaction.value?.toString()}</TableCell>
+            <TableCell>{transaction.value?.toString()} ETH</TableCell>
           </TableRow>
           <TableRow>
             <TableCell>Transaction Fee</TableCell>

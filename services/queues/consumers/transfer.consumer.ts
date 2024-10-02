@@ -1,3 +1,4 @@
+import { AbstractRabbitMQConsumer } from "@consumers/rabbitmq.consumer.abstract.ts";
 import {
   type CreatedHash,
   TransferProcessor,
@@ -11,9 +12,8 @@ import logger from "../../monitor/logger.ts";
 import { is0xHash } from "../../utils.ts";
 import { sendToBalanceTopic } from "../kafka/kafka.producer.ts";
 import { QueueTransactionAggregatorPayload } from "../producers";
-import { IQueueConsumer } from "./queue.consumer.abstract.ts";
 
-export class TransferConsumer extends IQueueConsumer {
+export class TransferConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.TRANSFER.name;
 
   constructor() {

@@ -15,8 +15,7 @@ export class TransactionReceiptProcessor
     InterfaceProcessor<
       Hash,
       GetTransactionReceiptReturnType,
-      TransactionReceiptCreateInput,
-      void
+      TransactionReceiptCreateInput | null
     >
 {
   get(id: Hash): Promise<GetTransactionReceiptReturnType> {

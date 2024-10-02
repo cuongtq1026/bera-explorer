@@ -6,7 +6,7 @@ import type {
 import { findTransactionReceipt } from "@database/repositories/transaction-receipt.repository.ts";
 import {
   createTransfers,
-  deleteTransfer,
+  deleteTransferByHash,
   type TransferCreateInput,
 } from "@database/repositories/transfer.repository.ts";
 import { decodeEventLog, erc20Abi, type Hash, type Hex } from "viem";
@@ -27,6 +27,8 @@ export class TransferProcessor
       ToInputArgType,
       TransferCreateInput[],
       CreatedHash[],
+      Hash,
+      TransferCreateInput[],
       void,
       CreatedHash[]
     >
@@ -36,7 +38,7 @@ export class TransferProcessor
       withLogs: true,
     });
     if (!receipt) {
-      throw new Error(`Transaction receipt not found`);
+      throw new Error(`Transaction receipt not found ${transactionHash}`);
     }
     const logs = receipt.logs;
     if (!logs) {
@@ -97,7 +99,7 @@ export class TransferProcessor
   }
 
   async deleteFromDb(id: Hash): Promise<void> {
-    await deleteTransfer(id);
+    await deleteTransferByHash(id);
   }
 
   async createInDb(inputs: TransferCreateInput[]): Promise<CreatedHash[]> {

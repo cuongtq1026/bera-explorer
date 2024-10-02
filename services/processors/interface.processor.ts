@@ -3,13 +3,15 @@ export interface InterfaceProcessor<
   GetReturn,
   InputType,
   ResultReturn = void,
+  DeleteArg = IdType,
+  CreateArg = InputType,
   DeletedResult = void,
   CreatedResult = void,
 > {
   get(id: IdType): Promise<GetReturn>;
-  toInput(input: GetReturn): InputType | null;
-  deleteFromDb(id: IdType): Promise<DeletedResult>;
-  createInDb(input: InputType): Promise<CreatedResult>;
+  toInput(input: GetReturn): InputType;
+  deleteFromDb(id: DeleteArg): Promise<DeletedResult>;
+  createInDb(input: CreateArg): Promise<CreatedResult>;
 
   process(id: IdType): Promise<ResultReturn>;
 }

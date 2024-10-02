@@ -1,5 +1,8 @@
+import * as process from "node:process";
+
 import {
   type Admin,
+  type EachMessageHandler,
   Kafka,
   logLevel,
   type Message,
@@ -61,12 +64,12 @@ export class KafkaConnection {
 
       logger.info(`⌛️ Connecting to Kafka Producer`);
       await this.producer.connect();
-      logger.info(`✅ Kafka Producer is ready`);
+      logger.info(`✅  Kafka Producer is ready`);
 
       this.admin = this.connection.admin();
       logger.info(`⌛️ Connecting to Kafka Admin`);
       await this.admin.connect();
-      logger.info(`✅ Kafka Admin is ready`);
+      logger.info(`✅  Kafka Admin is ready`);
       const existingTopics = await this.admin.listTopics();
       await this.admin.createTopics({
         topics: Object.values(topics)
@@ -102,24 +105,27 @@ export class KafkaConnection {
     });
   }
 
-  public async consume() {
+  public async consume(topic: string, eachMessageHandler: EachMessageHandler) {
     await this.checkConnection();
 
-    const consumer = this.connection.consumer({ groupId: "test-group" });
+    const groupId = process.env.KAFKA_GROUP_ID;
+    if (!groupId) {
+      throw new Error(`Missing KAFKA_GROUP_ID`);
+    }
+    const consumer = this.connection.consumer({
+      groupId,
+    });
     await consumer.subscribe({
-      topic: "test-topic",
+      topic,
       fromBeginning: true,
     });
 
     await consumer.run({
-      eachMessage: async ({ topic, partition, message }) => {
-        console.log(topic, partition, {
-          value: message.value?.toString(),
-        });
-      },
+      autoCommit: true,
+      autoCommitInterval: 1000,
+      autoCommitThreshold: 10,
+      eachMessage: eachMessageHandler,
     });
-
-    console.log("Consumed");
   }
 }
 

@@ -73,7 +73,7 @@ model TransactionReceipt {
   createdAt         DateTime @default(now())
   logs              Log[]
 
-  block       Block       @relation(fields: [blockNumber], references: [number])
+  block       Block       @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
   transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
 
   @@index([blockNumber, transactionIndex])
@@ -91,7 +91,7 @@ model Log {
   removed            Boolean
   transactionReceipt TransactionReceipt @relation(fields: [transactionHash], references: [transactionHash], onDelete: Cascade)
   topics             LogTopic[]
-  Block              Block              @relation(fields: [blockNumber], references: [number])
+  Block              Block              @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
 
   @@map("log")
 }
@@ -120,8 +120,8 @@ model InternalTransaction {
 
   calls InternalTransaction[] @relation("InternalCalls")
 
-  transaction Transaction          @relation(fields: [transactionHash], references: [hash])
-  parent      InternalTransaction? @relation("InternalCalls", fields: [parentHash], references: [hash])
+  transaction Transaction          @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
+  parent      InternalTransaction? @relation("InternalCalls", fields: [parentHash], references: [hash], onDelete: Cascade)
 
   @@map("internal_transaction")
 }
@@ -138,13 +138,30 @@ model Transfer {
   logIndex         Int
   timestamp        DateTime
 
-  transaction Transaction @relation(fields: [transactionHash], references: [hash])
-  block       Block       @relation(fields: [blockNumber], references: [number])
+  transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
+  block       Block       @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
+  balance     Balance[]
 
-  @@index([from, to])
+  @@index([from])
+  @@index([to])
   @@index([tokenAddress])
   @@index([timestamp])
   @@index([transactionHash])
   @@index([blockNumber, transactionIndex, logIndex])
   @@map("transfer")
+}
+
+model Balance {
+  address       String
+  tokenAddress  String
+  amount        Decimal  @db.Decimal(78, 0)
+  transferHash  String
+  lastUpdatedAt DateTime @updatedAt
+
+  transfer Transfer @relation(fields: [transferHash], references: [hash], onDelete: Cascade)
+
+  @@unique([address, tokenAddress])
+  @@index([address])
+  @@index([tokenAddress])
+  @@map("balance")
 }

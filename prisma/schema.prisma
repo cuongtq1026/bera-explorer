@@ -76,6 +76,7 @@ model TransactionReceipt {
   block       Block       @relation(fields: [blockNumber], references: [number])
   transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
 
+  @@index([blockNumber, transactionIndex])
   @@map("transaction_receipt")
 }
 
@@ -126,15 +127,16 @@ model InternalTransaction {
 }
 
 model Transfer {
-  hash            String   @id
-  blockNumber     BigInt
-  transactionHash String
-  from            String
-  to              String
-  tokenAddress    String
-  amount          Decimal  @db.Decimal(78, 0)
-  logIndex        Int
-  timestamp       DateTime
+  hash             String   @id
+  blockNumber      BigInt
+  transactionHash  String
+  transactionIndex Int
+  from             String
+  to               String
+  tokenAddress     String
+  amount           Decimal  @db.Decimal(78, 0)
+  logIndex         Int
+  timestamp        DateTime
 
   transaction Transaction @relation(fields: [transactionHash], references: [hash])
   block       Block       @relation(fields: [blockNumber], references: [number])
@@ -143,5 +145,6 @@ model Transfer {
   @@index([tokenAddress])
   @@index([timestamp])
   @@index([transactionHash])
+  @@index([blockNumber, transactionIndex, logIndex])
   @@map("transfer")
 }

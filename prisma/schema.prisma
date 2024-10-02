@@ -27,31 +27,32 @@ model Block {
   gasUsed            BigInt
   createdAt          BigInt
   transactions       Transaction[]
-  Transfer           Transfer[]
-  Log                Log[]
-  TransactionReceipt TransactionReceipt[]
+  transfer           Transfer[]
+  log                Log[]
+  transactionReceipt TransactionReceipt[]
 
   @@map("block")
 }
 
 model Transaction {
-  hash                String                @id @unique
-  nonce               BigInt
-  blockHash           String?
-  blockNumber         BigInt
-  transactionIndex    Int?
-  from                String
-  to                  String?
-  input               String
-  value               Decimal               @db.Decimal(78, 0)
-  chainId             Int?
-  gas                 BigInt
-  gasPrice            BigInt?
-  block               Block                 @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
-  receipt             TransactionReceipt?
-  internalTransaction InternalTransaction[]
-  Transfer            Transfer[]
+  hash                 String                @id @unique
+  nonce                BigInt
+  blockHash            String?
+  blockNumber          BigInt
+  transactionIndex     Int?
+  from                 String
+  to                   String?
+  input                String
+  value                Decimal               @db.Decimal(78, 0)
+  chainId              Int?
+  gas                  BigInt
+  gasPrice             BigInt?
+  block                Block                 @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
+  receipt              TransactionReceipt?
+  internalTransactions InternalTransaction[]
+  transfers            Transfer[]
 
+  @@index([blockNumber])
   @@map("transaction")
 }
 
@@ -91,7 +92,7 @@ model Log {
   removed            Boolean
   transactionReceipt TransactionReceipt @relation(fields: [transactionHash], references: [transactionHash], onDelete: Cascade)
   topics             LogTopic[]
-  Block              Block              @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
+  block              Block              @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
 
   @@map("log")
 }

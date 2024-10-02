@@ -31,8 +31,8 @@ export class TransferProcessor
       CreatedHash[]
     >
 {
-  async get(id: Hash): Promise<ToInputArgType> {
-    const receipt = await findTransactionReceipt(id, {
+  async get(transactionHash: Hash): Promise<ToInputArgType> {
+    const receipt = await findTransactionReceipt(transactionHash, {
       withLogs: true,
     });
     if (!receipt) {
@@ -90,6 +90,7 @@ export class TransferProcessor
           timestamp: input.createdAt,
           transactionHash: log.transactionHash,
           blockNumber: log.blockNumber,
+          transactionIndex: log.transactionIndex,
           hash: log.logHash,
         };
       });
@@ -108,17 +109,17 @@ export class TransferProcessor
     }));
   }
 
-  async process(id: Hash): Promise<CreatedHash[]> {
-    logger.info("[TransferProcessor] processing: " + id);
+  async process(transactionHash: Hash): Promise<CreatedHash[]> {
+    logger.info("[TransferProcessor] processing: " + transactionHash);
 
-    const obj = await this.get(id);
+    const obj = await this.get(transactionHash);
 
     const inputs = this.toInput(obj);
 
-    await this.deleteFromDb(id);
-    logger.info(`[TransferProcessor] deleted ${id}`);
+    await this.deleteFromDb(transactionHash);
+    logger.info(`[TransferProcessor] deleted ${transactionHash}`);
     const result = await this.createInDb(inputs);
-    logger.info(`[TransferProcessor] created ${id}`);
+    logger.info(`[TransferProcessor] created ${transactionHash}`);
 
     return result;
   }

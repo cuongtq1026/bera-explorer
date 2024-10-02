@@ -9,6 +9,7 @@ export type TransferCreateInput = {
   hash: Hash;
   blockNumber: bigint;
   transactionHash: string;
+  transactionIndex: number;
   from: string;
   to: string;
   tokenAddress: string;

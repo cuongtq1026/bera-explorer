@@ -13,7 +13,7 @@
 - [x] **Log Topic**
 - [x] **Internal Transaction**
 - [x] **Transfer**
-- [ ] **Balance**
+- [x] **Balance**
 - [ ] **Balance history**
 - [ ] **Token**
 - [ ] **Pool**
@@ -25,6 +25,7 @@ The project uses the following technologies:
 - Prisma (ORM)
 - Docker (Containerization)
 - RabbitMQ (Message broker)
+- Kafka (Aggregate data)
 - Prometheus (Monitoring)
 - Winston (Logging)
 - Postgres (Database)
@@ -52,8 +53,10 @@ The following services will be started:
 
 - **Postgres** DB: Stores blocks and transactions.
 - **Redis**: Caching layer.
-- **RabbitMQ**: Manages message queues between producers and consumers for processing blocks and transactions.
+- **RabbitMQ**: Manages message queues between producers and consumers for processing blocks, transactions, transactions-receipts, internal-transactions, transfers.
 - **Prometheus**: Monitors metrics such as RPC node requests, error rates, and message processing success rates.
+- **Kafka (No zookeeper included)**: Aggregates data from transfers to balances.
+- **Kafka UI**: Provides a web interface for viewing Kafka brokers, topics and consumers.
 ### 3. Configure Environment Variables
 Copy the example environment file and update the RPC_URLS:
 ```bash
@@ -77,15 +80,15 @@ bun run consume:all
 ### Queue New Messages
 Queue a block for processing:
 ```bash
-bun run queue-block <blockNumber>
+bun run queue block <blockNumber>
 ```
 Queue a range of blocks:
 ```bash
-bun run queue-blocks <from> <to>
+bun run queue blocks <from> <to>
 ```
 Queue a transaction for processing:
 ```bash
-bun run queue-transaction <txHash>
+bun run queue transaction <txHash>
 ```
 Note: Transactions will be automatically queued after a block is processed. Once a transaction is processed, a `transaction-receipt` message will be published._
 
@@ -124,6 +127,9 @@ cd frontend && bun run dev
 ### RabbitMQ:
 Access the RabbitMQ management interface:
 - http://localhost:15672/
+### Kafka:
+Access the Kafka management interface:
+- http://localhost:8080/
 ### Prometheus
 Access the Prometheus dashboard:
 - http://localhost:9090/

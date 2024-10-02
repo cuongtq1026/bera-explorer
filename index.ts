@@ -352,7 +352,9 @@ switch (command) {
       i++
     ) {
       const transactions = await findTransactions(
-        undefined,
+        {
+          blockNumber: undefined,
+        },
         {
           withReceipt: true,
         },

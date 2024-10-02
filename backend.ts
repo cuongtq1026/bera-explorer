@@ -133,7 +133,7 @@ app.get("/block/:blockNumber/transactions", async (req, res) => {
   };
 
   const transactions = await findTransactions(
-    blockNumber,
+    { blockNumber },
     undefined,
     pagination,
   );

@@ -13,7 +13,7 @@
 - [x] **Log Topic**
 - [x] **Internal Transaction**
 - [x] **Transfer**
-- [ ] **Balance**
+- [x] **Balance**
 - [ ] **Balance history**
 - [ ] **Token**
 - [ ] **Pool**

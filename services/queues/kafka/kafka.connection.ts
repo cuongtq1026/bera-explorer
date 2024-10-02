@@ -114,6 +114,7 @@ export class KafkaConnection {
     }
     const consumer = this.connection.consumer({
       groupId,
+      readUncommitted: true,
     });
     await consumer.subscribe({
       topic,

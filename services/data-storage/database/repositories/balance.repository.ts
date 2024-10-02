@@ -10,6 +10,14 @@ export type BalanceCreateInput = {
   lastUpdatedAt?: Date | string;
 };
 
+export function findBalances(address: string) {
+  return prisma.balance.findMany({
+    where: {
+      address,
+    },
+  });
+}
+
 export function createBalance(balanceCreateInput: BalanceCreateInput) {
   return prisma.balance.create({
     data: balanceCreateInput,

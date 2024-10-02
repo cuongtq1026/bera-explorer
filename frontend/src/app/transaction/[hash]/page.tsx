@@ -77,13 +77,15 @@ const TransactionPage = async ({ params }: { params: { hash: string } }) => {
           <TableRow>
             <TableCell>From</TableCell>
             <TableCell>
-              <AddressLink address={transaction.from} />
+              <AddressLink address={transaction.from} type={"address"} />
             </TableCell>
           </TableRow>
           <TableRow>
             <TableCell>To</TableCell>
             <TableCell>
-              {transaction.to && <AddressLink address={transaction.to} />}
+              {transaction.to && (
+                <AddressLink address={transaction.to} type={"address"} />
+              )}
             </TableCell>
           </TableRow>
           {transaction.transfers ? (
@@ -97,11 +99,19 @@ const TransactionPage = async ({ params }: { params: { hash: string } }) => {
                       key={transfer.hash}
                     >
                       <ChevronRightIcon />
-                      From <AddressLink
+                      From{" "}
+                      <AddressLink
                         address={transfer.from}
                         shorten
-                      /> To <AddressLink address={transfer.to} shorten /> For{" "}
-                      {formatUnits(transfer.amount, 18)}
+                        type={"address"}
+                      />{" "}
+                      To{" "}
+                      <AddressLink
+                        address={transfer.to}
+                        shorten
+                        type={"address"}
+                      />{" "}
+                      For {formatUnits(transfer.amount, 18)}
                       <span className={"font-semibold"}>
                         ({shortenEthAddress(transfer.tokenAddress)})
                       </span>

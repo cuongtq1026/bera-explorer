@@ -1,3 +1,4 @@
+import AddressLink from "@components/AddressLink.tsx";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -81,22 +82,36 @@ const BlockTransactionPage = async ({
               return (
                 <TableRow key={transaction.hash}>
                   <TableCell title={transaction.hash}>
-                    <Link
-                      href={`/transaction/${transaction.hash}`}
-                      className={"hover:text-blue-500"}
-                    >
-                      {shortenEthAddress(transaction.hash)}
-                    </Link>
+                    <AddressLink
+                      address={transaction.hash}
+                      type={"transaction"}
+                      shorten
+                    />
                   </TableCell>
-                  <TableCell>{transaction.blockNumber.toString()}</TableCell>
+                  <TableCell>
+                    <AddressLink
+                      address={transaction.blockNumber.toString()}
+                      type={"block"}
+                    />
+                  </TableCell>
                   <TableCell title={transaction.from}>
-                    {shortenEthAddress(transaction.from)}
+                    <AddressLink
+                      address={transaction.from}
+                      type={"address"}
+                      shorten
+                    />
                   </TableCell>
                   <TableCell className={"justify-center flex"}>
                     <ArrowRightCircleIcon className={"w-5 text-green-500"} />
                   </TableCell>
                   <TableCell title={transaction.to ?? ""}>
-                    {shortenEthAddress(transaction.to)}
+                    {transaction.to && (
+                      <AddressLink
+                        address={transaction.to}
+                        type={"address"}
+                        shorten
+                      />
+                    )}
                   </TableCell>
                   <TableCell>{transaction.value?.toString() || 0}</TableCell>
                   <TableCell>

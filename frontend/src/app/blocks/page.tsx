@@ -21,9 +21,7 @@ import {
 } from "@/components/ui/table";
 
 async function getBlocks() {
-  return findBlocksWithGas({
-    cursor: 7300
-  });
+  return findBlocksWithGas();
 }
 
 const BlockPage = async () => {

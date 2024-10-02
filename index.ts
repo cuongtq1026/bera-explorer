@@ -354,7 +354,7 @@ switch (command) {
       const transactions = await findTransactions(
         undefined,
         {
-          withReceipts: true,
+          withReceipt: true,
         },
         {
           size: SIZE,

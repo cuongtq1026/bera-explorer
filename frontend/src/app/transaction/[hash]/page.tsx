@@ -1,3 +1,4 @@
+import AddressLink from "@components/AddressLink.tsx";
 import {
   Table,
   TableBody,
@@ -75,11 +76,15 @@ const TransactionPage = async ({ params }: { params: { hash: string } }) => {
           </TableRow>
           <TableRow>
             <TableCell>From</TableCell>
-            <TableCell>{transaction.from}</TableCell>
+            <TableCell>
+              <AddressLink address={transaction.from} />
+            </TableCell>
           </TableRow>
           <TableRow>
             <TableCell>To</TableCell>
-            <TableCell>{transaction.to}</TableCell>
+            <TableCell>
+              {transaction.to && <AddressLink address={transaction.to} />}
+            </TableCell>
           </TableRow>
           {transaction.transfers ? (
             <TableRow>
@@ -92,15 +97,11 @@ const TransactionPage = async ({ params }: { params: { hash: string } }) => {
                       key={transfer.hash}
                     >
                       <ChevronRightIcon />
-                      From{" "}
-                      <span className={"font-semibold"}>
-                        {shortenEthAddress(transfer.from)}
-                      </span>{" "}
-                      To{" "}
-                      <span className={"font-semibold"}>
-                        {shortenEthAddress(transfer.to)}
-                      </span>{" "}
-                      For {formatUnits(transfer.amount, 18)}
+                      From <AddressLink
+                        address={transfer.from}
+                        shorten
+                      /> To <AddressLink address={transfer.to} shorten /> For{" "}
+                      {formatUnits(transfer.amount, 18)}
                       <span className={"font-semibold"}>
                         ({shortenEthAddress(transfer.tokenAddress)})
                       </span>

@@ -15,7 +15,7 @@
 - [x] **Transfer**
 - [x] **Balance**
 - [x] **Token**
-- [ ] **Contract**
+- [x] **Contract**
 - [ ] **Pool**
 - [ ] **Balance history**
 

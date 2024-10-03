@@ -2,6 +2,7 @@ import { BalanceConsumer } from "@consumers/balance.consumer.ts";
 import { BlockConsumer } from "@consumers/block.consumer.ts";
 import { DlxConsumer } from "@consumers/dlx.consumer.ts";
 import { InternalTransactionConsumer } from "@consumers/internal-transaction.consumer.ts";
+import { TokenConsumer } from "@consumers/token.consumer.ts";
 import { TransactionConsumer } from "@consumers/transaction.consumer.ts";
 import { TransactionReceiptConsumer } from "@consumers/transaction-receipt.consumer.ts";
 import { TransferConsumer } from "@consumers/transfer.consumer.ts";
@@ -16,6 +17,7 @@ import {
 import { BalanceProcessor } from "@processors/balance.processor.ts";
 import { BlockProcessor } from "@processors/block.processor.ts";
 import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
+import { TokenProcessor } from "@processors/token.processor.ts";
 import { TransactionProcessor } from "@processors/transaction.processor.ts";
 import { TransactionReceiptProcessor } from "@processors/transaction-receipt.processor.ts";
 import { TransferProcessor } from "@processors/transfer.processor.ts";
@@ -121,13 +123,26 @@ switch (command) {
     const transferHash = restArgs[0];
 
     if (transferHash == null || !is0xHash(transferHash)) {
-      logger.info("Invalid transaction hash.");
+      logger.info("Invalid transfer hash.");
       break;
     }
 
     const processor = new BalanceProcessor();
 
     await processor.process(transferHash);
+    break;
+  }
+  case "token": {
+    const transactionHash = restArgs[0];
+
+    if (transactionHash == null || !is0xHash(transactionHash)) {
+      logger.info("Invalid transaction hash.");
+      break;
+    }
+
+    const processor = new TokenProcessor();
+
+    await processor.process(transactionHash);
     break;
   }
   case "queue": {
@@ -233,6 +248,14 @@ switch (command) {
         await balanceConsumer.consume();
         break;
       }
+      case "token": {
+        setupPrometheus();
+
+        const tokenConsumer = new TokenConsumer();
+
+        await tokenConsumer.consume();
+        break;
+      }
       case "all": {
         setupPrometheus();
 
@@ -242,6 +265,7 @@ switch (command) {
         const internalTransactionConsumer = new InternalTransactionConsumer();
         const transferConsumer = new TransferConsumer();
         const balanceConsumer = new BalanceConsumer();
+        const tokenConsumer = new TokenConsumer();
 
         await blockConsumer.consume();
         await transactionConsumer.consume();
@@ -249,6 +273,7 @@ switch (command) {
         await internalTransactionConsumer.consume();
         await transferConsumer.consume();
         await balanceConsumer.consume();
+        await tokenConsumer.consume();
         break;
       }
       default: {

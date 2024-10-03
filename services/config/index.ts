@@ -45,6 +45,12 @@ export const queues = {
     bindExchangeName: aggregatorExchangeName,
     dlx: true,
   } as QueueType,
+  TOKEN: {
+    name: "token",
+    routingKey: "aggregator.token",
+    bindExchangeName: aggregatorExchangeName,
+    dlx: true,
+  } as QueueType,
 };
 
 export const AGGREGATOR_TRANSACTION_ROUTING_KEY = "aggregator.transaction";

@@ -4,6 +4,7 @@ import type {
   InternalTransaction,
   Log,
   LogTopic,
+  Token,
   Transaction,
   TransactionReceipt,
   Transfer,
@@ -121,6 +122,16 @@ export type BalanceDto = {
   amount: string;
   transferHash: string;
   lastUpdatedAt: Date;
+};
+/**
+ * ERC20 Token
+ */
+export type TokenDto = {
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  totalSupply: bigint;
 };
 
 export function toBlockDto(
@@ -304,5 +315,15 @@ export function toBalanceDto(balance: Balance): BalanceDto {
     amount: balance.amount.toString(),
     transferHash: balance.transferHash,
     lastUpdatedAt: balance.lastUpdatedAt,
+  };
+}
+
+export function toTokenDto(token: Token): TokenDto {
+  return {
+    address: token.address,
+    name: token.name,
+    symbol: token.symbol,
+    decimals: token.decimals,
+    totalSupply: BigInt(token.totalSupply.toFixed()),
   };
 }

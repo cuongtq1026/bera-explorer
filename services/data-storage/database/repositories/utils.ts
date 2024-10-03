@@ -1,4 +1,6 @@
+import type { TokenDto } from "@database/dto.ts";
 import type { BalanceCreateInput } from "@database/repositories/balance.repository.ts";
+import type { TokenCreateInput } from "@database/repositories/token.repository.ts";
 import type { Balance } from "@prisma/client";
 import type {
   Block,

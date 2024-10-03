@@ -166,3 +166,13 @@ model Balance {
   @@index([tokenAddress])
   @@map("balance")
 }
+
+model Token {
+  address     String  @id
+  name        String
+  symbol      String
+  decimals    Int     @db.SmallInt
+  totalSupply Decimal @db.Decimal(78, 0)
+
+  @@map("token")
+}

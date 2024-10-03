@@ -1,5 +1,8 @@
+import type { TokenDto } from "@database/dto.ts";
 import {
   type Block,
+  erc20Abi,
+  getContract,
   type GetTransactionReceiptReturnType,
   type GetTransactionReturnType,
   type Hash,
@@ -123,6 +126,68 @@ export async function getAllTracerCallsTransaction(
     );
 
     await rpcRequest.blacklist(debugClient);
+    throw error;
+  }
+}
+
+const ERC20_FUNCTION_NAMES = ["name", "symbol", "decimals", "totalSupply"];
+export async function getERC20Tokens(
+  addressSet: Set<Hash>,
+): Promise<TokenDto[]> {
+  if (!addressSet.size) return [];
+
+  const addresses = [...addressSet];
+  logger.info(`[getERC20Tokens] addresses: ${addresses}`);
+
+  const client = await rpcRequest.getClient();
+  try {
+    const contracts = addresses.map((address) => {
+      const contract = getContract({
+        address,
+        abi: erc20Abi,
+        client: client.instance,
+      });
+      return ERC20_FUNCTION_NAMES.map((functionName) => ({
+        ...contract,
+        functionName,
+      }));
+    });
+
+    const results = await client.instance.multicall({
+      contracts: contracts.flat(),
+    });
+
+    const tokens: TokenDto[] = [];
+    for (let i = 0; i < results.length; i += 4) {
+      const address = addresses[i / 4];
+      const name = results[i];
+      const symbol = results[1 + i];
+      const decimals = results[2 + i];
+      const totalSupply = results[3 + i];
+
+      if (
+        name.status === "failure" ||
+        symbol.status === "failure" ||
+        decimals.status === "failure" ||
+        totalSupply.status === "failure"
+      ) {
+        continue;
+      }
+      tokens.push({
+        address,
+        name: name.result as string,
+        symbol: symbol.result as string,
+        decimals: decimals.result as number,
+        totalSupply: totalSupply.result as bigint,
+      });
+    }
+    return tokens;
+  } catch (error) {
+    logger.error(
+      `[Address: ${addressSet} | RpcClient: ${client.key}] Error fetching erc20 contract data: ${error}`,
+    );
+
+    // await rpcRequest.blacklist(client);
     throw error;
   }
 }

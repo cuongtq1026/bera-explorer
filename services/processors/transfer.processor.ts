@@ -11,7 +11,7 @@ import {
 } from "@database/repositories/transfer.repository.ts";
 import { decodeEventLog, erc20Abi, type Hash, type Hex } from "viem";
 
-import { ERC20_TRANSFER_TOPIC } from "../config/constants.ts";
+import { ERC20_TRANSFER_SIGNATURE } from "../config/constants.ts";
 import logger from "../monitor/logger.ts";
 import type { InterfaceProcessor } from "./interface.processor.ts";
 
@@ -73,7 +73,7 @@ export class TransferProcessor
           topics: LogTopicDto[];
         } => log.topics != null,
       )
-      .filter((log) => log.topics[0]?.topic === ERC20_TRANSFER_TOPIC)
+      .filter((log) => log.topics[0]?.topic === ERC20_TRANSFER_SIGNATURE)
       .map<TransferCreateInput>((log) => {
         const signature = log.topics[0].topic as Hex;
         const logTopics = log.topics.slice(1).map((t) => t.topic as Hex);

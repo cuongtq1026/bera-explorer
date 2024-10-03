@@ -1,6 +1,7 @@
 import type {
   Balance,
   Block,
+  Contract,
   InternalTransaction,
   Log,
   LogTopic,
@@ -132,6 +133,12 @@ export type TokenDto = {
   symbol: string;
   decimals: number;
   totalSupply: bigint;
+};
+export type ContractDto = {
+  address: string;
+  name?: string | null;
+  deploymentTransactionHash: string;
+  deploymentBlockNumber: bigint | number;
 };
 
 export function toBlockDto(
@@ -325,5 +332,14 @@ export function toTokenDto(token: Token): TokenDto {
     symbol: token.symbol,
     decimals: token.decimals,
     totalSupply: BigInt(token.totalSupply.toFixed()),
+  };
+}
+
+export function toContractDto(contract: Contract): ContractDto {
+  return {
+    address: contract.address,
+    name: contract.name,
+    deploymentTransactionHash: contract.deploymentTransactionHash,
+    deploymentBlockNumber: contract.deploymentBlockNumber,
   };
 }

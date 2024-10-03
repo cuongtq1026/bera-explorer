@@ -4,6 +4,10 @@ import type {
   TransactionReceiptDto,
 } from "@database/dto.ts";
 import {
+  type ContractCreateInput,
+  createContracts,
+} from "@database/repositories/contract.repository.ts";
+import {
   createTokens,
   type TokenCreateInput,
 } from "@database/repositories/token.repository.ts";
@@ -33,7 +37,7 @@ export class TokenProcessor
     InterfaceProcessor<
       Hash,
       ToInputArgType,
-      Promise<TokenCreateInput[]>,
+      Promise<{ tokens: TokenCreateInput[]; contracts: ContractCreateInput[] }>,
       void,
       Hash,
       TokenCreateInput[]
@@ -70,12 +74,21 @@ export class TokenProcessor
     };
   }
 
-  async toInput(input: ToInputArgType): Promise<TokenCreateInput[]> {
+  async toInput(
+    input: ToInputArgType,
+  ): Promise<{ tokens: TokenCreateInput[]; contracts: ContractCreateInput[] }> {
     const addressSet = new Set<Hash>();
+    const contracts: ContractCreateInput[] = [];
 
     // add receipt address contract
     if (input.contractAddress != null) {
       addressSet.add(input.contractAddress as Hash);
+
+      contracts.push({
+        address: input.contractAddress,
+        deploymentTransactionHash: input.transactionHash,
+        deploymentBlockNumber: input.blockNumber,
+      });
     }
 
     // add contract creation logs (CONTRACT_INITIATED_SIGNATURE)
@@ -93,14 +106,28 @@ export class TokenProcessor
       });
 
     const tokens = await getERC20Tokens(addressSet);
+    tokens.forEach((token) => {
+      contracts.push({
+        address: token.address,
+        deploymentTransactionHash: input.transactionHash,
+        deploymentBlockNumber: input.blockNumber,
+      });
+    });
 
-    return tokens.map((token) => ({
-      address: token.address,
-      name: token.name,
-      symbol: token.symbol,
-      decimals: token.decimals,
-      totalSupply: token.totalSupply.toString(),
-    }));
+    return {
+      tokens: tokens.map((token) => ({
+        address: token.address,
+        name: token.name,
+        symbol: token.symbol,
+        decimals: token.decimals,
+        totalSupply: token.totalSupply.toString(),
+      })),
+      contracts: tokens.map((token) => ({
+        address: token.address,
+        deploymentTransactionHash: input.transactionHash,
+        deploymentBlockNumber: input.blockNumber,
+      })),
+    };
   }
 
   async deleteFromDb(): Promise<void> {
@@ -111,14 +138,23 @@ export class TokenProcessor
     await createTokens(inputs);
   }
 
+  async createContractsInDb(contracts: ContractCreateInput[]): Promise<void> {
+    if (!contracts.length) {
+      return;
+    }
+    await createContracts(contracts);
+  }
+
   async process(transactionHash: Hash): Promise<void> {
     logger.info("[TokenProcessor] processing: " + transactionHash);
 
     const obj = await this.get(transactionHash);
 
-    const inputs = await this.toInput(obj);
+    const { tokens, contracts } = await this.toInput(obj);
 
-    await this.createInDb(inputs);
+    await this.createInDb(tokens);
     logger.info(`[TokenProcessor] created ${transactionHash}`);
+    await this.createContractsInDb(contracts);
+    logger.info(`[TokenProcessor] contract created ${transactionHash}`);
   }
 }

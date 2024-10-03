@@ -30,6 +30,7 @@ model Block {
   transfer           Transfer[]
   log                Log[]
   transactionReceipt TransactionReceipt[]
+  Contract           Contract[]
 
   @@map("block")
 }
@@ -51,6 +52,7 @@ model Transaction {
   receipt              TransactionReceipt?
   internalTransactions InternalTransaction[]
   transfers            Transfer[]
+  Contract             Contract[]
 
   @@index([blockNumber])
   @@map("transaction")
@@ -175,4 +177,17 @@ model Token {
   totalSupply Decimal @db.Decimal(78, 0)
 
   @@map("token")
+}
+
+model Contract {
+  address String  @id
+  name    String?
+
+  // Track deployment details
+  deploymentTransaction     Transaction @relation(fields: [deploymentTransactionHash], references: [hash])
+  deploymentTransactionHash String
+  deploymentBlock           Block       @relation(fields: [deploymentBlockNumber], references: [number])
+  deploymentBlockNumber     BigInt
+
+  @@map("contract")
 }

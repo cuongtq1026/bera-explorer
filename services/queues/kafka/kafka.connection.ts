@@ -1,5 +1,3 @@
-import * as process from "node:process";
-
 import {
   type Admin,
   type EachMessageHandler,
@@ -113,8 +111,7 @@ export class KafkaConnection {
       throw new Error(`Missing KAFKA_GROUP_ID`);
     }
     const consumer = this.connection.consumer({
-      groupId,
-      readUncommitted: true,
+      groupId: `${groupId}-${topic}`,
     });
     await consumer.subscribe({
       topic,

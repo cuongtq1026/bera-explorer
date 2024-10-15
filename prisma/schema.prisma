@@ -141,9 +141,10 @@ model Transfer {
   logIndex         Int
   timestamp        DateTime
 
-  transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
-  block       Block       @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
-  balance     Balance[]
+  transaction    Transaction      @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
+  block          Block            @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
+  balance        Balance[]
+  BalanceHistory BalanceHistory[]
 
   @@index([from])
   @@index([to])
@@ -167,6 +168,31 @@ model Balance {
   @@index([address])
   @@index([tokenAddress])
   @@map("balance")
+}
+
+model BalanceHistory {
+  hash             String   @id
+  blockNumber      BigInt
+  transactionIndex Int
+  index            Int
+  logIndex         Int
+  transactionHash  String
+  transferHash     String
+  address          String
+  tokenAddress     String
+  amount           Decimal  @db.Decimal(78, 0)
+  createdAt        DateTime
+
+  transfer Transfer @relation(fields: [transferHash], references: [hash], onDelete: Cascade)
+
+  @@unique([transactionHash, transferHash, address])
+  @@index([address])
+  @@index([address, tokenAddress])
+  @@index([blockNumber, transactionIndex, logIndex]) //
+  @@index([transferHash])
+  @@index([createdAt])
+  @@index([amount, createdAt])
+  @@map("balance_history")
 }
 
 model Token {

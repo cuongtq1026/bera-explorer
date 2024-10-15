@@ -1,23 +1,19 @@
-import { AbstractKafkaConsumer } from "@consumers/kafka.consumer.abstract.ts";
-import { BalanceProcessor } from "@processors/balance.processor.ts";
+import { TransferKafkaProcessor } from "@processors/transfer-kafka.processor.ts";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import type { EachMessagePayload } from "kafkajs";
+import type { Hash } from "viem";
 
 import {
   InvalidPayloadException,
   PayloadNotFoundException,
 } from "../../exceptions/consumer.exception.ts";
 import logger from "../../monitor/logger.ts";
-import { BalanceMessagePayload, topics } from "../kafka";
+import { topics, TransferMessagePayload } from "../kafka";
+import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
-/**
- * @deprecated
- *
- * No longer used due to design flaws
- */
-export class BalanceConsumer extends AbstractKafkaConsumer {
-  protected topicName = topics.BALANCE.name;
+export class TransferKafkaConsumer extends AbstractKafkaConsumer {
+  protected topicName = topics.TRANSFER.name;
 
   constructor() {
     super();
@@ -30,7 +26,7 @@ export class BalanceConsumer extends AbstractKafkaConsumer {
 
     const rawContent = eachMessagePayload.message.value?.toString();
     logger.info(
-      `[MessageId: ${messageId}] TransactionConsumer message rawContent: ${rawContent}.`,
+      `[MessageId: ${messageId}] TransferKafkaConsumer message rawContent: ${rawContent}.`,
     );
 
     if (!rawContent) {
@@ -39,7 +35,7 @@ export class BalanceConsumer extends AbstractKafkaConsumer {
 
     // transform
     const contentInstance = plainToInstance(
-      BalanceMessagePayload,
+      TransferMessagePayload,
       JSON.parse(rawContent),
     );
 
@@ -49,8 +45,10 @@ export class BalanceConsumer extends AbstractKafkaConsumer {
       throw new InvalidPayloadException(messageId);
     }
 
+    const { transferHash } = contentInstance;
+
     // process
-    const processor = new BalanceProcessor();
-    await processor.process(contentInstance.transferHash);
+    const transferProcessor = new TransferKafkaProcessor();
+    await transferProcessor.process(transferHash as Hash);
   }
 }

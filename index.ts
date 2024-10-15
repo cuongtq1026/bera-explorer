@@ -1,11 +1,14 @@
 import { BalanceConsumer } from "@consumers/balance.consumer.ts";
 import { BlockConsumer } from "@consumers/block.consumer.ts";
+import { BlockKafkaConsumer } from "@consumers/block.kafka.consumer.ts";
 import { DlxConsumer } from "@consumers/dlx.consumer.ts";
 import { InternalTransactionConsumer } from "@consumers/internal-transaction.consumer.ts";
 import { TokenConsumer } from "@consumers/token.consumer.ts";
 import { TransactionConsumer } from "@consumers/transaction.consumer.ts";
 import { TransactionReceiptConsumer } from "@consumers/transaction-receipt.consumer.ts";
+import { TransactionReceiptKafkaConsumer } from "@consumers/transaction-receipt.kafka.consumer.ts";
 import { TransferConsumer } from "@consumers/transfer.consumer.ts";
+import { TransferKafkaConsumer } from "@consumers/transfer.kafka.consumer.ts";
 import {
   countTransactions,
   findTransactions,
@@ -208,6 +211,22 @@ switch (command) {
         await consumer.consume();
         break;
       }
+      case "block-kafka": {
+        setupPrometheus();
+
+        const consumer = new BlockKafkaConsumer();
+
+        await consumer.consume();
+        break;
+      }
+      case "transaction-receipt-kafka": {
+        setupPrometheus();
+
+        const consumer = new TransactionReceiptKafkaConsumer();
+
+        await consumer.consume();
+        break;
+      }
       case "transaction": {
         setupPrometheus();
 
@@ -240,6 +259,14 @@ switch (command) {
         await consumer.consume();
         break;
       }
+      case "transfer-kafka": {
+        setupPrometheus();
+
+        const consumer = new TransferKafkaConsumer();
+
+        await consumer.consume();
+        break;
+      }
       case "balance": {
         setupPrometheus();
 
@@ -263,17 +290,18 @@ switch (command) {
         const transactionConsumer = new TransactionConsumer();
         const transactionReceiptConsumer = new TransactionReceiptConsumer();
         const internalTransactionConsumer = new InternalTransactionConsumer();
-        const transferConsumer = new TransferConsumer();
-        const balanceConsumer = new BalanceConsumer();
-        const tokenConsumer = new TokenConsumer();
+        const blockKafkaConsumer = new BlockKafkaConsumer();
+        const transactionReceiptKafkaConsumer =
+          new TransactionReceiptKafkaConsumer();
+        const transferKafkaConsumer = new TransferKafkaConsumer();
 
         await blockConsumer.consume();
         await transactionConsumer.consume();
         await transactionReceiptConsumer.consume();
         await internalTransactionConsumer.consume();
-        await transferConsumer.consume();
-        await balanceConsumer.consume();
-        await tokenConsumer.consume();
+        await blockKafkaConsumer.consume();
+        await transactionReceiptKafkaConsumer.consume();
+        await transferKafkaConsumer.consume();
         break;
       }
       default: {

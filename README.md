@@ -14,10 +14,10 @@
 - [x] **Internal Transaction**
 - [x] **Transfer**
 - [x] **Balance**
+- [x] **Balance history**
 - [x] **Token**
-- [x] **Contract**
 - [ ] **Pool**
-- [ ] **Balance history**
+- [ ] **Token Price**
 
 
 ## Technologies

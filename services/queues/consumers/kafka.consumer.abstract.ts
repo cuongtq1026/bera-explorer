@@ -34,4 +34,13 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
   protected abstract handler(
     eachMessagePayload: EachMessagePayload,
   ): Promise<void>;
+
+  protected async onFinish(
+    eachMessagePayload: EachMessagePayload,
+    _data: any,
+  ): Promise<void> {
+    const messageId = `${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
+
+    logger.info(`[MessageId: ${messageId}] Finished.`);
+  }
 }

@@ -267,15 +267,18 @@ switch (command) {
         const transactionConsumer = new TransactionConsumer();
         const transactionReceiptConsumer = new TransactionReceiptConsumer();
         const internalTransactionConsumer = new InternalTransactionConsumer();
-        const transferConsumer = new TransferConsumer();
-        const balanceConsumer = new BalanceConsumer();
+        const blockKafkaConsumer = new BlockKafkaConsumer();
+        const transactionReceiptKafkaConsumer =
+          new TransactionReceiptKafkaConsumer();
+        const transferKafkaConsumer = new TransferKafkaConsumer();
 
         await blockConsumer.consume();
         await transactionConsumer.consume();
         await transactionReceiptConsumer.consume();
         await internalTransactionConsumer.consume();
-        await transferConsumer.consume();
-        await balanceConsumer.consume();
+        await blockKafkaConsumer.consume();
+        await transactionReceiptKafkaConsumer.consume();
+        await transferKafkaConsumer.consume();
         break;
       }
       default: {

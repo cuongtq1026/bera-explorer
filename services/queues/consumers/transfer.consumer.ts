@@ -13,6 +13,11 @@ import { is0xHash } from "../../utils.ts";
 import { sendToBalanceTopic } from "../kafka/kafka.producer.ts";
 import { QueueTransactionAggregatorPayload } from "../producers";
 
+/**
+ * @deprecated
+ *
+ * No longer used due to design flaws
+ */
 export class TransferConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.TRANSFER.name;
 

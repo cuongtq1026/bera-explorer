@@ -11,6 +11,11 @@ import {
 import logger from "../../monitor/logger.ts";
 import { BalanceMessagePayload, topics } from "../kafka";
 
+/**
+ * @deprecated
+ *
+ * No longer used due to design flaws
+ */
 export class BalanceConsumer extends AbstractKafkaConsumer {
   protected topicName = topics.BALANCE.name;
 

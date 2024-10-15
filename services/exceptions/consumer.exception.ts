@@ -21,3 +21,11 @@ export class InvalidPayloadException extends ConsumerException {
     super(`Payload invalid. MessageId: ${messageId}`);
   }
 }
+
+// Throw to temporary stop the consuming job
+// and keep retrying until transaction receipt got indexed into the db
+export class KafkaReachedEndIndexedOffset extends ConsumerException {
+  constructor(topic: string, id: string) {
+    super(`No indexed data found. Topic: ${topic} | ID: ${id}`);
+  }
+}

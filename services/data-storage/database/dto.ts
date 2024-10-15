@@ -1,5 +1,6 @@
 import type {
   Balance,
+  BalanceHistory,
   Block,
   InternalTransaction,
   Log,
@@ -107,12 +108,13 @@ export type InternalTransactionDto = {
 export type TransferDto = {
   hash: Hash;
   blockNumber: bigint;
-  transactionHash: string;
+  transactionHash: Hash;
   from: string;
   to: string;
   tokenAddress: string;
   amount: bigint;
   logIndex: number;
+  transactionIndex: number;
   timestamp: Date;
 };
 export type BalanceDto = {
@@ -121,6 +123,35 @@ export type BalanceDto = {
   amount: string;
   transferHash: string;
   lastUpdatedAt: Date;
+};
+export type BalanceHistoryDto = {
+  hash: Hash;
+  blockNumber: bigint | number;
+  transactionIndex: number;
+  logIndex: number;
+  index: number;
+  transactionHash: Hash;
+  transferHash: string;
+  address: string;
+  tokenAddress: string;
+  amount: bigint;
+  createdAt: Date | string;
+};
+/**
+ * ERC20 Token
+ */
+export type TokenDto = {
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  totalSupply: bigint;
+};
+export type ContractDto = {
+  address: string;
+  name?: string | null;
+  deploymentTransactionHash: string;
+  deploymentBlockNumber: bigint | number;
 };
 
 export function toBlockDto(
@@ -287,7 +318,8 @@ export function toTransferDto(transfer: Transfer): TransferDto {
   return {
     hash: transfer.hash as Hash,
     blockNumber: transfer.blockNumber,
-    transactionHash: transfer.transactionHash,
+    transactionHash: transfer.transactionHash as Hash,
+    transactionIndex: transfer.transactionIndex,
     from: transfer.from,
     to: transfer.to,
     tokenAddress: transfer.tokenAddress,
@@ -304,5 +336,42 @@ export function toBalanceDto(balance: Balance): BalanceDto {
     amount: balance.amount.toString(),
     transferHash: balance.transferHash,
     lastUpdatedAt: balance.lastUpdatedAt,
+  };
+}
+
+export function toTokenDto(token: Token): TokenDto {
+  return {
+    address: token.address,
+    name: token.name,
+    symbol: token.symbol,
+    decimals: token.decimals,
+    totalSupply: BigInt(token.totalSupply.toFixed()),
+  };
+}
+
+export function toContractDto(contract: Contract): ContractDto {
+  return {
+    address: contract.address,
+    name: contract.name,
+    deploymentTransactionHash: contract.deploymentTransactionHash,
+    deploymentBlockNumber: contract.deploymentBlockNumber,
+  };
+}
+
+export function toBalanceHistoryDto(
+  balanceHistory: BalanceHistory,
+): BalanceHistoryDto {
+  return {
+    hash: balanceHistory.address as Hash,
+    blockNumber: balanceHistory.blockNumber,
+    transactionIndex: balanceHistory.transactionIndex,
+    logIndex: balanceHistory.logIndex,
+    index: balanceHistory.index,
+    transactionHash: balanceHistory.transactionHash as Hash,
+    transferHash: balanceHistory.transferHash,
+    address: balanceHistory.address,
+    tokenAddress: balanceHistory.tokenAddress,
+    amount: parseToBigInt(balanceHistory.amount.toFixed()),
+    createdAt: balanceHistory.createdAt,
   };
 }

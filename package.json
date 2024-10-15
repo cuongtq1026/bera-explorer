@@ -14,6 +14,10 @@
     "consume:internal-transaction": "bun run index.ts consume internal-transaction",
     "consume:transfer": "bun run index.ts consume transfer",
     "consume:balance": "bun run index.ts consume balance",
+    "consume:token": "bun run index.ts consume token",
+    "consume:block-kafka": "bun run index.ts consume block-kafka",
+    "consume:transaction-receipt-kafka": "bun run index.ts consume transaction-receipt-kafka",
+    "consume:transfer-kafka": "bun run index.ts consume transfer-kafka",
     "queue:blocks": "bun run index.ts queue blocks",
     "queue:transaction-aggregator": "bun run index.ts queue transaction-aggregator",
     "retry-queue-all": "bun run index.ts retry-queue-all"

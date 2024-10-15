@@ -30,6 +30,7 @@ model Block {
   transfer           Transfer[]
   log                Log[]
   transactionReceipt TransactionReceipt[]
+  Contract           Contract[]
 
   @@map("block")
 }
@@ -51,6 +52,7 @@ model Transaction {
   receipt              TransactionReceipt?
   internalTransactions InternalTransaction[]
   transfers            Transfer[]
+  Contract             Contract[]
 
   @@index([blockNumber])
   @@map("transaction")
@@ -139,9 +141,10 @@ model Transfer {
   logIndex         Int
   timestamp        DateTime
 
-  transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
-  block       Block       @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
-  balance     Balance[]
+  transaction    Transaction      @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
+  block          Block            @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
+  balance        Balance[]
+  BalanceHistory BalanceHistory[]
 
   @@index([from])
   @@index([to])
@@ -165,4 +168,52 @@ model Balance {
   @@index([address])
   @@index([tokenAddress])
   @@map("balance")
+}
+
+model BalanceHistory {
+  hash             String   @id
+  blockNumber      BigInt
+  transactionIndex Int
+  index            Int
+  logIndex         Int
+  transactionHash  String
+  transferHash     String
+  address          String
+  tokenAddress     String
+  amount           Decimal  @db.Decimal(78, 0)
+  createdAt        DateTime
+
+  transfer Transfer @relation(fields: [transferHash], references: [hash], onDelete: Cascade)
+
+  @@unique([transactionHash, transferHash, address])
+  @@index([address])
+  @@index([address, tokenAddress])
+  @@index([blockNumber, transactionIndex, logIndex]) //
+  @@index([transferHash])
+  @@index([createdAt])
+  @@index([amount, createdAt])
+  @@map("balance_history")
+}
+
+model Token {
+  address     String  @id
+  name        String
+  symbol      String
+  decimals    Int     @db.SmallInt
+  totalSupply Decimal @db.Decimal(78, 0)
+
+  @@map("token")
+}
+
+model Contract {
+  address String  @id
+  name    String?
+
+  // Track deployment details
+  deploymentTransaction     Transaction @relation(fields: [deploymentTransactionHash], references: [hash])
+  deploymentTransactionHash String
+  deploymentBlock           Block       @relation(fields: [deploymentBlockNumber], references: [number])
+  deploymentBlockNumber     BigInt
+
+  @@map("contract")
 }

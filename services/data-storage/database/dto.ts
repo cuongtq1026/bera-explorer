@@ -1,3 +1,4 @@
+import type { SwapCreateInput } from "@database/repositories/swap.repository.ts";
 import type { TransferCreateInput } from "@database/repositories/transfer.repository.ts";
 import type {
   Balance,
@@ -158,12 +159,33 @@ export type ContractDto = {
   deploymentTransactionHash: string;
   deploymentBlockNumber: bigint | number;
 };
+export type PriceDto = {
+  tokenAddress: string;
+  transactionHash: string;
+  usd_price: bigint;
+  createdAt: Date;
+};
 
-export function logToTransferDto(
+export type SwapDto = {
+  blockNumber: bigint | number;
+  transactionHash: string;
+  dex: string;
+  from: string;
+  to: string;
+  fromAmount: bigint;
+  toAmount: bigint;
+  createdAt: Date;
+};
+
+export function decodeTransferLog(
   log: LogDto,
   topics: LogTopicDto[],
-  createdAt: Date,
-): TransferCreateInput | null {
+): {
+  tokenAddress: Hash;
+  from: Hash;
+  to: Hash;
+  value: bigint;
+} | null {
   const signature = topics[0].topic as Hex;
   if (signature !== ERC20_TRANSFER_SIGNATURE) {
     return null;
@@ -175,11 +197,29 @@ export function logToTransferDto(
     data: log.data as Hash,
     topics: [signature, ...logTopics],
   });
+
+  return {
+    tokenAddress: log.address as Hash,
+    from: decodedTopics.args.from.toLowerCase() as Hash,
+    to: decodedTopics.args.to.toLowerCase() as Hash,
+    value: decodedTopics.args.value,
+  };
+}
+
+export function logToTransferDto(
+  log: LogDto,
+  topics: LogTopicDto[],
+  createdAt: Date,
+): TransferCreateInput | null {
+  const decodedTopics = decodeTransferLog(log, topics);
+  if (decodedTopics == null) {
+    return null;
+  }
   return {
     hash: log.logHash,
-    from: decodedTopics.args.from.toLowerCase(),
-    to: decodedTopics.args.to.toLowerCase(),
-    amount: decodedTopics.args.value.toString(),
+    from: decodedTopics.from,
+    to: decodedTopics.to,
+    amount: decodedTopics.value.toString(),
     tokenAddress: log.address,
     logIndex: log.index,
     timestamp: createdAt,
@@ -413,5 +453,18 @@ export function toBalanceHistoryDto(
     tokenAddress: balanceHistory.tokenAddress,
     amount: parseToBigInt(balanceHistory.amount.toFixed()),
     createdAt: balanceHistory.createdAt,
+  };
+}
+
+export function dtoToSwapCreateInput(swapDto: SwapDto): SwapCreateInput {
+  return {
+    blockNumber: swapDto.blockNumber,
+    transactionHash: swapDto.transactionHash,
+    dex: swapDto.dex,
+    from: swapDto.from,
+    to: swapDto.to,
+    fromAmount: swapDto.fromAmount.toString(),
+    toAmount: swapDto.toAmount.toString(),
+    createdAt: swapDto.createdAt,
   };
 }

@@ -25,7 +25,7 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
   protected async handler(
     eachMessagePayload: EachMessagePayload,
   ): Promise<void> {
-    const messageId = `${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
+    const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
     const rawContent = eachMessagePayload.message.value?.toString();
     logger.info(
@@ -81,7 +81,11 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
     }
 
     // TODO: Wait until data indexed
-    throw new KafkaReachedEndIndexedOffset(eachMessagePayload.topic, hash);
+    throw new KafkaReachedEndIndexedOffset(
+      eachMessagePayload.topic,
+      this.consumerName,
+      hash,
+    );
   }
 
   protected async onFinish(
@@ -94,7 +98,7 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
       return super.onFinish(eachMessagePayload, data);
     }
 
-    const messageId = `${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
+    const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
     // Send to log topic
     await sendToLogTopic(logs);

@@ -18,6 +18,7 @@
     "consume:transaction-receipt-kafka": "bun run index.ts consume transaction-receipt-kafka",
     "consume:log-kafka": "bun run index.ts consume log-kafka",
     "consume:transfer-kafka": "bun run index.ts consume transfer-kafka",
+    "consume:swap-kafka": "bun run index.ts consume swap-kafka",
     "queue:blocks": "bun run index.ts queue blocks",
     "queue:transaction-aggregator": "bun run index.ts queue transaction-aggregator",
     "retry-queue-all": "bun run index.ts retry-queue-all"

@@ -42,7 +42,7 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
     eachMessagePayload: EachMessagePayload,
     _data: any,
   ): Promise<void> {
-    const messageId = `${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
+    const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
     logger.info(`[MessageId: ${messageId}] Finished.`);
   }

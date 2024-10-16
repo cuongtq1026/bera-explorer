@@ -23,3 +23,7 @@ export function shortenEthAddress(address: string | null): string {
 
   return `${start}...${end}`;
 }
+
+export function getSignature(input: string) {
+  return input.slice(0, 10);
+}

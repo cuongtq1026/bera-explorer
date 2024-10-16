@@ -31,6 +31,7 @@ model Block {
   log                Log[]
   transactionReceipt TransactionReceipt[]
   Contract           Contract[]
+  Swap               Swap[]
 
   @@map("block")
 }
@@ -53,6 +54,7 @@ model Transaction {
   internalTransactions InternalTransaction[]
   transfers            Transfer[]
   Contract             Contract[]
+  Swap                 Swap[]
 
   @@index([blockNumber])
   @@map("transaction")
@@ -201,11 +203,12 @@ model BalanceHistory {
 }
 
 model Token {
-  address     String  @id
+  address     String       @id
   name        String
   symbol      String
-  decimals    Int     @db.SmallInt
-  totalSupply Decimal @db.Decimal(78, 0)
+  decimals    Int          @db.SmallInt
+  totalSupply Decimal      @db.Decimal(78, 0)
+  Erc20Price  Erc20Price[]
 
   @@map("token")
 }
@@ -221,4 +224,38 @@ model Contract {
   deploymentBlockNumber     BigInt
 
   @@map("contract")
+}
+
+model Swap {
+  id              BigInt   @id @default(autoincrement())
+  blockNumber     BigInt
+  transactionHash String
+  from            String
+  to              String
+  dex             String
+  fromAmount      Decimal  @db.Decimal(78, 0)
+  toAmount        Decimal  @db.Decimal(78, 0)
+  createdAt       DateTime
+
+  block       Block       @relation(fields: [blockNumber], references: [number])
+  transaction Transaction @relation(fields: [transactionHash], references: [hash])
+
+  @@index([dex])
+  @@index([from])
+  @@index([to])
+  @@map("swap")
+}
+
+model Erc20Price {
+  tokenAddress    String
+  transactionHash String
+  usd_price       Decimal  @db.Decimal(78, 0)
+  createdAt       DateTime
+
+  token Token? @relation(fields: [tokenAddress], references: [address])
+
+  @@unique([tokenAddress, transactionHash])
+  @@index([transactionHash])
+  @@index([tokenAddress, createdAt])
+  @@map("erc20_price")
 }

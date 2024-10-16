@@ -9,6 +9,7 @@ import {
 import { BalanceProcessor } from "@processors/balance.processor.ts";
 import { BlockProcessor } from "@processors/block.processor.ts";
 import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
+import { SwapProcessor } from "@processors/swap.processor.ts";
 import { TokenProcessor } from "@processors/token.processor.ts";
 import { TransactionProcessor } from "@processors/transaction.processor.ts";
 import { TransactionReceiptProcessor } from "@processors/transaction-receipt.processor.ts";
@@ -18,10 +19,11 @@ import type { Hash } from "viem";
 import { queues } from "./services/config";
 import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
+import { BalanceKafkaConsumer } from "./services/queues/kafka/consumers/balance.kafka.consumer.ts";
+import { LogKafkaConsumer } from "./services/queues/kafka/consumers/log.kafka.consumer.ts";
+import { SwapKafkaConsumer } from "./services/queues/kafka/consumers/swap.kafka.consumer.ts";
 import { TransactionKafkaConsumer } from "./services/queues/kafka/consumers/transaction.kafka.consumer.ts";
 import { TransferKafkaConsumer } from "./services/queues/kafka/consumers/transfer.kafka.consumer.ts";
-import { LogKafkaConsumer } from "./services/queues/kafka/consumers/log.kafka.consumer.ts";
-import { BalanceKafkaConsumer } from "./services/queues/kafka/consumers/balance.kafka.consumer.ts";
 import { BlockConsumer } from "./services/queues/rabbitmq/consumers/block.consumer.ts";
 import { DlxConsumer } from "./services/queues/rabbitmq/consumers/dlx.consumer.ts";
 import { InternalTransactionConsumer } from "./services/queues/rabbitmq/consumers/internal-transaction.consumer.ts";
@@ -144,6 +146,19 @@ switch (command) {
     }
 
     const processor = new TokenProcessor();
+
+    await processor.process(transactionHash);
+    break;
+  }
+  case "swap": {
+    const transactionHash = restArgs[0];
+
+    if (transactionHash == null || !is0xHash(transactionHash)) {
+      logger.info("Invalid transaction hash.");
+      break;
+    }
+
+    const processor = new SwapProcessor();
 
     await processor.process(transactionHash);
     break;
@@ -283,6 +298,14 @@ switch (command) {
         await tokenConsumer.consume();
         break;
       }
+      case "swap-kafka": {
+        setupPrometheus();
+
+        const consumer = new SwapKafkaConsumer();
+
+        await consumer.consume();
+        break;
+      }
       case "all": {
         setupPrometheus();
 
@@ -291,10 +314,10 @@ switch (command) {
         const transactionReceiptConsumer = new TransactionReceiptConsumer();
         const internalTransactionConsumer = new InternalTransactionConsumer();
         const blockKafkaConsumer = new TransactionKafkaConsumer();
-        const transactionReceiptKafkaConsumer =
-          new LogKafkaConsumer();
+        const transactionReceiptKafkaConsumer = new LogKafkaConsumer();
         const logKafkaConsumer = new TransferKafkaConsumer();
         const transferKafkaConsumer = new BalanceKafkaConsumer();
+        const swapKafkaConsumer = new SwapKafkaConsumer();
 
         await blockConsumer.consume();
         await transactionConsumer.consume();
@@ -304,6 +327,7 @@ switch (command) {
         await transactionReceiptKafkaConsumer.consume();
         await logKafkaConsumer.consume();
         await transferKafkaConsumer.consume();
+        await swapKafkaConsumer.consume();
         break;
       }
       default: {

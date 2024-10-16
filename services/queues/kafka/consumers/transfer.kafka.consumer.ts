@@ -26,7 +26,7 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
   protected async handler(
     eachMessagePayload: EachMessagePayload,
   ): Promise<void> {
-    const messageId = `${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
+    const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
     const rawContent = eachMessagePayload.message.value?.toString();
     logger.info(
@@ -90,7 +90,7 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
       return super.onFinish(eachMessagePayload, data);
     }
 
-    const messageId = `${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
+    const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
     // Send to log topic
     await sendToTransferTopic([transferHash]);

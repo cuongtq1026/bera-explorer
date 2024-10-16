@@ -57,6 +57,9 @@ export async function findTransaction(
           ? {
               include: {
                 logs: {
+                  include: {
+                    topics: true,
+                  },
                   orderBy: {
                     index: "asc",
                   },

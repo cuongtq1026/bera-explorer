@@ -1,4 +1,5 @@
-import { TransferKafkaProcessor } from "@processors/transfer-kafka.processor.ts";
+import prisma from "@database/prisma.ts";
+import { LogProcessor } from "@processors/log.processor.ts";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import type { EachMessagePayload } from "kafkajs";
@@ -9,12 +10,13 @@ import {
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
-import { topics, TransferMessagePayload } from "../index.ts";
+import { LogMessagePayload, topics } from "../index.ts";
+import { sendToTransferTopic } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class TransferKafkaConsumer extends AbstractKafkaConsumer {
-  protected topicName = topics.TRANSFER.name;
-  protected consumerName = "transfer";
+  protected topicName = topics.LOG.name;
+  protected consumerName = "log";
 
   constructor() {
     super();
@@ -27,7 +29,7 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
 
     const rawContent = eachMessagePayload.message.value?.toString();
     logger.info(
-      `[MessageId: ${messageId}] TransferKafkaConsumer message rawContent: ${rawContent}.`,
+      `[MessageId: ${messageId}] LogKafkaConsumer message rawContent: ${rawContent}.`,
     );
 
     if (!rawContent) {
@@ -36,7 +38,7 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
 
     // transform
     const contentInstance = plainToInstance(
-      TransferMessagePayload,
+      LogMessagePayload,
       JSON.parse(rawContent),
     );
 
@@ -46,10 +48,59 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
       throw new InvalidPayloadException(messageId);
     }
 
-    const { transferHash } = contentInstance;
+    const { logHash } = contentInstance;
 
-    // process
-    const transferProcessor = new TransferKafkaProcessor();
-    await transferProcessor.process(transferHash as Hash);
+    // process from db if already existed
+    const logDb = await prisma.log.findUnique({
+      where: {
+        logHash,
+      },
+      include: {
+        transfer: {
+          select: {
+            hash: true,
+          },
+        },
+      },
+    });
+
+    if (logDb == null) {
+      throw Error("Log is not found.");
+    }
+    // if transfer exist, finish
+    if (logDb.transfer) {
+      await this.onFinish(eachMessagePayload, {
+        transferHash: logDb.transfer ? logDb.transfer.hash : null,
+      });
+      return;
+    }
+
+    // if transfer doesn't exist, process to save it
+    const processor = new LogProcessor();
+    const { transferHash } = await processor.process(logHash as Hash);
+
+    await this.onFinish(eachMessagePayload, {
+      transferHash,
+    });
+  }
+
+  protected async onFinish(
+    eachMessagePayload: EachMessagePayload,
+    data: { transferHash: string | null },
+  ): Promise<void> {
+    const { transferHash } = data;
+
+    if (!transferHash) {
+      return super.onFinish(eachMessagePayload, data);
+    }
+
+    const messageId = `${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
+
+    // Send to log topic
+    await sendToTransferTopic([transferHash]);
+    logger.info(
+      `[MessageId: ${messageId}] Sent ${transferHash} message to transfer topic.`,
+    );
+    return super.onFinish(eachMessagePayload, data);
   }
 }

@@ -14,7 +14,7 @@ import { BlockMessagePayload, topics } from "../index.ts";
 import { sendToTransactionTopic } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
-export class BlockKafkaConsumer extends AbstractKafkaConsumer {
+export class TransactionKafkaConsumer extends AbstractKafkaConsumer {
   protected topicName = topics.BLOCK.name;
   protected consumerName = "block";
 

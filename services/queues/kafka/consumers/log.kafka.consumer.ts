@@ -1,5 +1,4 @@
 import prisma from "@database/prisma.ts";
-import { LogProcessor } from "@processors/log.processor.ts";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import type { EachMessagePayload } from "kafkajs";
@@ -7,16 +6,17 @@ import type { Hash } from "viem";
 
 import {
   InvalidPayloadException,
+  KafkaReachedEndIndexedOffset,
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
-import { LogMessagePayload, topics } from "../index.ts";
-import { sendToTransferTopic } from "../producers";
+import { topics, TransactionMessagePayload } from "../index.ts";
+import { sendToLogTopic } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class LogKafkaConsumer extends AbstractKafkaConsumer {
-  protected topicName = topics.LOG.name;
-  protected consumerName = "log";
+  protected topicName = topics.TRANSACTION.name;
+  protected consumerName = "receipt";
 
   constructor() {
     super();
@@ -29,7 +29,7 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
 
     const rawContent = eachMessagePayload.message.value?.toString();
     logger.info(
-      `[MessageId: ${messageId}] LogKafkaConsumer message rawContent: ${rawContent}.`,
+      `[MessageId: ${messageId}] TransactionReceiptKafkaConsumer message rawContent: ${rawContent}.`,
     );
 
     if (!rawContent) {
@@ -38,7 +38,7 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
 
     // transform
     const contentInstance = plainToInstance(
-      LogMessagePayload,
+      TransactionMessagePayload,
       JSON.parse(rawContent),
     );
 
@@ -48,58 +48,58 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
       throw new InvalidPayloadException(messageId);
     }
 
-    const { logHash } = contentInstance;
-
+    const { hash } = contentInstance;
     // process from db if already existed
-    const logDb = await prisma.log.findUnique({
+    const transactionDb = await prisma.transaction.findUnique({
       where: {
-        logHash,
+        hash,
       },
       include: {
-        transfer: {
+        receipt: {
           select: {
-            hash: true,
+            transactionHash: true,
+            logs: {
+              select: {
+                logHash: true,
+              },
+              orderBy: [
+                {
+                  index: "asc",
+                },
+              ],
+            },
           },
         },
       },
     });
-
-    if (logDb == null) {
-      throw Error("Log is not found.");
-    }
-    // if transfer exist, finish
-    if (logDb.transfer) {
+    if (transactionDb && transactionDb.receipt) {
       await this.onFinish(eachMessagePayload, {
-        transferHash: logDb.transfer ? logDb.transfer.hash : null,
+        transactionHash: hash,
+        logs: transactionDb.receipt.logs.map((t) => t.logHash as Hash),
       });
       return;
     }
 
-    // if transfer doesn't exist, process to save it
-    const processor = new LogProcessor();
-    const { transferHash } = await processor.process(logHash as Hash);
-
-    await this.onFinish(eachMessagePayload, {
-      transferHash,
-    });
+    // TODO: Wait until data indexed
+    throw new KafkaReachedEndIndexedOffset(eachMessagePayload.topic, hash);
   }
 
   protected async onFinish(
     eachMessagePayload: EachMessagePayload,
-    data: { transferHash: string | null },
+    data: { transactionHash: string; logs: string[] },
   ): Promise<void> {
-    const { transferHash } = data;
+    const { logs } = data;
 
-    if (!transferHash) {
+    if (!logs.length) {
       return super.onFinish(eachMessagePayload, data);
     }
 
     const messageId = `${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
     // Send to log topic
-    await sendToTransferTopic([transferHash]);
+    await sendToLogTopic(logs);
     logger.info(
-      `[MessageId: ${messageId}] Sent ${transferHash} message to transfer topic.`,
+      `[MessageId: ${messageId}] Sent ${logs.length} messages to log topic.`,
     );
     return super.onFinish(eachMessagePayload, data);
   }

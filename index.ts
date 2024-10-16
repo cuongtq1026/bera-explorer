@@ -18,10 +18,10 @@ import type { Hash } from "viem";
 import { queues } from "./services/config";
 import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
-import { BlockKafkaConsumer } from "./services/queues/kafka/consumers/block.kafka.consumer.ts";
-import { LogKafkaConsumer } from "./services/queues/kafka/consumers/log.kafka.consumer.ts";
-import { TransactionReceiptKafkaConsumer } from "./services/queues/kafka/consumers/transaction-receipt.kafka.consumer.ts";
+import { TransactionKafkaConsumer } from "./services/queues/kafka/consumers/transaction.kafka.consumer.ts";
 import { TransferKafkaConsumer } from "./services/queues/kafka/consumers/transfer.kafka.consumer.ts";
+import { LogKafkaConsumer } from "./services/queues/kafka/consumers/log.kafka.consumer.ts";
+import { BalanceKafkaConsumer } from "./services/queues/kafka/consumers/balance.kafka.consumer.ts";
 import { BlockConsumer } from "./services/queues/rabbitmq/consumers/block.consumer.ts";
 import { DlxConsumer } from "./services/queues/rabbitmq/consumers/dlx.consumer.ts";
 import { InternalTransactionConsumer } from "./services/queues/rabbitmq/consumers/internal-transaction.consumer.ts";
@@ -214,7 +214,7 @@ switch (command) {
       case "block-kafka": {
         setupPrometheus();
 
-        const consumer = new BlockKafkaConsumer();
+        const consumer = new TransactionKafkaConsumer();
 
         await consumer.consume();
         break;
@@ -222,7 +222,7 @@ switch (command) {
       case "transaction-receipt-kafka": {
         setupPrometheus();
 
-        const consumer = new TransactionReceiptKafkaConsumer();
+        const consumer = new LogKafkaConsumer();
 
         await consumer.consume();
         break;
@@ -262,7 +262,7 @@ switch (command) {
       case "transfer-kafka": {
         setupPrometheus();
 
-        const consumer = new TransferKafkaConsumer();
+        const consumer = new BalanceKafkaConsumer();
 
         await consumer.consume();
         break;
@@ -270,7 +270,7 @@ switch (command) {
       case "log-kafka": {
         setupPrometheus();
 
-        const consumer = new LogKafkaConsumer();
+        const consumer = new TransferKafkaConsumer();
 
         await consumer.consume();
         break;
@@ -290,11 +290,11 @@ switch (command) {
         const transactionConsumer = new TransactionConsumer();
         const transactionReceiptConsumer = new TransactionReceiptConsumer();
         const internalTransactionConsumer = new InternalTransactionConsumer();
-        const blockKafkaConsumer = new BlockKafkaConsumer();
+        const blockKafkaConsumer = new TransactionKafkaConsumer();
         const transactionReceiptKafkaConsumer =
-          new TransactionReceiptKafkaConsumer();
-        const logKafkaConsumer = new LogKafkaConsumer();
-        const transferKafkaConsumer = new TransferKafkaConsumer();
+          new LogKafkaConsumer();
+        const logKafkaConsumer = new TransferKafkaConsumer();
+        const transferKafkaConsumer = new BalanceKafkaConsumer();
 
         await blockConsumer.consume();
         await transactionConsumer.consume();

@@ -18,7 +18,7 @@ type DeleteArgType = {
 };
 type CreateArgType = [BalanceHistoryCreateInput, BalanceHistoryCreateInput];
 
-export class TransferKafkaProcessor
+export class BalanceKafkaProcessor
   implements
     InterfaceProcessor<
       Hash,
@@ -100,22 +100,22 @@ export class TransferKafkaProcessor
   }
 
   async process(id: Hash): Promise<void> {
-    logger.info("[TransferKafkaProcessor] processing: " + id);
+    logger.info("[BalanceKafkaProcessor] processing: " + id);
 
     const obj = await this.get(id);
 
     const input = await this.toInput(obj);
 
     if (!input) {
-      throw Error("[TransferKafkaProcessor] input is null");
+      throw Error("[BalanceKafkaProcessor] input is null");
     }
 
     await this.deleteFromDb({
       transactionHash: obj.transactionHash,
       transferHash: obj.hash,
     });
-    logger.info(`[TransferKafkaProcessor] deleted ${id}`);
+    logger.info(`[BalanceKafkaProcessor] deleted ${id}`);
     await this.createInDb(input);
-    logger.info(`[TransferKafkaProcessor] created ${id}`);
+    logger.info(`[BalanceKafkaProcessor] created ${id}`);
   }
 }

@@ -1,14 +1,14 @@
-import { AbstractRabbitMQConsumer } from "@consumers/rabbitmq.consumer.abstract.ts";
 import { BlockProcessor } from "@processors/block.processor.ts";
 import type { ConsumeMessage } from "amqplib";
 import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
 import type { Hash } from "viem";
 
-import { queues } from "../../config";
-import logger from "../../monitor/logger.ts";
+import { queues } from "../../../config";
+import logger from "../../../monitor/logger.ts";
 import { QueueBlockPayload, QueueTransactionPayload } from "../producers";
 import mqConnection from "../rabbitmq.connection.ts";
+import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
 
 export class BlockConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.BLOCK_QUEUE.name;

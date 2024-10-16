@@ -1,19 +1,19 @@
-import { AbstractRabbitMQConsumer } from "@consumers/rabbitmq.consumer.abstract.ts";
 import { TransactionProcessor } from "@processors/transaction.processor.ts";
 import type { ConsumeMessage } from "amqplib";
 import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
 import type { Hash } from "viem";
 
-import { queues } from "../../config";
-import logger from "../../monitor/logger.ts";
-import { is0xHash } from "../../utils.ts";
+import { queues } from "../../../config";
+import logger from "../../../monitor/logger.ts";
+import { is0xHash } from "../../../utils.ts";
 import {
   QueueInternalTransactionPayload,
   QueueTransactionPayload,
   QueueTransactionReceiptPayload,
 } from "../producers";
 import mqConnection from "../rabbitmq.connection.ts";
+import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
 
 export class TransactionConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.TRANSACTION_QUEUE.name;

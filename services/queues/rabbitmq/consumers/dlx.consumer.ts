@@ -1,9 +1,9 @@
-import { AbstractRabbitMQConsumer } from "@consumers/rabbitmq.consumer.abstract.ts";
 import type { ConsumeMessage } from "amqplib";
 
-import { DEAD_LETTER_QUEUE_NAME } from "../../config";
-import logger from "../../monitor/logger.ts";
+import { DEAD_LETTER_QUEUE_NAME } from "../../../config";
+import logger from "../../../monitor/logger.ts";
 import mqConnection from "../rabbitmq.connection.ts";
+import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
 
 export class DlxConsumer extends AbstractRabbitMQConsumer {
   protected queueName: string = DEAD_LETTER_QUEUE_NAME;

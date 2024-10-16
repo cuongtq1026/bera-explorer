@@ -4,8 +4,8 @@ import {
   topics,
   TransactionMessagePayload,
   TransferMessagePayload,
-} from "./index.ts";
-import kafkaConnection from "./kafka.connection.ts";
+} from "../index.ts";
+import kafkaConnection from "../kafka.connection.ts";
 
 export async function sendToBalanceTopic(transferHash: string) {
   return kafkaConnection.send(topics.BALANCE.name, [

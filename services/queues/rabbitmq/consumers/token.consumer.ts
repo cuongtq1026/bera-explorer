@@ -1,13 +1,13 @@
-import { AbstractRabbitMQConsumer } from "@consumers/rabbitmq.consumer.abstract.ts";
 import { TokenProcessor } from "@processors/token.processor.ts";
 import type { ConsumeMessage } from "amqplib";
 import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
 
-import { queues } from "../../config";
-import logger from "../../monitor/logger.ts";
-import { is0xHash } from "../../utils.ts";
+import { queues } from "../../../config";
+import logger from "../../../monitor/logger.ts";
+import { is0xHash } from "../../../utils.ts";
 import { QueueTransactionAggregatorPayload } from "../producers";
+import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
 
 export class TokenConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.TRANSFER.name;

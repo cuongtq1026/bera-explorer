@@ -1,13 +1,13 @@
-import { AbstractRabbitMQConsumer } from "@consumers/rabbitmq.consumer.abstract.ts";
 import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
 import type { ConsumeMessage } from "amqplib";
 import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
 
-import { queues } from "../../config";
-import logger from "../../monitor/logger.ts";
-import { is0xHash } from "../../utils.ts";
+import { queues } from "../../../config";
+import logger from "../../../monitor/logger.ts";
+import { is0xHash } from "../../../utils.ts";
 import { QueueInternalTransactionPayload } from "../producers";
+import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
 
 export class InternalTransactionConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.INTERNAL_TRANSACTION_QUEUE.name;

@@ -1,14 +1,3 @@
-import { BalanceConsumer } from "@consumers/balance.consumer.ts";
-import { BlockConsumer } from "@consumers/block.consumer.ts";
-import { BlockKafkaConsumer } from "@consumers/block.kafka.consumer.ts";
-import { DlxConsumer } from "@consumers/dlx.consumer.ts";
-import { InternalTransactionConsumer } from "@consumers/internal-transaction.consumer.ts";
-import { TokenConsumer } from "@consumers/token.consumer.ts";
-import { TransactionConsumer } from "@consumers/transaction.consumer.ts";
-import { TransactionReceiptConsumer } from "@consumers/transaction-receipt.consumer.ts";
-import { TransactionReceiptKafkaConsumer } from "@consumers/transaction-receipt.kafka.consumer.ts";
-import { TransferConsumer } from "@consumers/transfer.consumer.ts";
-import { TransferKafkaConsumer } from "@consumers/transfer.kafka.consumer.ts";
 import {
   countTransactions,
   findTransactions,
@@ -29,14 +18,25 @@ import type { Hash } from "viem";
 import { queues } from "./services/config";
 import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
+import { BalanceConsumer } from "./services/queues/kafka/consumers/balance.consumer.ts";
+import { BlockKafkaConsumer } from "./services/queues/kafka/consumers/block.kafka.consumer.ts";
+import { TransactionReceiptKafkaConsumer } from "./services/queues/kafka/consumers/transaction-receipt.kafka.consumer.ts";
+import { TransferKafkaConsumer } from "./services/queues/kafka/consumers/transfer.kafka.consumer.ts";
+import { BlockConsumer } from "./services/queues/rabbitmq/consumers/block.consumer.ts";
+import { DlxConsumer } from "./services/queues/rabbitmq/consumers/dlx.consumer.ts";
+import { InternalTransactionConsumer } from "./services/queues/rabbitmq/consumers/internal-transaction.consumer.ts";
+import { TokenConsumer } from "./services/queues/rabbitmq/consumers/token.consumer.ts";
+import { TransactionConsumer } from "./services/queues/rabbitmq/consumers/transaction.consumer.ts";
+import { TransactionReceiptConsumer } from "./services/queues/rabbitmq/consumers/transaction-receipt.consumer.ts";
+import { TransferConsumer } from "./services/queues/rabbitmq/consumers/transfer.consumer.ts";
 import {
   queueBlock,
   QueueInternalTransactionPayload,
   queueTransaction,
   queueTransactionAggregator,
   QueueTransactionReceiptPayload,
-} from "./services/queues/producers";
-import mqConnection from "./services/queues/rabbitmq.connection.ts";
+} from "./services/queues/rabbitmq/producers";
+import mqConnection from "./services/queues/rabbitmq/rabbitmq.connection.ts";
 import { is0xHash, parseToBigInt } from "./services/utils.ts";
 
 /**

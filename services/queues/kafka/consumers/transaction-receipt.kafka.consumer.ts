@@ -1,5 +1,4 @@
 import prisma from "@database/prisma.ts";
-import { BlockProcessor } from "@processors/block.processor.ts";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import type { EachMessagePayload } from "kafkajs";
@@ -9,14 +8,14 @@ import {
   InvalidPayloadException,
   KafkaReachedEndIndexedOffset,
   PayloadNotFoundException,
-} from "../../exceptions/consumer.exception.ts";
-import logger from "../../monitor/logger.ts";
-import { BlockMessagePayload, topics } from "../kafka";
-import { sendToTransactionTopic } from "../kafka/kafka.producer.ts";
+} from "../../../exceptions/consumer.exception.ts";
+import logger from "../../../monitor/logger.ts";
+import { topics, TransactionMessagePayload } from "../index.ts";
+import { sendToTransferTopic } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
-export class BlockKafkaConsumer extends AbstractKafkaConsumer {
-  protected topicName = topics.BLOCK.name;
+export class TransactionReceiptKafkaConsumer extends AbstractKafkaConsumer {
+  protected topicName = topics.TRANSACTION.name;
 
   constructor() {
     super();
@@ -29,7 +28,7 @@ export class BlockKafkaConsumer extends AbstractKafkaConsumer {
 
     const rawContent = eachMessagePayload.message.value?.toString();
     logger.info(
-      `[MessageId: ${messageId}] BlockKafkaConsumer message rawContent: ${rawContent}.`,
+      `[MessageId: ${messageId}] TransactionReceiptKafkaConsumer message rawContent: ${rawContent}.`,
     );
 
     if (!rawContent) {
@@ -38,7 +37,7 @@ export class BlockKafkaConsumer extends AbstractKafkaConsumer {
 
     // transform
     const contentInstance = plainToInstance(
-      BlockMessagePayload,
+      TransactionMessagePayload,
       JSON.parse(rawContent),
     );
 
@@ -48,50 +47,55 @@ export class BlockKafkaConsumer extends AbstractKafkaConsumer {
       throw new InvalidPayloadException(messageId);
     }
 
-    const { blockNumber } = contentInstance;
+    const { hash } = contentInstance;
     // process from db if already existed
-    const dbBlock = await prisma.block.findUnique({
+    const transactionDb = await prisma.transaction.findUnique({
       where: {
-        number: blockNumber,
+        hash,
       },
       include: {
-        transactions: {
+        receipt: {
+          select: {
+            transactionHash: true,
+          },
+        },
+        transfers: {
           select: {
             hash: true,
+            logIndex: true,
           },
           orderBy: [
             {
-              transactionIndex: "asc",
+              logIndex: "asc",
             },
           ],
         },
       },
     });
-    if (dbBlock) {
+    if (transactionDb && transactionDb.receipt) {
       await this.onFinish(eachMessagePayload, {
-        blockNumber,
-        transactions: dbBlock.transactions.map((t) => t.hash as Hash),
+        transactionHash: hash,
+        transfers: transactionDb.transfers.map((t) => t.hash as Hash),
       });
       return;
     }
 
-    throw new KafkaReachedEndIndexedOffset(
-      eachMessagePayload.topic,
-      blockNumber.toString(),
-    );
+    // Throw to temporary stop the consuming job
+    // and keep retrying until transaction receipt got indexed into the db
+    throw new KafkaReachedEndIndexedOffset(eachMessagePayload.topic, hash);
   }
 
   protected async onFinish(
     eachMessagePayload: EachMessagePayload,
-    data: { blockNumber: number; transactions: Hash[] },
+    data: { transactionHash: string; transfers: string[] },
   ): Promise<void> {
     const messageId = `${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
     // Send to transaction topic
-    const { transactions } = data;
-    await sendToTransactionTopic(transactions);
+    const { transfers } = data;
+    await sendToTransferTopic(transfers);
     logger.info(
-      `[MessageId: ${messageId}] Sent ${transactions.length} messages to transaction topic.`,
+      `[MessageId: ${messageId}] Sent ${transfers.length} messages to transfer topic.`,
     );
 
     return super.onFinish(eachMessagePayload, data);

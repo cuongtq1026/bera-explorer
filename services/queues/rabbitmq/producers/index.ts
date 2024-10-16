@@ -5,8 +5,8 @@ import {
   AGGREGATOR_TRANSACTION_ROUTING_KEY,
   aggregatorExchangeName,
   queues,
-} from "../../config";
-import logger from "../../monitor/logger.ts";
+} from "../../../config";
+import logger from "../../../monitor/logger.ts";
 import mqConnection from "../rabbitmq.connection.ts";
 
 export class QueueBlockPayload {

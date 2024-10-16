@@ -1,8 +1,8 @@
-import { AbstractConsumer } from "@consumers/consumer.abstract.ts";
 import type { ConsumeMessage } from "amqplib";
 
-import logger from "../../monitor/logger.ts";
-import { queueMessageProcessedCounter } from "../../monitor/prometheus.ts";
+import logger from "../../../monitor/logger.ts";
+import { queueMessageProcessedCounter } from "../../../monitor/prometheus.ts";
+import { AbstractConsumer } from "../../consumer.abstract.ts";
 import { DELAY } from "../index.ts";
 import mqConnection from "../rabbitmq.connection.ts";
 

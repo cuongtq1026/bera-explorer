@@ -8,14 +8,14 @@ import {
   InvalidPayloadException,
   KafkaReachedEndIndexedOffset,
   PayloadNotFoundException,
-} from "../../exceptions/consumer.exception.ts";
-import logger from "../../monitor/logger.ts";
-import { topics, TransactionMessagePayload } from "../kafka";
-import { sendToTransferTopic } from "../kafka/kafka.producer.ts";
+} from "../../../exceptions/consumer.exception.ts";
+import logger from "../../../monitor/logger.ts";
+import { BlockMessagePayload, topics } from "../index.ts";
+import { sendToTransactionTopic } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
-export class TransactionReceiptKafkaConsumer extends AbstractKafkaConsumer {
-  protected topicName = topics.TRANSACTION.name;
+export class BlockKafkaConsumer extends AbstractKafkaConsumer {
+  protected topicName = topics.BLOCK.name;
 
   constructor() {
     super();
@@ -28,7 +28,7 @@ export class TransactionReceiptKafkaConsumer extends AbstractKafkaConsumer {
 
     const rawContent = eachMessagePayload.message.value?.toString();
     logger.info(
-      `[MessageId: ${messageId}] TransactionReceiptKafkaConsumer message rawContent: ${rawContent}.`,
+      `[MessageId: ${messageId}] BlockKafkaConsumer message rawContent: ${rawContent}.`,
     );
 
     if (!rawContent) {
@@ -37,7 +37,7 @@ export class TransactionReceiptKafkaConsumer extends AbstractKafkaConsumer {
 
     // transform
     const contentInstance = plainToInstance(
-      TransactionMessagePayload,
+      BlockMessagePayload,
       JSON.parse(rawContent),
     );
 
@@ -47,55 +47,50 @@ export class TransactionReceiptKafkaConsumer extends AbstractKafkaConsumer {
       throw new InvalidPayloadException(messageId);
     }
 
-    const { hash } = contentInstance;
+    const { blockNumber } = contentInstance;
     // process from db if already existed
-    const transactionDb = await prisma.transaction.findUnique({
+    const dbBlock = await prisma.block.findUnique({
       where: {
-        hash,
+        number: blockNumber,
       },
       include: {
-        receipt: {
-          select: {
-            transactionHash: true,
-          },
-        },
-        transfers: {
+        transactions: {
           select: {
             hash: true,
-            logIndex: true,
           },
           orderBy: [
             {
-              logIndex: "asc",
+              transactionIndex: "asc",
             },
           ],
         },
       },
     });
-    if (transactionDb && transactionDb.receipt) {
+    if (dbBlock) {
       await this.onFinish(eachMessagePayload, {
-        transactionHash: hash,
-        transfers: transactionDb.transfers.map((t) => t.hash as Hash),
+        blockNumber,
+        transactions: dbBlock.transactions.map((t) => t.hash as Hash),
       });
       return;
     }
 
-    // Throw to temporary stop the consuming job
-    // and keep retrying until transaction receipt got indexed into the db
-    throw new KafkaReachedEndIndexedOffset(eachMessagePayload.topic, hash);
+    throw new KafkaReachedEndIndexedOffset(
+      eachMessagePayload.topic,
+      blockNumber.toString(),
+    );
   }
 
   protected async onFinish(
     eachMessagePayload: EachMessagePayload,
-    data: { transactionHash: string; transfers: string[] },
+    data: { blockNumber: number; transactions: Hash[] },
   ): Promise<void> {
     const messageId = `${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
     // Send to transaction topic
-    const { transfers } = data;
-    await sendToTransferTopic(transfers);
+    const { transactions } = data;
+    await sendToTransactionTopic(transactions);
     logger.info(
-      `[MessageId: ${messageId}] Sent ${transfers.length} messages to transfer topic.`,
+      `[MessageId: ${messageId}] Sent ${transactions.length} messages to transaction topic.`,
     );
 
     return super.onFinish(eachMessagePayload, data);

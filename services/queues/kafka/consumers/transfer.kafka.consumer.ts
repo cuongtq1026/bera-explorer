@@ -7,9 +7,9 @@ import type { Hash } from "viem";
 import {
   InvalidPayloadException,
   PayloadNotFoundException,
-} from "../../exceptions/consumer.exception.ts";
-import logger from "../../monitor/logger.ts";
-import { topics, TransferMessagePayload } from "../kafka";
+} from "../../../exceptions/consumer.exception.ts";
+import logger from "../../../monitor/logger.ts";
+import { topics, TransferMessagePayload } from "../index.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class TransferKafkaConsumer extends AbstractKafkaConsumer {

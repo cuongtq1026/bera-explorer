@@ -11,8 +11,8 @@ import {
   DEAD_LETTER_EXCHANGE_NAME,
   DEAD_LETTER_QUEUE_NAME,
   queues,
-} from "../config";
-import logger from "../monitor/logger.ts";
+} from "../../config";
+import logger from "../../monitor/logger.ts";
 import {
   EXPONENTIAL_BACKOFF,
   EXPONENTIAL_BACKOFF_IN_SECONDS,

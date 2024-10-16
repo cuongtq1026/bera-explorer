@@ -1,4 +1,3 @@
-import { AbstractKafkaConsumer } from "@consumers/kafka.consumer.abstract.ts";
 import { BalanceProcessor } from "@processors/balance.processor.ts";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
@@ -7,9 +6,10 @@ import type { EachMessagePayload } from "kafkajs";
 import {
   InvalidPayloadException,
   PayloadNotFoundException,
-} from "../../exceptions/consumer.exception.ts";
-import logger from "../../monitor/logger.ts";
-import { BalanceMessagePayload, topics } from "../kafka";
+} from "../../../exceptions/consumer.exception.ts";
+import logger from "../../../monitor/logger.ts";
+import { BalanceMessagePayload, topics } from "../index.ts";
+import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 /**
  * @deprecated

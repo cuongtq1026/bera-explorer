@@ -1,8 +1,8 @@
-import { AbstractConsumer } from "@consumers/consumer.abstract.ts";
 import type { EachMessagePayload } from "kafkajs";
 
-import logger from "../../monitor/logger.ts";
-import kafkaConnection from "../kafka/kafka.connection.ts";
+import logger from "../../../monitor/logger.ts";
+import { AbstractConsumer } from "../../consumer.abstract.ts";
+import kafkaConnection from "../kafka.connection.ts";
 
 export abstract class AbstractKafkaConsumer extends AbstractConsumer<
   void,

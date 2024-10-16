@@ -1,4 +1,3 @@
-import { AbstractRabbitMQConsumer } from "@consumers/rabbitmq.consumer.abstract.ts";
 import {
   type CreatedHash,
   TransferProcessor,
@@ -7,11 +6,12 @@ import type { ConsumeMessage } from "amqplib";
 import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
 
-import { queues } from "../../config";
-import logger from "../../monitor/logger.ts";
-import { is0xHash } from "../../utils.ts";
-import { sendToBalanceTopic } from "../kafka/kafka.producer.ts";
+import { queues } from "../../../config";
+import logger from "../../../monitor/logger.ts";
+import { is0xHash } from "../../../utils.ts";
+import { sendToBalanceTopic } from "../../kafka/producers";
 import { QueueTransactionAggregatorPayload } from "../producers";
+import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
 
 /**
  * @deprecated

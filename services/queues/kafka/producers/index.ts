@@ -8,18 +8,8 @@ import {
 } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
 
-export async function sendToBalanceTopic(transferHash: string) {
-  return kafkaConnection.send(topics.BALANCE.name, [
-    {
-      value: JSON.stringify({
-        transferHash,
-      } as BalanceMessagePayload),
-    },
-  ]);
-}
-
 export async function sendToBlockTopic(blockNumber: number) {
-  return kafkaConnection.send(topics.BALANCE.name, [
+  return kafkaConnection.send(topics.BLOCK.name, [
     {
       value: JSON.stringify({
         blockNumber,

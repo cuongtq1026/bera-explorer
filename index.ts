@@ -18,7 +18,6 @@ import type { Hash } from "viem";
 import { queues } from "./services/config";
 import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
-import { BalanceConsumer } from "./services/queues/kafka/consumers/balance.consumer.ts";
 import { BlockKafkaConsumer } from "./services/queues/kafka/consumers/block.kafka.consumer.ts";
 import { LogKafkaConsumer } from "./services/queues/kafka/consumers/log.kafka.consumer.ts";
 import { TransactionReceiptKafkaConsumer } from "./services/queues/kafka/consumers/transaction-receipt.kafka.consumer.ts";
@@ -274,14 +273,6 @@ switch (command) {
         const consumer = new LogKafkaConsumer();
 
         await consumer.consume();
-        break;
-      }
-      case "balance": {
-        setupPrometheus();
-
-        const balanceConsumer = new BalanceConsumer();
-
-        await balanceConsumer.consume();
         break;
       }
       case "token": {

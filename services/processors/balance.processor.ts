@@ -15,6 +15,11 @@ import { NoGetResult } from "../exceptions/processor.exception.ts";
 import logger from "../monitor/logger.ts";
 import type { InterfaceProcessor } from "./interface.processor.ts";
 
+/**
+ * @deprecated
+ *
+ * No longer used due to design flaws
+ */
 export class BalanceProcessor
   implements
     InterfaceProcessor<

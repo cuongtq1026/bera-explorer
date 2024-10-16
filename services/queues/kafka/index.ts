@@ -1,9 +1,6 @@
 import { IsNotEmpty, IsNumber } from "class-validator";
 
 export const topics = {
-  BALANCE: {
-    name: "balance",
-  },
   BLOCK: {
     name: "blocks",
   },

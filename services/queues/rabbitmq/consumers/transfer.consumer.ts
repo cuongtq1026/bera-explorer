@@ -9,7 +9,6 @@ import { validateOrReject } from "class-validator";
 import { queues } from "../../../config";
 import logger from "../../../monitor/logger.ts";
 import { is0xHash } from "../../../utils.ts";
-import { sendToBalanceTopic } from "../../kafka/producers";
 import { QueueTransactionAggregatorPayload } from "../producers";
 import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
 
@@ -66,11 +65,6 @@ export class TransferConsumer extends AbstractRabbitMQConsumer {
     message: ConsumeMessage,
     createdHashes: CreatedHash[],
   ): Promise<void> {
-    // Queue to balance kafka topic
-    for (const createdHash of createdHashes) {
-      await sendToBalanceTopic(createdHash.hash);
-    }
-
     return super.onFinish(message, createdHashes);
   }
 }

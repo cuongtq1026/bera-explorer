@@ -8,6 +8,7 @@ import type {
   InternalTransaction,
   Log,
   LogTopic,
+  Swap,
   Token,
   Transaction,
   TransactionReceipt,
@@ -162,11 +163,13 @@ export type ContractDto = {
 export type PriceDto = {
   tokenAddress: string;
   transactionHash: string;
+  swapId: bigint | number;
   usd_price: bigint;
   createdAt: Date;
 };
 
 export type SwapDto = {
+  id: bigint | number;
   blockNumber: bigint | number;
   transactionHash: string;
   dex: string;
@@ -466,5 +469,19 @@ export function dtoToSwapCreateInput(swapDto: SwapDto): SwapCreateInput {
     fromAmount: swapDto.fromAmount.toString(),
     toAmount: swapDto.toAmount.toString(),
     createdAt: swapDto.createdAt,
+  };
+}
+
+export function toSwapDto(swap: Swap): SwapDto {
+  return {
+    id: swap.id,
+    blockNumber: swap.blockNumber,
+    transactionHash: swap.transactionHash as Hash,
+    dex: swap.dex as Hash,
+    from: swap.from,
+    to: swap.to,
+    fromAmount: parseToBigInt(swap.fromAmount.toFixed()),
+    toAmount: parseToBigInt(swap.toAmount.toFixed()),
+    createdAt: swap.createdAt,
   };
 }

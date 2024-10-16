@@ -203,12 +203,11 @@ model BalanceHistory {
 }
 
 model Token {
-  address     String       @id
+  address     String  @id
   name        String
   symbol      String
-  decimals    Int          @db.SmallInt
-  totalSupply Decimal      @db.Decimal(78, 0)
-  Erc20Price  Erc20Price[]
+  decimals    Int     @db.SmallInt
+  totalSupply Decimal @db.Decimal(78, 0)
 
   @@map("token")
 }
@@ -237,8 +236,9 @@ model Swap {
   toAmount        Decimal  @db.Decimal(78, 0)
   createdAt       DateTime
 
-  block       Block       @relation(fields: [blockNumber], references: [number])
-  transaction Transaction @relation(fields: [transactionHash], references: [hash])
+  block       Block        @relation(fields: [blockNumber], references: [number])
+  transaction Transaction  @relation(fields: [transactionHash], references: [hash])
+  Erc20Price  Erc20Price[]
 
   @@index([dex])
   @@index([from])
@@ -247,14 +247,16 @@ model Swap {
 }
 
 model Erc20Price {
+  id              BigInt   @id @default(autoincrement())
   tokenAddress    String
   transactionHash String
+  swapId          BigInt
   usd_price       Decimal  @db.Decimal(78, 0)
   createdAt       DateTime
 
-  token Token? @relation(fields: [tokenAddress], references: [address])
+  swap Swap @relation(fields: [swapId], references: [id])
 
-  @@unique([tokenAddress, transactionHash])
+  @@index([swapId])
   @@index([transactionHash])
   @@index([tokenAddress, createdAt])
   @@map("erc20_price")

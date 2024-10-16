@@ -1,9 +1,7 @@
 import prisma from "@database/prisma.ts";
-import { LogProcessor } from "@processors/log.processor.ts";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import type { EachMessagePayload } from "kafkajs";
-import type { Hash } from "viem";
 
 import {
   InvalidPayloadException,
@@ -77,7 +75,11 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
     }
 
     // TODO: Wait until data indexed
-    throw new KafkaReachedEndIndexedOffset(eachMessagePayload.topic, logHash);
+    throw new KafkaReachedEndIndexedOffset(
+      eachMessagePayload.topic,
+      this.consumerName,
+      logHash,
+    );
   }
 
   protected async onFinish(

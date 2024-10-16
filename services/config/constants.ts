@@ -1,3 +1,4 @@
+import type { TokenDto } from "@database/dto.ts";
 import {
   type AbiFunction,
   getAbiItem,
@@ -22,3 +23,44 @@ export const CROC_SWAP_DEX_MULTI_SWAP = toFunctionSelector(
     name: "multiSwap",
   }) as AbiFunction,
 );
+
+// Berachain as default
+type Chain = {
+  id: number;
+  name: string;
+  stableCoins: TokenDto[];
+};
+export const USD_DECIMAL = 18;
+export const ONE_USD = 10 ** USD_DECIMAL;
+export const CHAIN_ID = process.env.CHAIN_ID ? +process.env.CHAIN_ID : 80084;
+export const chains: { [chainId: number]: Chain } = {
+  "80084": {
+    id: 80084,
+    name: "Berachain",
+    stableCoins: [
+      {
+        address: "0x0e4aaf1351de4c0264c5c7056ef3777b41bd8e03",
+        name: "Honey Token",
+        symbol: "HONEY",
+        decimals: 18,
+        totalSupply: 11737742132405135320233771727n,
+      },
+    ],
+  },
+};
+export function isStableCoin(tokenAddress: string): boolean {
+  const stableCoins = chains[CHAIN_ID].stableCoins;
+
+  return stableCoins.some((stableCoin) => stableCoin.address === tokenAddress);
+}
+export function getStableCoin(tokenAddress: string): TokenDto | null {
+  const stableCoins = chains[CHAIN_ID].stableCoins;
+
+  const result = stableCoins.find(
+    (stableCoin) => stableCoin.address === tokenAddress,
+  );
+  if (result == null) {
+    return null;
+  }
+  return result;
+}

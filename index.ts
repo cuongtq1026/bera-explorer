@@ -9,6 +9,7 @@ import {
 import { BalanceProcessor } from "@processors/balance.processor.ts";
 import { BlockProcessor } from "@processors/block.processor.ts";
 import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
+import { PriceProcessor } from "@processors/price.processor.ts";
 import { SwapProcessor } from "@processors/swap.processor.ts";
 import { TokenProcessor } from "@processors/token.processor.ts";
 import { TransactionProcessor } from "@processors/transaction.processor.ts";
@@ -161,6 +162,17 @@ switch (command) {
     const processor = new SwapProcessor();
 
     await processor.process(transactionHash);
+    break;
+  }
+  case "price": {
+    const swapId = parseToBigInt(restArgs[0]);
+    if (swapId == null) {
+      logger.info("Invalid swapId number.");
+      break;
+    }
+    const processor = new PriceProcessor();
+
+    await processor.process(swapId);
     break;
   }
   case "queue": {

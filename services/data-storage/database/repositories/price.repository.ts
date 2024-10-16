@@ -1,5 +1,3 @@
-import type { Hash } from "viem";
-
 import prisma from "../prisma.ts";
 
 export type PriceCreateInput = {
@@ -7,7 +5,14 @@ export type PriceCreateInput = {
   transactionHash: string;
   usd_price: string;
   createdAt: Date | string;
+  swapId: bigint | number;
 };
+
+export function createPrice(priceCreateInput: PriceCreateInput) {
+  return prisma.erc20Price.create({
+    data: priceCreateInput,
+  });
+}
 
 export function createPrices(priceCreateInputs: PriceCreateInput[]) {
   return prisma.erc20Price.createMany({
@@ -15,10 +20,10 @@ export function createPrices(priceCreateInputs: PriceCreateInput[]) {
   });
 }
 
-export async function deletePrices(transactionHash: Hash): Promise<void> {
+export async function deletePrices(swapId: bigint): Promise<void> {
   await prisma.erc20Price.deleteMany({
     where: {
-      transactionHash,
+      swapId,
     },
   });
 }

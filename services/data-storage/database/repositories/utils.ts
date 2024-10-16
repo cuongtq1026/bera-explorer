@@ -1,7 +1,6 @@
-import type { PriceDto, TokenDto } from "@database/dto.ts";
+import type { PriceDto } from "@database/dto.ts";
 import type { BalanceCreateInput } from "@database/repositories/balance.repository.ts";
 import type { PriceCreateInput } from "@database/repositories/price.repository.ts";
-import type { TokenCreateInput } from "@database/repositories/token.repository.ts";
 import type { Balance } from "@prisma/client";
 import type {
   Block,
@@ -183,5 +182,6 @@ export function toPriceCreateInput(priceDto: PriceDto): PriceCreateInput {
     transactionHash: priceDto.transactionHash,
     usd_price: priceDto.usd_price.toString(),
     createdAt: priceDto.createdAt,
+    swapId: priceDto.swapId,
   };
 }

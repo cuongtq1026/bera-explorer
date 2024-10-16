@@ -1,3 +1,4 @@
+import { type SwapDto, toSwapDto } from "@database/dto.ts";
 import type { Hash } from "viem";
 
 import prisma from "../prisma.ts";
@@ -12,6 +13,20 @@ export type SwapCreateInput = {
   toAmount: string;
   createdAt: Date | string;
 };
+
+export async function getSwap(swapId: bigint): Promise<SwapDto | null> {
+  return prisma.swap
+    .findUnique({
+      where: {
+        id: swapId,
+      },
+    })
+    .then((result) => {
+      if (result == null) return null;
+
+      return toSwapDto(result);
+    });
+}
 
 export function createSwaps(inputs: SwapCreateInput[]) {
   return prisma.swap.createMany({

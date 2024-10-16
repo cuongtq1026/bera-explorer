@@ -65,6 +65,8 @@ export class SwapKafkaConsumer extends AbstractKafkaConsumer {
 
     const processor = new SwapProcessor();
     await processor.process(transaction.hash);
+
+    await this.onFinish(eachMessagePayload, null);
   }
 
   protected async onFinish(

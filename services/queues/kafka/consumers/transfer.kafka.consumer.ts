@@ -7,6 +7,7 @@ import type { Hash } from "viem";
 
 import {
   InvalidPayloadException,
+  KafkaReachedEndIndexedOffset,
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
@@ -75,13 +76,8 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
       return;
     }
 
-    // if transfer doesn't exist, process to save it
-    const processor = new LogProcessor();
-    const { transferHash } = await processor.process(logHash as Hash);
-
-    await this.onFinish(eachMessagePayload, {
-      transferHash,
-    });
+    // TODO: Wait until data indexed
+    throw new KafkaReachedEndIndexedOffset(eachMessagePayload.topic, logHash);
   }
 
   protected async onFinish(

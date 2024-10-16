@@ -9,6 +9,7 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
   EachMessagePayload
 > {
   protected abstract topicName: string;
+  protected abstract consumerName: string;
 
   protected constructor() {
     super();
@@ -17,10 +18,12 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
   public async consume(): Promise<void> {
     logger.info(`Consumer topic ${this.topicName} started.`);
 
-    await kafkaConnection.consume(
-      this.topicName,
-      (message: EachMessagePayload) => this.execute(message),
-    );
+    await kafkaConnection.consume({
+      topic: this.topicName,
+      groupId: this.consumerName,
+      eachMessageHandler: (message: EachMessagePayload) =>
+        this.execute(message),
+    });
   }
 
   protected async execute(

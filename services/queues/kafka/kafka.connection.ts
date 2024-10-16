@@ -103,14 +103,22 @@ export class KafkaConnection {
     });
   }
 
-  public async consume(topic: string, eachMessageHandler: EachMessageHandler) {
+  public async consume({
+    topic,
+    groupId,
+    eachMessageHandler,
+  }: {
+    topic: string;
+    groupId: string;
+    eachMessageHandler: EachMessageHandler;
+  }) {
     await this.checkConnection();
 
-    const groupId = process.env.KAFKA_GROUP_ID;
-    if (!groupId) {
+    const envGroupId = process.env.KAFKA_GROUP_ID;
+    if (!envGroupId) {
       throw new Error(`Missing KAFKA_GROUP_ID`);
     }
-    const groupIdTopic = `${groupId}-${topic}`;
+    const groupIdTopic = [envGroupId, groupId, topic].join("-");
     const consumer = this.connection.consumer({
       groupId: groupIdTopic,
     });

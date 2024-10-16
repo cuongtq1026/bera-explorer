@@ -11,11 +11,12 @@ import {
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
 import { LogMessagePayload, topics } from "../index.ts";
-import { sendToTransactionTopic, sendToTransferTopic } from "../producers";
+import { sendToTransferTopic } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class LogKafkaConsumer extends AbstractKafkaConsumer {
   protected topicName = topics.LOG.name;
+  protected consumerName = "log";
 
   constructor() {
     super();

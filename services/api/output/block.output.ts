@@ -1,4 +1,4 @@
-import { type BlockDto } from "../../data-storage/database/dto.ts";
+import { type BlockDto } from "@database/dto.ts";
 import {
   toTransactionOutput,
   TransactionOutput,
@@ -23,13 +23,13 @@ export class BlockOutput {
   gasUsed: string;
   createdAt: Date;
 
-  transactions: TransactionOutput[];
+  transactions?: TransactionOutput[];
 }
 
 export function toBlockOutput(block: BlockDto | null): BlockOutput | null {
   if (!block) return null;
 
-  return {
+  const dto: BlockOutput = {
     number: block.number.toString(),
     hash: block.hash,
     parentHash: block.parentHash,
@@ -47,7 +47,11 @@ export function toBlockOutput(block: BlockDto | null): BlockOutput | null {
     gasLimit: block.gasLimit.toString(),
     gasUsed: block.gasUsed.toString(),
     createdAt: new Date(Number(block.createdAt) * 1000),
-
-    transactions: block.transactions.map(toTransactionOutput),
   };
+
+  if (block.transactions) {
+    dto.transactions = block.transactions.map(toTransactionOutput);
+  }
+
+  return dto;
 }

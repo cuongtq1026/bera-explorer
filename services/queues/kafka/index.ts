@@ -10,6 +10,9 @@ export const topics = {
   TRANSACTION: {
     name: "transactions",
   },
+  LOG: {
+    name: "logs",
+  },
   TRANSFER: {
     name: "transfers",
   },
@@ -34,4 +37,9 @@ export class TransactionMessagePayload {
 export class TransferMessagePayload {
   @IsNotEmpty()
   transferHash: string;
+}
+
+export class LogMessagePayload {
+  @IsNotEmpty()
+  logHash: string;
 }

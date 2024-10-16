@@ -1,17 +1,17 @@
-import type {
-  LogDto,
-  LogTopicDto,
-  TransactionReceiptDto,
+import {
+  type LogDto,
+  type LogTopicDto,
+  logToTransferDto,
+  type TransactionReceiptDto,
 } from "@database/dto.ts";
 import { findTransactionReceipt } from "@database/repositories/transaction-receipt.repository.ts";
 import {
   createTransfers,
-  deleteTransferByHash,
+  deleteTransferByTxHash,
   type TransferCreateInput,
 } from "@database/repositories/transfer.repository.ts";
-import { decodeEventLog, erc20Abi, type Hash, type Hex } from "viem";
+import { type Hash } from "viem";
 
-import { ERC20_TRANSFER_SIGNATURE } from "../config/constants.ts";
 import logger from "../monitor/logger.ts";
 import type { InterfaceProcessor } from "./interface.processor.ts";
 
@@ -73,33 +73,12 @@ export class TransferProcessor
           topics: LogTopicDto[];
         } => log.topics != null,
       )
-      .filter((log) => log.topics[0]?.topic === ERC20_TRANSFER_SIGNATURE)
-      .map<TransferCreateInput>((log) => {
-        const signature = log.topics[0].topic as Hex;
-        const logTopics = log.topics.slice(1).map((t) => t.topic as Hex);
-        const topics = decodeEventLog({
-          abi: erc20Abi,
-          eventName: "Transfer",
-          data: log.data as Hash,
-          topics: [signature, ...logTopics],
-        });
-        return {
-          from: topics.args.from.toLowerCase(),
-          to: topics.args.to.toLowerCase(),
-          amount: topics.args.value.toString(),
-          tokenAddress: log.address,
-          logIndex: log.index,
-          timestamp: input.createdAt,
-          transactionHash: log.transactionHash,
-          blockNumber: log.blockNumber,
-          transactionIndex: log.transactionIndex,
-          hash: log.logHash,
-        };
-      });
+      .map((log) => logToTransferDto(log, log.topics, input.createdAt))
+      .filter((log): log is TransferCreateInput => log != null);
   }
 
   async deleteFromDb(id: Hash): Promise<void> {
-    await deleteTransferByHash(id);
+    await deleteTransferByTxHash(id);
   }
 
   async createInDb(inputs: TransferCreateInput[]): Promise<CreatedHash[]> {

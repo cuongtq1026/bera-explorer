@@ -84,18 +84,21 @@ model TransactionReceipt {
 }
 
 model Log {
-  logHash            String             @id
-  address            String
-  data               String
-  blockNumber        BigInt
-  transactionHash    String
-  transactionIndex   Int
-  index              Int
-  removed            Boolean
+  logHash          String  @id
+  address          String
+  data             String
+  blockNumber      BigInt
+  transactionHash  String
+  transactionIndex Int
+  index            Int
+  removed          Boolean
+
   transactionReceipt TransactionReceipt @relation(fields: [transactionHash], references: [transactionHash], onDelete: Cascade)
   topics             LogTopic[]
   block              Block              @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
+  transfer           Transfer?
 
+  @@index([transactionHash, index])
   @@map("log")
 }
 
@@ -106,6 +109,7 @@ model LogTopic {
   logHash   String
   log       Log    @relation(fields: [logHash], references: [logHash], onDelete: Cascade)
 
+  @@index([logHash])
   @@map("log_topic")
 }
 
@@ -134,17 +138,18 @@ model Transfer {
   blockNumber      BigInt
   transactionHash  String
   transactionIndex Int
+  logIndex         Int
   from             String
   to               String
   tokenAddress     String
   amount           Decimal  @db.Decimal(78, 0)
-  logIndex         Int
   timestamp        DateTime
 
   transaction    Transaction      @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
   block          Block            @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
   balance        Balance[]
-  BalanceHistory BalanceHistory[]
+  balanceHistory BalanceHistory[]
+  log            Log              @relation(fields: [hash], references: [logHash])
 
   @@index([from])
   @@index([to])

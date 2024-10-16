@@ -13,10 +13,10 @@
     "consume:transaction-receipt": "bun run index.ts consume transaction-receipt",
     "consume:internal-transaction": "bun run index.ts consume internal-transaction",
     "consume:transfer": "bun run index.ts consume transfer",
-    "consume:balance": "bun run index.ts consume balance",
     "consume:token": "bun run index.ts consume token",
     "consume:block-kafka": "bun run index.ts consume block-kafka",
     "consume:transaction-receipt-kafka": "bun run index.ts consume transaction-receipt-kafka",
+    "consume:log-kafka": "bun run index.ts consume log-kafka",
     "consume:transfer-kafka": "bun run index.ts consume transfer-kafka",
     "queue:blocks": "bun run index.ts queue blocks",
     "queue:transaction-aggregator": "bun run index.ts queue transaction-aggregator",
@@ -30,14 +30,14 @@
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "prettier": "^3.3.3",
-    "prisma": "^5.20.0",
+    "prisma": "^5.21.0",
     "typescript-eslint": "^8.6.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@prisma/client": "^5.20.0",
+    "@prisma/client": "^5.21.0",
     "@types/amqplib": "^0.10.5",
     "@types/uuid": "^10.0.0",
     "amqplib": "^0.10.4",

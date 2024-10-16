@@ -10,11 +10,11 @@ export type TransferCreateInput = {
   blockNumber: bigint;
   transactionHash: string;
   transactionIndex: number;
+  logIndex: number;
   from: string;
   to: string;
   tokenAddress: string;
   amount: string;
-  logIndex: number;
   timestamp: Date | string;
 };
 
@@ -24,12 +24,26 @@ export function createTransfers(transferCreateInputs: TransferCreateInput[]) {
   });
 }
 
-export async function deleteTransferByHash(
+export function createTransfer(transferCreateInput: TransferCreateInput) {
+  return prisma.transfer.create({
+    data: transferCreateInput,
+  });
+}
+
+export async function deleteTransferByTxHash(
   transactionHash: Hash,
 ): Promise<void> {
   await prisma.transfer.deleteMany({
     where: {
       transactionHash,
+    },
+  });
+}
+
+export async function deleteTransferByHash(logHash: Hash): Promise<void> {
+  await prisma.transfer.deleteMany({
+    where: {
+      hash: logHash,
     },
   });
 }

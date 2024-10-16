@@ -1,6 +1,7 @@
 import {
   BalanceMessagePayload,
   BlockMessagePayload,
+  LogMessagePayload,
   topics,
   TransactionMessagePayload,
   TransferMessagePayload,
@@ -45,6 +46,17 @@ export async function sendToTransferTopic(transferHashes: string[]) {
       value: JSON.stringify({
         transferHash,
       } as TransferMessagePayload),
+    })),
+  );
+}
+
+export async function sendToLogTopic(logHashes: string[]) {
+  return kafkaConnection.send(
+    topics.LOG.name,
+    logHashes.map((logHash) => ({
+      value: JSON.stringify({
+        logHash,
+      } as LogMessagePayload),
     })),
   );
 }

@@ -35,3 +35,26 @@ export async function findLogs(transactionHash: Hash): Promise<LogDto[]> {
       return logs.map((log) => toLogDto(log));
     });
 }
+
+export async function getLog(
+  logHash: Hash,
+  options?: {
+    topics?: boolean;
+    block?: boolean;
+  },
+): Promise<LogDto | null> {
+  return prisma.log
+    .findUnique({
+      where: {
+        logHash,
+      },
+      include: {
+        topics: options?.topics,
+        block: options?.block,
+      },
+    })
+    .then((log) => {
+      if (log == null) return log;
+      return toLogDto(log);
+    });
+}

@@ -20,6 +20,7 @@ import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
 import { BalanceConsumer } from "./services/queues/kafka/consumers/balance.consumer.ts";
 import { BlockKafkaConsumer } from "./services/queues/kafka/consumers/block.kafka.consumer.ts";
+import { LogKafkaConsumer } from "./services/queues/kafka/consumers/log.kafka.consumer.ts";
 import { TransactionReceiptKafkaConsumer } from "./services/queues/kafka/consumers/transaction-receipt.kafka.consumer.ts";
 import { TransferKafkaConsumer } from "./services/queues/kafka/consumers/transfer.kafka.consumer.ts";
 import { BlockConsumer } from "./services/queues/rabbitmq/consumers/block.consumer.ts";
@@ -267,6 +268,14 @@ switch (command) {
         await consumer.consume();
         break;
       }
+      case "log-kafka": {
+        setupPrometheus();
+
+        const consumer = new LogKafkaConsumer();
+
+        await consumer.consume();
+        break;
+      }
       case "balance": {
         setupPrometheus();
 
@@ -293,6 +302,7 @@ switch (command) {
         const blockKafkaConsumer = new BlockKafkaConsumer();
         const transactionReceiptKafkaConsumer =
           new TransactionReceiptKafkaConsumer();
+        const logKafkaConsumer = new LogKafkaConsumer();
         const transferKafkaConsumer = new TransferKafkaConsumer();
 
         await blockConsumer.consume();
@@ -301,6 +311,7 @@ switch (command) {
         await internalTransactionConsumer.consume();
         await blockKafkaConsumer.consume();
         await transactionReceiptKafkaConsumer.consume();
+        await logKafkaConsumer.consume();
         await transferKafkaConsumer.consume();
         break;
       }

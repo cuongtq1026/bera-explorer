@@ -1,3 +1,4 @@
+import type { TransferCreateInput } from "@database/repositories/transfer.repository.ts";
 import type {
   Balance,
   BalanceHistory,
@@ -11,8 +12,9 @@ import type {
   TransactionReceipt,
   Transfer,
 } from "@prisma/client";
-import type { Hash } from "viem";
+import { decodeEventLog, erc20Abi, type Hash, type Hex } from "viem";
 
+import { ERC20_TRANSFER_SIGNATURE } from "../../config/constants.ts";
 import { parseToBigInt } from "../../utils.ts";
 
 export type BlockDto = {
@@ -93,6 +95,7 @@ export type LogDto = {
   index: number;
   removed: boolean;
 
+  block?: BlockDto;
   topics?: LogTopicDto[];
 };
 export type InternalTransactionDto = {
@@ -155,6 +158,36 @@ export type ContractDto = {
   deploymentTransactionHash: string;
   deploymentBlockNumber: bigint | number;
 };
+
+export function logToTransferDto(
+  log: LogDto,
+  topics: LogTopicDto[],
+  createdAt: Date,
+): TransferCreateInput | null {
+  const signature = topics[0].topic as Hex;
+  if (signature !== ERC20_TRANSFER_SIGNATURE) {
+    return null;
+  }
+  const logTopics = topics.slice(1).map((t) => t.topic as Hex);
+  const decodedTopics = decodeEventLog({
+    abi: erc20Abi,
+    eventName: "Transfer",
+    data: log.data as Hash,
+    topics: [signature, ...logTopics],
+  });
+  return {
+    hash: log.logHash,
+    from: decodedTopics.args.from.toLowerCase(),
+    to: decodedTopics.args.to.toLowerCase(),
+    amount: decodedTopics.args.value.toString(),
+    tokenAddress: log.address,
+    logIndex: log.index,
+    timestamp: createdAt,
+    transactionHash: log.transactionHash,
+    blockNumber: log.blockNumber,
+    transactionIndex: log.transactionIndex,
+  };
+}
 
 export function toBlockDto(
   block: Block & {
@@ -270,6 +303,7 @@ export function toTransactionReceiptDto(
 export function toLogDto(
   log: Log & {
     topics?: LogTopic[];
+    block?: Block;
   },
 ): LogDto {
   const dto: LogDto = {
@@ -285,6 +319,10 @@ export function toLogDto(
 
   if (log.topics) {
     dto.topics = log.topics.map((topic) => toLogTopicDto(topic));
+  }
+
+  if (log.block) {
+    dto.block = toBlockDto(log.block);
   }
 
   return dto;

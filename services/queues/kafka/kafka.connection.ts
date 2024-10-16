@@ -110,8 +110,9 @@ export class KafkaConnection {
     if (!groupId) {
       throw new Error(`Missing KAFKA_GROUP_ID`);
     }
+    const groupIdTopic = `${groupId}-${topic}`;
     const consumer = this.connection.consumer({
-      groupId: `${groupId}-${topic}`,
+      groupId: groupIdTopic,
     });
     await consumer.subscribe({
       topic,

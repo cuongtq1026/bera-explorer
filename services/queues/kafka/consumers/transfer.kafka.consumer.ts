@@ -3,6 +3,7 @@ import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import type { EachMessagePayload } from "kafkajs";
 
+import { ERC20_TRANSFER_SIGNATURE } from "../../../config/constants.ts";
 import {
   InvalidPayloadException,
   KafkaReachedEndIndexedOffset,
@@ -13,6 +14,13 @@ import { LogMessagePayload, topics } from "../index.ts";
 import { sendToTransferTopic } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
+/**
+ * Steps:
+ * - Get log from database, if it is not found, stop consumer and wait until it is indexed
+ * - Check signature of log's topics, if it is not ERC20 Transfer, finish
+ * - Check log.transfer, if it is not found, stop consumer and wait until it is indexed
+ * - Send transfer to transfer topic
+ */
 export class TransferKafkaConsumer extends AbstractKafkaConsumer {
   protected topicName = topics.LOG.name;
   protected consumerName = "transfer";
@@ -60,26 +68,45 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
             hash: true,
           },
         },
+        topics: {
+          select: {
+            topic: true,
+          },
+        },
       },
     });
 
     if (logDb == null) {
-      throw Error("Log is not found.");
+      // TODO: Wait until data indexed
+      throw new KafkaReachedEndIndexedOffset(
+        eachMessagePayload.topic,
+        this.consumerName,
+        logHash,
+      );
     }
-    // if transfer exist, finish
-    if (logDb.transfer) {
-      await this.onFinish(eachMessagePayload, {
-        transferHash: logDb.transfer ? logDb.transfer.hash : null,
-      });
-      return;
+    {
+      const signature = logDb.topics[0]?.topic;
+      if (signature !== ERC20_TRANSFER_SIGNATURE) {
+        await this.onFinish(eachMessagePayload, {
+          transferHash: null,
+        });
+        return;
+      }
     }
 
-    // TODO: Wait until data indexed
-    throw new KafkaReachedEndIndexedOffset(
-      eachMessagePayload.topic,
-      this.consumerName,
-      logHash,
-    );
+    if (!logDb.transfer) {
+      // TODO: Wait until data indexed
+      throw new KafkaReachedEndIndexedOffset(
+        eachMessagePayload.topic,
+        this.consumerName,
+        logHash,
+      );
+    }
+
+    await this.onFinish(eachMessagePayload, {
+      transferHash: logDb.transfer.hash,
+    });
+    return;
   }
 
   protected async onFinish(

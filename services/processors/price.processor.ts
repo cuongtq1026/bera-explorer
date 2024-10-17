@@ -5,7 +5,7 @@ import {
   type PriceCreateInput,
 } from "@database/repositories/price.repository.ts";
 import { getSwap } from "@database/repositories/swap.repository.ts";
-import { Decimal } from "@prisma/client/runtime/library";
+import Decimal from "decimal.js";
 
 import { getStableCoin, isStableCoin, ONE_USD } from "../config/constants.ts";
 import { NoGetResult } from "../exceptions/processor.exception.ts";

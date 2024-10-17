@@ -72,20 +72,19 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
         },
       },
     });
-    if (transactionDb && transactionDb.receipt) {
-      await this.onFinish(eachMessagePayload, {
-        transactionHash: hash,
-        logs: transactionDb.receipt.logs.map((t) => t.logHash as Hash),
-      });
-      return;
+    if (!transactionDb || !transactionDb.receipt) {
+      // TODO: Wait until data indexed
+      throw new KafkaReachedEndIndexedOffset(
+        eachMessagePayload.topic,
+        this.consumerName,
+        hash,
+      );
     }
 
-    // TODO: Wait until data indexed
-    throw new KafkaReachedEndIndexedOffset(
-      eachMessagePayload.topic,
-      this.consumerName,
-      hash,
-    );
+    await this.onFinish(eachMessagePayload, {
+      transactionHash: hash,
+      logs: transactionDb.receipt.logs.map((t) => t.logHash as Hash),
+    });
   }
 
   protected async onFinish(

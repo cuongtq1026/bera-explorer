@@ -13,6 +13,9 @@ export const topics = {
   TRANSFER: {
     name: "transfers",
   },
+  SWAP: {
+    name: "swaps",
+  },
 };
 
 export class BalanceMessagePayload {
@@ -39,4 +42,9 @@ export class TransferMessagePayload {
 export class LogMessagePayload {
   @IsNotEmpty()
   logHash: string;
+}
+
+export class SwapMessagePayload {
+  @IsNotEmpty()
+  swapId: string;
 }

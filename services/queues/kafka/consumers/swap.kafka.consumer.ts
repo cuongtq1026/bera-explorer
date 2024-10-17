@@ -12,6 +12,7 @@ import {
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
 import { topics, TransactionMessagePayload } from "../index.ts";
+import { sendToSwapTopic } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class SwapKafkaConsumer extends AbstractKafkaConsumer {
@@ -64,15 +65,30 @@ export class SwapKafkaConsumer extends AbstractKafkaConsumer {
     }
 
     const processor = new SwapProcessor();
-    await processor.process(transaction.hash);
+    const swapIds = await processor.process(transaction.hash);
 
-    await this.onFinish(eachMessagePayload, null);
+    await this.onFinish(eachMessagePayload, { swapIds });
   }
 
   protected async onFinish(
     eachMessagePayload: EachMessagePayload,
-    data: any,
+    data: {
+      swapIds: (bigint | number)[] | null;
+    },
   ): Promise<void> {
+    const { swapIds } = data;
+
+    if (!swapIds) {
+      return super.onFinish(eachMessagePayload, data);
+    }
+    const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
+
+    // Send to swap topic
+    await sendToSwapTopic(swapIds);
+    logger.info(
+      `[MessageId: ${messageId}] Sent ${swapIds.length} messages to swap topic.`,
+    );
+
     return super.onFinish(eachMessagePayload, data);
   }
 }

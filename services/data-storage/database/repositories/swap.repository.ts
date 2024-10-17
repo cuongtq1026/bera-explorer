@@ -28,10 +28,13 @@ export async function getSwap(swapId: bigint): Promise<SwapDto | null> {
     });
 }
 
-export function createSwaps(inputs: SwapCreateInput[]) {
-  return prisma.swap.createMany({
+export async function createSwaps(
+  inputs: SwapCreateInput[],
+): Promise<(bigint | number)[]> {
+  const swaps = await prisma.swap.createManyAndReturn({
     data: inputs,
   });
+  return swaps.map((swap) => swap.id);
 }
 
 export async function deleteSwaps(transactionHash: Hash): Promise<void> {

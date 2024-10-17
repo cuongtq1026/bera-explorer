@@ -16,7 +16,7 @@ import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class LogKafkaConsumer extends AbstractKafkaConsumer {
   protected topicName = topics.TRANSACTION.name;
-  protected consumerName = "receipt";
+  protected consumerName = "log";
 
   constructor() {
     super();

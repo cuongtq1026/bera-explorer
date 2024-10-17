@@ -22,6 +22,7 @@ import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
 import { BalanceKafkaConsumer } from "./services/queues/kafka/consumers/balance.kafka.consumer.ts";
 import { LogKafkaConsumer } from "./services/queues/kafka/consumers/log.kafka.consumer.ts";
+import { PriceKafkaConsumer } from "./services/queues/kafka/consumers/price.kafka.consumer.ts";
 import { SwapKafkaConsumer } from "./services/queues/kafka/consumers/swap.kafka.consumer.ts";
 import { TransactionKafkaConsumer } from "./services/queues/kafka/consumers/transaction.kafka.consumer.ts";
 import { TransferKafkaConsumer } from "./services/queues/kafka/consumers/transfer.kafka.consumer.ts";
@@ -238,7 +239,7 @@ switch (command) {
         await consumer.consume();
         break;
       }
-      case "block-kafka": {
+      case "transaction-kafka": {
         setupPrometheus();
 
         const consumer = new TransactionKafkaConsumer();
@@ -246,7 +247,7 @@ switch (command) {
         await consumer.consume();
         break;
       }
-      case "transaction-receipt-kafka": {
+      case "log-kafka": {
         setupPrometheus();
 
         const consumer = new LogKafkaConsumer();
@@ -286,7 +287,7 @@ switch (command) {
         await consumer.consume();
         break;
       }
-      case "transfer-kafka": {
+      case "balance-kafka": {
         setupPrometheus();
 
         const consumer = new BalanceKafkaConsumer();
@@ -294,7 +295,7 @@ switch (command) {
         await consumer.consume();
         break;
       }
-      case "log-kafka": {
+      case "transfer-kafka": {
         setupPrometheus();
 
         const consumer = new TransferKafkaConsumer();
@@ -318,6 +319,14 @@ switch (command) {
         await consumer.consume();
         break;
       }
+      case "price-kafka": {
+        setupPrometheus();
+
+        const consumer = new PriceKafkaConsumer();
+
+        await consumer.consume();
+        break;
+      }
       case "all": {
         setupPrometheus();
 
@@ -330,6 +339,7 @@ switch (command) {
         const logKafkaConsumer = new TransferKafkaConsumer();
         const transferKafkaConsumer = new BalanceKafkaConsumer();
         const swapKafkaConsumer = new SwapKafkaConsumer();
+        const priceKafkaConsumer = new PriceKafkaConsumer();
 
         await blockConsumer.consume();
         await transactionConsumer.consume();
@@ -340,6 +350,7 @@ switch (command) {
         await logKafkaConsumer.consume();
         await transferKafkaConsumer.consume();
         await swapKafkaConsumer.consume();
+        await priceKafkaConsumer.consume();
         break;
       }
       default: {

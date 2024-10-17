@@ -1,7 +1,7 @@
 import {
-  BalanceMessagePayload,
   BlockMessagePayload,
   LogMessagePayload,
+  SwapMessagePayload,
   topics,
   TransactionMessagePayload,
   TransferMessagePayload,
@@ -47,6 +47,17 @@ export async function sendToLogTopic(logHashes: string[]) {
       value: JSON.stringify({
         logHash,
       } as LogMessagePayload),
+    })),
+  );
+}
+
+export async function sendToSwapTopic(swapIds: (bigint | number)[]) {
+  return kafkaConnection.send(
+    topics.SWAP.name,
+    swapIds.map((swapId) => ({
+      value: JSON.stringify({
+        swapId: swapId.toString(),
+      } as SwapMessagePayload),
     })),
   );
 }

@@ -14,6 +14,7 @@ import logger from "../monitor/logger.ts";
 import { getSignature } from "../utils.ts";
 
 type CreateArgType = SwapCreateInput[];
+type CreateReturnType = (bigint | number)[];
 type InputType = Promise<CreateArgType | null>;
 
 export class SwapProcessor
@@ -22,9 +23,11 @@ export class SwapProcessor
       Hash,
       TransactionDto,
       InputType,
-      void,
+      CreateReturnType | null,
       Hash,
-      CreateArgType
+      CreateArgType,
+      void,
+      CreateReturnType
     >
 {
   async get(transactionHash: Hash): Promise<TransactionDto> {
@@ -53,25 +56,25 @@ export class SwapProcessor
     await deleteSwaps(transactionHash);
   }
 
-  async createInDb(inputs: SwapCreateInput[]): Promise<void> {
-    await createSwaps(inputs);
+  async createInDb(inputs: SwapCreateInput[]): Promise<(bigint | number)[]> {
+    return createSwaps(inputs);
   }
 
-  async process(transactionHash: Hash) {
+  async process(transactionHash: Hash): Promise<(bigint | number)[] | null> {
     // get
     const transaction = await this.get(transactionHash);
 
     const input = await this.toInput(transaction);
     if (input == null) {
       // consider it finished
-      return;
+      return null;
     }
 
     // store to database
     await this.deleteFromDb(transactionHash);
     logger.info(`[SwapProcessor] deleted ${transactionHash}`);
-    await this.createInDb(input);
+    const swapId = await this.createInDb(input);
     logger.info(`[SwapProcessor] created ${transactionHash}`);
-    return;
+    return swapId;
   }
 }

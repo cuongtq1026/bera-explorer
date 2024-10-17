@@ -1,20 +1,22 @@
-import { BalanceKafkaProcessor } from "@processors/balance.kafka.processor.ts";
+import { getSwap } from "@database/repositories/swap.repository.ts";
+import { PriceProcessor } from "@processors/price.processor.ts";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import type { EachMessagePayload } from "kafkajs";
-import type { Hash } from "viem";
 
 import {
   InvalidPayloadException,
+  KafkaReachedEndIndexedOffset,
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
-import { topics, TransferMessagePayload } from "../index.ts";
+import { parseToBigInt } from "../../../utils.ts";
+import { SwapMessagePayload, topics } from "../index.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
-export class BalanceKafkaConsumer extends AbstractKafkaConsumer {
-  protected topicName = topics.TRANSFER.name;
-  protected consumerName = "balance";
+export class PriceKafkaConsumer extends AbstractKafkaConsumer {
+  protected topicName = topics.SWAP.name;
+  protected consumerName = "price";
 
   constructor() {
     super();
@@ -27,7 +29,7 @@ export class BalanceKafkaConsumer extends AbstractKafkaConsumer {
 
     const rawContent = eachMessagePayload.message.value?.toString();
     logger.info(
-      `[MessageId: ${messageId}] TransferKafkaConsumer message rawContent: ${rawContent}.`,
+      `[MessageId: ${messageId}] PriceKafkaConsumer message rawContent: ${rawContent}.`,
     );
 
     if (!rawContent) {
@@ -36,7 +38,7 @@ export class BalanceKafkaConsumer extends AbstractKafkaConsumer {
 
     // transform
     const contentInstance = plainToInstance(
-      TransferMessagePayload,
+      SwapMessagePayload,
       JSON.parse(rawContent),
     );
 
@@ -46,10 +48,23 @@ export class BalanceKafkaConsumer extends AbstractKafkaConsumer {
       throw new InvalidPayloadException(messageId);
     }
 
-    const { transferHash } = contentInstance;
+    const { swapId: rawSwapId } = contentInstance;
+    const swapId = parseToBigInt(rawSwapId);
 
-    // process
-    const processor = new BalanceKafkaProcessor();
-    await processor.process(transferHash as Hash);
+    const swap = await getSwap(swapId);
+
+    if (swap == null) {
+      // TODO: Wait until data indexed
+      throw new KafkaReachedEndIndexedOffset(
+        eachMessagePayload.topic,
+        this.consumerName,
+        rawSwapId,
+      );
+    }
+
+    const processor = new PriceProcessor();
+    await processor.process(swapId);
+
+    await this.onFinish(eachMessagePayload, null);
   }
 }

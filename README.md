@@ -15,9 +15,11 @@
 - [x] **Transfer**
 - [x] **Balance**
 - [x] **Balance history**
+- [x] **Swap**
 - [x] **Token**
-- [ ] **Pool**
-- [ ] **Token Price**
+- [x] **Token USD Price**
+- [ ] **Token BTC Price**
+- [ ] **Token ETH Price**
 
 
 ## Technologies

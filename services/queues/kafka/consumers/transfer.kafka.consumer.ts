@@ -11,6 +11,7 @@ import {
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
 import { LogMessagePayload, topics } from "../index.ts";
+import kafkaConnection from "../kafka.connection.ts";
 import { sendToTransferTopic } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
@@ -34,26 +35,25 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
   ): Promise<void> {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
-    const rawContent = eachMessagePayload.message.value?.toString();
-    logger.info(
-      `[MessageId: ${messageId}] LogKafkaConsumer message rawContent: ${rawContent}.`,
-    );
-
+    const rawContent = eachMessagePayload.message.value;
     if (!rawContent) {
       throw new PayloadNotFoundException(messageId);
     }
+    logger.info(
+      `[MessageId: ${messageId}] TransferKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
+    );
+
+    const rawDecodedContent = await kafkaConnection.decode(rawContent);
+
+    logger.info(
+      `[MessageId: ${messageId}] TransferKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,
+    );
 
     // transform
     const contentInstance = plainToInstance(
       LogMessagePayload,
-      JSON.parse(rawContent),
+      JSON.parse(rawContent.toString()),
     );
-
-    // validation
-    const errors = await validate(contentInstance);
-    if (errors.length > 0) {
-      throw new InvalidPayloadException(messageId);
-    }
 
     const { logHash } = contentInstance;
 
@@ -122,7 +122,11 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
     // Send to log topic
-    await sendToTransferTopic([transferHash]);
+    await sendToTransferTopic([
+      {
+        transferHash,
+      },
+    ]);
     logger.info(
       `[MessageId: ${messageId}] Sent ${transferHash} message to transfer topic.`,
     );

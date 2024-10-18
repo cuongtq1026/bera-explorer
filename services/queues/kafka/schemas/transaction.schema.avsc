@@ -1,0 +1,12 @@
+{
+    "name": "TransactionSchema",
+    "namespace": "com.group",
+    "doc": "Schema of transaction hash reference",
+    "type": "record",
+    "fields": [
+        {
+            "name": "hash",
+            "type": "string"
+        }
+    ]
+}

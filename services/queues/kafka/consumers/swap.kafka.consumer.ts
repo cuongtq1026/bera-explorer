@@ -1,17 +1,16 @@
 import { findTransaction } from "@database/repositories/transaction.repository.ts";
 import { SwapProcessor } from "@processors/swap.processor.ts";
 import { plainToInstance } from "class-transformer";
-import { validate } from "class-validator";
 import type { EachMessagePayload } from "kafkajs";
 import type { Hash } from "viem";
 
 import {
-  InvalidPayloadException,
   KafkaReachedEndIndexedOffset,
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
 import { topics, TransactionMessagePayload } from "../index.ts";
+import kafkaConnection from "../kafka.connection.ts";
 import { sendToSwapTopic } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
@@ -28,26 +27,25 @@ export class SwapKafkaConsumer extends AbstractKafkaConsumer {
   ): Promise<void> {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
-    const rawContent = eachMessagePayload.message.value?.toString();
-    logger.info(
-      `[MessageId: ${messageId}] SwapKafkaConsumer message rawContent: ${rawContent}.`,
-    );
-
+    const rawContent = eachMessagePayload.message.value;
     if (!rawContent) {
       throw new PayloadNotFoundException(messageId);
     }
+    logger.info(
+      `[MessageId: ${messageId}] SwapKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
+    );
+
+    const rawDecodedContent = await kafkaConnection.decode(rawContent);
+
+    logger.info(
+      `[MessageId: ${messageId}] SwapKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,
+    );
 
     // transform
     const contentInstance = plainToInstance(
       TransactionMessagePayload,
-      JSON.parse(rawContent),
+      JSON.parse(rawDecodedContent.toString()),
     );
-
-    // validation
-    const errors = await validate(contentInstance);
-    if (errors.length > 0) {
-      throw new InvalidPayloadException(messageId);
-    }
 
     const { hash: transactionHash } = contentInstance;
 
@@ -84,7 +82,11 @@ export class SwapKafkaConsumer extends AbstractKafkaConsumer {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
     // Send to swap topic
-    await sendToSwapTopic(swapIds);
+    await sendToSwapTopic(
+      swapIds.map((swapId) => ({
+        swapId: swapId.toString(),
+      })),
+    );
     logger.info(
       `[MessageId: ${messageId}] Sent ${swapIds.length} messages to swap topic.`,
     );

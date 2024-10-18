@@ -8,56 +8,59 @@ import {
 } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
 
-export async function sendToBlockTopic(blockNumber: number) {
-  return kafkaConnection.send(topics.BLOCK.name, [
-    {
-      value: JSON.stringify({
-        blockNumber,
-      } as BlockMessagePayload),
-    },
-  ]);
+export async function sendToBlockTopic(messages: BlockMessagePayload[]) {
+  return kafkaConnection.send(
+    topics.BLOCK.name,
+    await Promise.all(
+      messages.map(async (message) => ({
+        value: await kafkaConnection.encode("BLOCK", message),
+      })),
+    ),
+  );
 }
 
-export async function sendToTransactionTopic(transactionHashes: string[]) {
+export async function sendToTransactionTopic(
+  messages: TransactionMessagePayload[],
+) {
   return kafkaConnection.send(
     topics.TRANSACTION.name,
-    transactionHashes.map((transactionHash) => ({
-      value: JSON.stringify({
-        hash: transactionHash,
-      } as TransactionMessagePayload),
-    })),
+    await Promise.all(
+      messages.map(async (message) => ({
+        value: await kafkaConnection.encode("TRANSACTION", message),
+      })),
+    ),
   );
 }
 
-export async function sendToTransferTopic(transferHashes: string[]) {
+export async function sendToTransferTopic(messages: TransferMessagePayload[]) {
   return kafkaConnection.send(
     topics.TRANSFER.name,
-    transferHashes.map((transferHash) => ({
-      value: JSON.stringify({
-        transferHash,
-      } as TransferMessagePayload),
-    })),
+    await Promise.all(
+      messages.map(async (message) => ({
+        value: await kafkaConnection.encode("TRANSFER", message),
+      })),
+    ),
   );
 }
 
-export async function sendToLogTopic(logHashes: string[]) {
+export async function sendToLogTopic(messages: LogMessagePayload[]) {
   return kafkaConnection.send(
     topics.LOG.name,
-    logHashes.map((logHash) => ({
-      value: JSON.stringify({
-        logHash,
-      } as LogMessagePayload),
-    })),
+    await Promise.all(
+      messages.map(async (message) => ({
+        value: await kafkaConnection.encode("LOG", message),
+      })),
+    ),
   );
 }
 
-export async function sendToSwapTopic(swapIds: (bigint | number)[]) {
+export async function sendToSwapTopic(messages: SwapMessagePayload[]) {
   return kafkaConnection.send(
     topics.SWAP.name,
-    swapIds.map((swapId) => ({
-      value: JSON.stringify({
-        swapId: swapId.toString(),
-      } as SwapMessagePayload),
-    })),
+    await Promise.all(
+      messages.map(async (message) => ({
+        value: await kafkaConnection.encode("LOG", message),
+      })),
+    ),
   );
 }

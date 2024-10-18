@@ -39,7 +39,7 @@
       ],
       "@consumers/*": [
         "./services/queues/consumers/*"
-      ],
+      ]
     }
   }
 }

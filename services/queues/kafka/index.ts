@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber } from "class-validator";
+import { IsNotEmpty } from "class-validator";
 
 export const topics = {
   BLOCK: {
@@ -18,15 +18,9 @@ export const topics = {
   },
 };
 
-export class BalanceMessagePayload {
-  @IsNotEmpty()
-  transferHash: string;
-}
-
 export class BlockMessagePayload {
   @IsNotEmpty()
-  @IsNumber()
-  blockNumber: number;
+  blockNumber: string;
 }
 
 export class TransactionMessagePayload {

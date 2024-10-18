@@ -14,8 +14,9 @@
     "consume:internal-transaction": "bun run index.ts consume internal-transaction",
     "consume:transfer": "bun run index.ts consume transfer",
     "consume:token": "bun run index.ts consume token",
-    "consume:transaction-receipt-kafka": "bun run index.ts consume transaction-receipt-kafka",
-    "consume:log-kafka": "bun run index.ts consume log-kafka",
+    "send-blocks-topic": "bun run index.ts send-blocks-topic",
+    "consume:transaction-kafka": "bun run index.ts consume transaction-kafka",
+    "consume:log-kafka": "EXPORTER_PORT=4200 bun run index.ts consume log-kafka",
     "consume:transfer-kafka": "bun run index.ts consume transfer-kafka",
     "consume:swap-kafka": "bun run index.ts consume swap-kafka",
     "consume:price-kafka": "bun run index.ts consume price-kafka",
@@ -38,6 +39,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@kafkajs/confluent-schema-registry": "^3.3.0",
     "@prisma/client": "^5.21.0",
     "@types/amqplib": "^0.10.5",
     "@types/uuid": "^10.0.0",

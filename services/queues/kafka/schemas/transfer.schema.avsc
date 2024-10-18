@@ -1,0 +1,12 @@
+{
+    "name": "TransferSchema",
+    "namespace": "com.group",
+    "doc": "Schema of transfer hash reference",
+    "type": "record",
+    "fields": [
+        {
+            "name": "transferHash",
+            "type": "string"
+        }
+    ]
+}

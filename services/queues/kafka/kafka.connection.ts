@@ -1,3 +1,4 @@
+import { SchemaRegistry, SchemaType } from "@kafkajs/confluent-schema-registry";
 import {
   type Admin,
   type EachMessageHandler,
@@ -10,6 +11,13 @@ import {
 
 import logger from "../../monitor/logger.ts";
 import { topics } from "./index.ts";
+import {
+  blockSchema,
+  logSchema,
+  swapSchema,
+  transactionSchema,
+  transferSchema,
+} from "./schemas";
 
 export const toWinstonLogLevel = (level: logLevel) => {
   switch (level) {
@@ -30,15 +38,20 @@ export class KafkaConnection {
   private connected!: boolean;
   private producer!: Producer;
   private admin!: Admin;
+  private registry!: SchemaRegistry;
+  private schemaMap = new Map<keyof typeof topics, number>();
 
   async connect() {
     const kafkaBrokerUrl = process.env.KAFKA_BROKER_CONNECTION;
     if (!kafkaBrokerUrl) {
       throw Error("No Kafka connection URL provided");
     }
+    const schemaRegistry = process.env.SCHEMA_REGISTRY;
+    if (!schemaRegistry) {
+      throw Error("No schema registry connection URL provided");
+    }
 
     if (this.connected && this.producer) return;
-    else this.connected = true;
 
     try {
       this.connection = new Kafka({
@@ -60,14 +73,17 @@ export class KafkaConnection {
         createPartitioner: Partitioners.DefaultPartitioner,
       });
 
-      logger.info(`⌛️ Connecting to Kafka Producer`);
+      logger.info(`⌛  Connecting to Kafka Producer`);
       await this.producer.connect();
       logger.info(`✅  Kafka Producer is ready`);
 
       this.admin = this.connection.admin();
-      logger.info(`⌛️ Connecting to Kafka Admin`);
+      logger.info(`⌛  Connecting to Kafka Admin`);
       await this.admin.connect();
       logger.info(`✅  Kafka Admin is ready`);
+      logger.info(`⌛  Connecting to Schema Registry`);
+      this.registry = new SchemaRegistry({ host: schemaRegistry });
+      logger.info(`✅  Schema Registry is ready`);
       const existingTopics = await this.admin.listTopics();
       await this.admin.createTopics({
         topics: Object.values(topics)
@@ -79,18 +95,90 @@ export class KafkaConnection {
           })),
       });
       logger.info(`Kafka topics created`);
+
+      {
+        logger.info(`⌛  Creating Registry schemas`);
+
+        const { id: blockSchemaId } = await this.registry.register({
+          type: SchemaType.AVRO,
+          schema: JSON.stringify(blockSchema),
+        });
+        this.schemaMap.set("BLOCK", blockSchemaId);
+
+        const { id: logSchemaId } = await this.registry.register({
+          type: SchemaType.AVRO,
+          schema: JSON.stringify(logSchema),
+        });
+        this.schemaMap.set("LOG", logSchemaId);
+
+        const { id: swapId } = await this.registry.register({
+          type: SchemaType.AVRO,
+          schema: JSON.stringify(swapSchema),
+        });
+        this.schemaMap.set("SWAP", swapId);
+
+        const { id: transactionSchemaId } = await this.registry.register({
+          type: SchemaType.AVRO,
+          schema: JSON.stringify(transactionSchema),
+        });
+        this.schemaMap.set("TRANSACTION", transactionSchemaId);
+
+        const { id: transferSchemaId } = await this.registry.register({
+          type: SchemaType.AVRO,
+          schema: JSON.stringify(transferSchema),
+        });
+        this.schemaMap.set("TRANSFER", transferSchemaId);
+
+        logger.info(`✅  Schema Registry registered: ${this.schemaMap.size}`);
+      }
+
+      // When everything is fully connected, set connected = true
+      this.connected = true;
     } catch (error) {
       logger.error(error);
-      logger.error(`Not connected to Kafka server`);
+      logger.error(`Failed to connect to Kafka`);
 
       throw error;
     }
   }
 
+  public async encode(
+    schemaName: keyof typeof topics,
+    value: any,
+  ): Promise<Buffer> {
+    await this.checkConnection();
+
+    return this.registry.encode(this.getSchemaId(schemaName), value);
+  }
+
+  public async decode(value: Buffer): Promise<Buffer> {
+    await this.checkConnection();
+
+    return this.registry.decode(value);
+  }
+
+  public getSchemaId(schemaName: keyof typeof topics): number {
+    const schema = this.schemaMap.get(schemaName);
+    if (schema == null) {
+      throw new Error(`No schemaName: ${schemaName}`);
+    }
+    return schema;
+  }
+
+  private promise: Promise<void> | null = null;
+
   private async checkConnection(): Promise<void> {
-    if (this.producer) {
+    if (!this.promise) {
+      this.promise = this.checkConnectionOnce();
+    }
+    return this.promise;
+  }
+
+  private async checkConnectionOnce(): Promise<void> {
+    if (this.connected) {
       return;
     }
+
     await this.connect();
   }
 

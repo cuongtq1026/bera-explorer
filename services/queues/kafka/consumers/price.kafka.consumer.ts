@@ -1,17 +1,16 @@
 import { getSwap } from "@database/repositories/swap.repository.ts";
 import { PriceProcessor } from "@processors/price.processor.ts";
 import { plainToInstance } from "class-transformer";
-import { validate } from "class-validator";
 import type { EachMessagePayload } from "kafkajs";
 
 import {
-  InvalidPayloadException,
   KafkaReachedEndIndexedOffset,
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
 import { parseToBigInt } from "../../../utils.ts";
 import { SwapMessagePayload, topics } from "../index.ts";
+import kafkaConnection from "../kafka.connection.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class PriceKafkaConsumer extends AbstractKafkaConsumer {
@@ -27,26 +26,25 @@ export class PriceKafkaConsumer extends AbstractKafkaConsumer {
   ): Promise<void> {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
-    const rawContent = eachMessagePayload.message.value?.toString();
-    logger.info(
-      `[MessageId: ${messageId}] PriceKafkaConsumer message rawContent: ${rawContent}.`,
-    );
-
+    const rawContent = eachMessagePayload.message.value;
     if (!rawContent) {
       throw new PayloadNotFoundException(messageId);
     }
+    logger.info(
+      `[MessageId: ${messageId}] PriceKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
+    );
+
+    const rawDecodedContent = await kafkaConnection.decode(rawContent);
+
+    logger.info(
+      `[MessageId: ${messageId}] PriceKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,
+    );
 
     // transform
     const contentInstance = plainToInstance(
       SwapMessagePayload,
-      JSON.parse(rawContent),
+      JSON.parse(rawDecodedContent.toString()),
     );
-
-    // validation
-    const errors = await validate(contentInstance);
-    if (errors.length > 0) {
-      throw new InvalidPayloadException(messageId);
-    }
 
     const { swapId: rawSwapId } = contentInstance;
     const swapId = parseToBigInt(rawSwapId);

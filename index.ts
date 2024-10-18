@@ -26,6 +26,7 @@ import { PriceKafkaConsumer } from "./services/queues/kafka/consumers/price.kafk
 import { SwapKafkaConsumer } from "./services/queues/kafka/consumers/swap.kafka.consumer.ts";
 import { TransactionKafkaConsumer } from "./services/queues/kafka/consumers/transaction.kafka.consumer.ts";
 import { TransferKafkaConsumer } from "./services/queues/kafka/consumers/transfer.kafka.consumer.ts";
+import { sendToBlockTopic } from "./services/queues/kafka/producers";
 import { BlockConsumer } from "./services/queues/rabbitmq/consumers/block.consumer.ts";
 import { DlxConsumer } from "./services/queues/rabbitmq/consumers/dlx.consumer.ts";
 import { InternalTransactionConsumer } from "./services/queues/rabbitmq/consumers/internal-transaction.consumer.ts";
@@ -357,6 +358,26 @@ switch (command) {
         logger.info(`No model to consume: ${modelToConsume}.`);
       }
     }
+    break;
+  }
+  case "send-blocks-topic": {
+    const from = parseToBigInt(restArgs[0]);
+    const to = parseToBigInt(restArgs[1]);
+    if (from == null || to == null || from >= to) {
+      logger.info(`Invalid block number. from: ${from} | to: ${to}.`);
+      break;
+    }
+
+    for (let i = from; i <= to; i++) {
+      await sendToBlockTopic([
+        {
+          blockNumber: from.toString(),
+        },
+      ]);
+
+      logger.debug(`Sent block ${i} to block topic.`);
+    }
+    logger.info(`Finish send all messages to block topic.`);
     break;
   }
   case "retry-queue-all": {

@@ -11,6 +11,7 @@ import {
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
 import { topics, TransactionMessagePayload } from "../index.ts";
+import kafkaConnection from "../kafka.connection.ts";
 import { sendToLogTopic } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
@@ -27,26 +28,25 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
   ): Promise<void> {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
-    const rawContent = eachMessagePayload.message.value?.toString();
-    logger.info(
-      `[MessageId: ${messageId}] TransactionReceiptKafkaConsumer message rawContent: ${rawContent}.`,
-    );
-
+    const rawContent = eachMessagePayload.message.value;
     if (!rawContent) {
       throw new PayloadNotFoundException(messageId);
     }
+    logger.info(
+      `[MessageId: ${messageId}] LogKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
+    );
+
+    const rawDecodedContent = await kafkaConnection.decode(rawContent);
+
+    logger.info(
+      `[MessageId: ${messageId}] LogKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,
+    );
 
     // transform
     const contentInstance = plainToInstance(
       TransactionMessagePayload,
-      JSON.parse(rawContent),
+      JSON.parse(rawDecodedContent.toString()),
     );
-
-    // validation
-    const errors = await validate(contentInstance);
-    if (errors.length > 0) {
-      throw new InvalidPayloadException(messageId);
-    }
 
     const { hash } = contentInstance;
     // process from db if already existed
@@ -100,7 +100,11 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
     // Send to log topic
-    await sendToLogTopic(logs);
+    await sendToLogTopic(
+      logs.map((log) => ({
+        logHash: log,
+      })),
+    );
     logger.info(
       `[MessageId: ${messageId}] Sent ${logs.length} messages to log topic.`,
     );

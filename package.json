@@ -4,9 +4,8 @@
   "module": "index.ts",
   "type": "module",
   "exports": "./dist/index.mjs",
-  "bin": "./dist/rollup.config.js",
   "scripts": {
-    "build": "pkgroll --src .",
+    "build": "pkgroll --src . --export-condition=node",
     "backend:dev": "tsx watch backend.ts",
     "prisma:generate": "prisma generate",
     "prisma:deploy": "prisma migrate deploy",

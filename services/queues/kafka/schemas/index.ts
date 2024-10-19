@@ -1,22 +1,15 @@
-import { readAVSCAsync } from "@kafkajs/confluent-schema-registry";
-import { join } from "path";
+import blockSchemaJson from "./block.schema.avsc.json";
+import logSchemaJson from "./log.schema.avsc.json";
+import swapSchemaJson from "./swap.schema.avsc.json";
+import transactionSchemaJson from "./transaction.schema.avsc.json";
+import transferSchemaJson from "./transfer.schema.avsc.json";
 
-export const blockSchema = await readAVSCAsync(
-  join(import.meta.dirname, "block.schema.avsc"),
-);
+export const blockSchema = blockSchemaJson;
 
-export const logSchema = await readAVSCAsync(
-  join(import.meta.dirname, "log.schema.avsc"),
-);
+export const logSchema = logSchemaJson;
 
-export const swapSchema = await readAVSCAsync(
-  join(import.meta.dirname, "swap.schema.avsc"),
-);
+export const swapSchema = swapSchemaJson;
 
-export const transactionSchema = await readAVSCAsync(
-  join(import.meta.dirname, "transaction.schema.avsc"),
-);
+export const transactionSchema = transactionSchemaJson;
 
-export const transferSchema = await readAVSCAsync(
-  join(import.meta.dirname, "transfer.schema.avsc"),
-);
+export const transferSchema = transferSchemaJson;

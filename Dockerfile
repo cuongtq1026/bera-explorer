@@ -1,23 +1,21 @@
 # Build stage
-FROM oven/bun:latest as builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 COPY package.json bun.lockb prisma/ ./
 
-RUN bun install
-RUN bun run prisma:generate
+RUN yarn install --production
+RUN yarn run prisma:generate
 
 COPY . .
 
-RUN bun build ./index.ts --outdir ./build --target bun
+RUN yarn build
 
-# Production stage
-FROM oven/bun:latest
+FROM node:20-alpine
 
 WORKDIR /app
 
-COPY --from=builder /app/node_modules/.prisma/client/libquery_engine-linux-arm64-openssl-1.1.x.so.node ./
-COPY --from=builder /app/build ./build
+COPY --from=builder /app .
 
-CMD ["bun", "run", "./build/index.js", "consume", "all"]
+CMD ["node", "./dist/index.mjs", "consume", "all"]

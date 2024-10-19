@@ -1,15 +1,8 @@
+import { KafkaJS } from "@confluentinc/kafka-javascript";
 import { SchemaRegistry, SchemaType } from "@kafkajs/confluent-schema-registry";
-import {
-  type Admin,
-  type EachMessageHandler,
-  Kafka,
-  logLevel,
-  type Message,
-  Partitioners,
-  type Producer,
-} from "kafkajs";
 
-import logger from "../../monitor/logger.ts";
+import { appLogger } from "../../monitor/app.logger.ts";
+import { KafkaLogger } from "../../monitor/kafka.logger.ts";
 import { topics } from "./index.ts";
 import {
   blockSchema,
@@ -19,25 +12,13 @@ import {
   transferSchema,
 } from "./schemas";
 
-export const toWinstonLogLevel = (level: logLevel) => {
-  switch (level) {
-    case logLevel.ERROR:
-    case logLevel.NOTHING:
-      return "error";
-    case logLevel.WARN:
-      return "warn";
-    case logLevel.INFO:
-      return "info";
-    case logLevel.DEBUG:
-      return "debug";
-  }
-};
+const serviceLogger = appLogger.namespace("KafkaConnection");
 
 export class KafkaConnection {
-  private connection: Kafka;
+  private connection: KafkaJS.Kafka;
   private connected!: boolean;
-  private producer!: Producer;
-  private admin!: Admin;
+  private producer!: KafkaJS.Producer;
+  private admin!: KafkaJS.Admin;
   private registry!: SchemaRegistry;
   private schemaMap = new Map<keyof typeof topics, number>();
 
@@ -54,36 +35,31 @@ export class KafkaConnection {
     if (this.connected && this.producer) return;
 
     try {
-      this.connection = new Kafka({
-        clientId: "bera-explorer",
-        brokers: [kafkaBrokerUrl],
-        logCreator:
-          () =>
-          ({ level, log }) => {
-            const { message, ...extra } = log;
-            logger.log({
-              level: toWinstonLogLevel(level),
-              message: message,
-              extra,
-            });
-          },
+      this.connection = new KafkaJS.Kafka({
+        kafkaJS: {
+          clientId: "bera-explorer",
+          brokers: [kafkaBrokerUrl],
+          logger: new KafkaLogger(),
+        },
       });
 
       this.producer = this.connection.producer({
-        createPartitioner: Partitioners.DefaultPartitioner,
+        kafkaJS: {
+          idempotent: true,
+        },
       });
 
-      logger.info(`⌛  Connecting to Kafka Producer`);
+      serviceLogger.info(`⌛  Connecting to Kafka Producer`);
       await this.producer.connect();
-      logger.info(`✅  Kafka Producer is ready`);
+      serviceLogger.info(`✅  Kafka Producer is ready`);
 
       this.admin = this.connection.admin();
-      logger.info(`⌛  Connecting to Kafka Admin`);
+      serviceLogger.info(`⌛  Connecting to Kafka Admin`);
       await this.admin.connect();
-      logger.info(`✅  Kafka Admin is ready`);
-      logger.info(`⌛  Connecting to Schema Registry`);
+      serviceLogger.info(`✅  Kafka Admin is ready`);
+      serviceLogger.info(`⌛  Connecting to Schema Registry`);
       this.registry = new SchemaRegistry({ host: schemaRegistry });
-      logger.info(`✅  Schema Registry is ready`);
+      serviceLogger.info(`✅  Schema Registry is ready`);
       const existingTopics = await this.admin.listTopics();
       await this.admin.createTopics({
         topics: Object.values(topics)
@@ -94,10 +70,10 @@ export class KafkaConnection {
             replicationFactor: 1,
           })),
       });
-      logger.info(`Kafka topics created`);
+      serviceLogger.info(`Kafka topics created`);
 
       {
-        logger.info(`⌛  Creating Registry schemas`);
+        serviceLogger.info(`⌛  Creating Registry schemas`);
 
         const { id: blockSchemaId } = await this.registry.register({
           type: SchemaType.AVRO,
@@ -129,14 +105,15 @@ export class KafkaConnection {
         });
         this.schemaMap.set("TRANSFER", transferSchemaId);
 
-        logger.info(`✅  Schema Registry registered: ${this.schemaMap.size}`);
+        serviceLogger.info(
+          `✅  Schema Registry registered: ${this.schemaMap.size}`,
+        );
       }
 
       // When everything is fully connected, set connected = true
       this.connected = true;
-    } catch (error) {
-      logger.error(error);
-      logger.error(`Failed to connect to Kafka`);
+    } catch (error: any) {
+      serviceLogger.error(`Failed to connect to Kafka`);
 
       throw error;
     }
@@ -182,7 +159,10 @@ export class KafkaConnection {
     await this.connect();
   }
 
-  public async send<T extends Message = Message>(topic: string, messages: T[]) {
+  public async send<T extends KafkaJS.Message = KafkaJS.Message>(
+    topic: string,
+    messages: T[],
+  ) {
     await this.checkConnection();
 
     await this.producer.send({
@@ -198,7 +178,7 @@ export class KafkaConnection {
   }: {
     topic: string;
     groupId: string;
-    eachMessageHandler: EachMessageHandler;
+    eachMessageHandler: KafkaJS.EachMessageHandler;
   }) {
     await this.checkConnection();
 
@@ -208,17 +188,23 @@ export class KafkaConnection {
     }
     const groupIdTopic = [envGroupId, groupId, topic].join("-");
     const consumer = this.connection.consumer({
-      groupId: groupIdTopic,
+      kafkaJS: {
+        groupId: groupIdTopic,
+        fromBeginning: true,
+        autoCommit: true,
+        autoCommitInterval: 1000,
+      },
     });
+
+    serviceLogger.info(`⌛  Connecting to Consumer ${groupIdTopic}`);
+    await consumer.connect();
+    serviceLogger.info(`✅  Connected to Consumer ${groupIdTopic}`);
+
     await consumer.subscribe({
-      topic,
-      fromBeginning: true,
+      topics: [topic],
     });
 
     await consumer.run({
-      autoCommit: true,
-      autoCommitInterval: 1000,
-      autoCommitThreshold: 10,
       eachMessage: eachMessageHandler,
     });
   }

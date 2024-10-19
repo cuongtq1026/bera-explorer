@@ -24,7 +24,7 @@ if (process.env.NODE_ENV !== "production") {
     new transports.Console({
       level: "debug",
       format: format.combine(
-        format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+        format.timestamp({ format: "YYYY-MM-DD, HH:mm:ss" }),
         format.printf(
           ({
             level,
@@ -35,14 +35,13 @@ if (process.env.NODE_ENV !== "production") {
             file,
             ...metadata
           }) => {
-            const messages = [];
-            messages.push(timestamp);
+            const messages = [process.pid, "-", timestamp];
             if (label) {
               messages.push(`[${label}]`);
             }
             messages.push(level.toUpperCase());
             if (namespace) {
-              messages.push(namespace);
+              messages.push(`[${namespace}]`);
             }
             messages.push(message);
             if (file) {
@@ -56,6 +55,7 @@ if (process.env.NODE_ENV !== "production") {
           },
         ),
         format.colorize({ all: true }),
+        format.errors({ stack: true }),
       ),
     }),
   );

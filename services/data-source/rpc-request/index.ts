@@ -1,12 +1,14 @@
 import { createClient, createPublicClient, http } from "viem";
 import { berachainTestnetbArtio } from "viem/chains";
 
-import logger from "../../monitor/logger.ts";
+import { appLogger } from "../../monitor/app.logger.ts";
 import { rpcBlacklistCounter } from "../../monitor/prometheus.ts";
 import { getHostFromUrl } from "../../utils.ts";
 import redisClient from "../redis-client.ts";
 import { extendDebugClient } from "./extends.ts";
 import type { RpcClient, RpcDebugClient } from "./types.ts";
+
+const serviceLogger = appLogger.namespace("RpcRequest");
 
 const BLACKLIST_KEY = "rpc_url:blacklist";
 
@@ -22,7 +24,7 @@ export class RpcRequest {
     }
 
     const rpcUrls = envRpcUrls.split(",");
-    logger.info(`Number of RPC URLs provided: ${rpcUrls.length}`);
+    serviceLogger.info(`Number of RPC URLs provided: ${rpcUrls.length}`);
 
     this.clients = rpcUrls.map((url, index) => ({
       url,
@@ -36,7 +38,9 @@ export class RpcRequest {
     const envDebugRpcUrls = process.env.DEBUG_RPC_URLS;
     if (envDebugRpcUrls) {
       const debugRpcUrls = envDebugRpcUrls.split(",");
-      logger.info(`Number of Debug RPC URLs provided: ${debugRpcUrls.length}`);
+      serviceLogger.info(
+        `Number of Debug RPC URLs provided: ${debugRpcUrls.length}`,
+      );
 
       this.debugClients = debugRpcUrls.map((url, index) => ({
         url,
@@ -48,7 +52,7 @@ export class RpcRequest {
       }));
     }
     if (!envDebugRpcUrls) {
-      logger.warn("No Debug RPC URLs provided");
+      serviceLogger.warn("No Debug RPC URLs provided");
     }
   }
 
@@ -65,7 +69,7 @@ export class RpcRequest {
       rpc: client.key,
     });
 
-    logger.info("RPC URL blacklisted: " + client.key);
+    serviceLogger.info("RPC URL blacklisted: " + client.key);
   }
 
   async isBlacklisted(key: string) {
@@ -103,7 +107,9 @@ export class RpcRequest {
       return client;
     }
 
-    logger.warn(`All RPC URLs are blacklisted. Wait and retry in 1 second.`);
+    serviceLogger.warn(
+      `All RPC URLs are blacklisted. Wait and retry in 1 second.`,
+    );
     await new Promise((resolve) =>
       setTimeout(() => {
         resolve(0);

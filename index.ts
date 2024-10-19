@@ -18,6 +18,7 @@ import { TransferProcessor } from "@processors/transfer.processor.ts";
 import type { Hash } from "viem";
 
 import { queues } from "./services/config";
+import { appLogger } from "./services/monitor/app.logger.ts";
 import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
 import { BalanceKafkaConsumer } from "./services/queues/kafka/consumers/balance.kafka.consumer.ts";
@@ -51,7 +52,8 @@ import { is0xHash, parseToBigInt } from "./services/utils.ts";
 
 const [command, ...restArgs] = process.argv.slice(2);
 
-logger.info(`Executing command ${command}...`);
+const serviceLogger = appLogger.namespace("Root");
+serviceLogger.info(`Executing command ${command}...`);
 
 switch (command) {
   case "block": {

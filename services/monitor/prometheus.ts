@@ -1,8 +1,9 @@
 import http from "http";
 import client from "prom-client";
 
-import logger from "./logger.ts";
+import { appLogger } from "./app.logger.ts";
 
+const serviceLogger = appLogger.namespace("Prometheus");
 export const prometheusRegistry = new client.Registry();
 
 export const rpcRequestCounter = new client.Counter({
@@ -44,7 +45,7 @@ export function setupPrometheus() {
     ? +process.env.EXPORTER_PORT
     : 4000;
   server.listen(exporterPort);
-  logger.info(`✅  [Prometheus] Server is running on port ${exporterPort}`);
+  serviceLogger.info(`✅  Server is running on port ${exporterPort}`);
 }
 
 export default client;

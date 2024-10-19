@@ -1,3 +1,5 @@
+import 'dotenv/config'
+
 import { createClient, createPublicClient, http } from "viem";
 import { berachainTestnetbArtio } from "viem/chains";
 

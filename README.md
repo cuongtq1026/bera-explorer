@@ -38,13 +38,13 @@ The project uses the following technologies:
 
 ## Setup
 ### 1. Install dependencies
-Install the project dependencies using [Bun](https://bun.sh):
+Install the project dependencies
 ```bash
-bun install
+yarn install
 ```
 Install dependencies in frontend directory:
 ```bash
-cd frontend && bun install
+cd frontend && yarn install
 ```
 
 ### 2. Run docker-compose:
@@ -70,41 +70,41 @@ cp .env.example .env
 ### 4. Generate Prisma Client
 Run the following command to generate Prisma client:
 ```bash
-bun run prisma:generate
+yarn run prisma:generate
 ```
 
 ## Start Services
 
 ### Start Consumers
 ```bash
-bun run consume:all
+yarn run consume:all
 ```
 
 ### Queue New Messages
 Queue a block for processing:
 ```bash
-bun run queue block <blockNumber>
+yarn run queue block <blockNumber>
 ```
 Queue a range of blocks:
 ```bash
-bun run queue blocks <from> <to>
+yarn run queue blocks <from> <to>
 ```
 Queue a transaction for processing:
 ```bash
-bun run queue transaction <txHash>
+yarn run queue transaction <txHash>
 ```
 Note: Transactions will be automatically queued after a block is processed. Once a transaction is processed, a `transaction-receipt` message will be published._
 
 ### Retry Failed Messages
 There is a Dead Letter Exchange (DLX) for storing failed messages. Retry them with:
 ```bash
-bun run retry-queue-all
+yarn run retry-queue-all
 ```
 
 ## Backend API
 To start the backend API server:
 ```bash
-bun run dev
+yarn run dev
 ```
 
 ### API Endpoints
@@ -123,7 +123,7 @@ Query Params: `page?: number, size?: number, cursor?: number, order?: "asc" | "d
 ## UI
 To start the UI server:
 ```bash
-cd frontend && bun run dev
+cd frontend && yarn run dev
 ```
 
 ## Monitoring

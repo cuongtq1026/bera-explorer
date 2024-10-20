@@ -6,9 +6,14 @@ import {
   TransactionMessagePayload,
   TransferMessagePayload,
 } from "../index.ts";
-import kafkaConnection from "../kafka.connection.ts";
+import kafkaConnection, {
+  type TransactionOptions,
+} from "../kafka.connection.ts";
 
-export async function sendToBlockTopic(messages: BlockMessagePayload[]) {
+export async function sendToBlockTopic(
+  messages: BlockMessagePayload[],
+  options?: TransactionOptions,
+) {
   return kafkaConnection.send(
     topics.BLOCK.name,
     await Promise.all(
@@ -16,11 +21,13 @@ export async function sendToBlockTopic(messages: BlockMessagePayload[]) {
         value: await kafkaConnection.encode("BLOCK", message),
       })),
     ),
+    options,
   );
 }
 
 export async function sendToTransactionTopic(
   messages: TransactionMessagePayload[],
+  options?: TransactionOptions,
 ) {
   return kafkaConnection.send(
     topics.TRANSACTION.name,
@@ -29,10 +36,14 @@ export async function sendToTransactionTopic(
         value: await kafkaConnection.encode("TRANSACTION", message),
       })),
     ),
+    options,
   );
 }
 
-export async function sendToTransferTopic(messages: TransferMessagePayload[]) {
+export async function sendToTransferTopic(
+  messages: TransferMessagePayload[],
+  options?: TransactionOptions,
+) {
   return kafkaConnection.send(
     topics.TRANSFER.name,
     await Promise.all(
@@ -40,10 +51,14 @@ export async function sendToTransferTopic(messages: TransferMessagePayload[]) {
         value: await kafkaConnection.encode("TRANSFER", message),
       })),
     ),
+    options,
   );
 }
 
-export async function sendToLogTopic(messages: LogMessagePayload[]) {
+export async function sendToLogTopic(
+  messages: LogMessagePayload[],
+  options?: TransactionOptions,
+) {
   return kafkaConnection.send(
     topics.LOG.name,
     await Promise.all(
@@ -51,10 +66,14 @@ export async function sendToLogTopic(messages: LogMessagePayload[]) {
         value: await kafkaConnection.encode("LOG", message),
       })),
     ),
+    options,
   );
 }
 
-export async function sendToSwapTopic(messages: SwapMessagePayload[]) {
+export async function sendToSwapTopic(
+  messages: SwapMessagePayload[],
+  options?: TransactionOptions,
+) {
   return kafkaConnection.send(
     topics.SWAP.name,
     await Promise.all(
@@ -62,5 +81,6 @@ export async function sendToSwapTopic(messages: SwapMessagePayload[]) {
         value: await kafkaConnection.encode("LOG", message),
       })),
     ),
+    options,
   );
 }

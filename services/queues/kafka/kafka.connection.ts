@@ -14,10 +14,15 @@ import {
 
 const serviceLogger = appLogger.namespace("KafkaConnection");
 
+export type TransactionOptions = {
+  transaction?: KafkaJS.Transaction;
+};
+
 export class KafkaConnection {
   private connection: KafkaJS.Kafka;
   private connected!: boolean;
   private producer!: KafkaJS.Producer;
+  private producerEOS!: KafkaJS.Producer;
   private admin!: KafkaJS.Admin;
   private registry!: SchemaRegistry;
   private schemaMap = new Map<keyof typeof topics, number>();
@@ -43,14 +48,18 @@ export class KafkaConnection {
         },
       });
 
-      this.producer = this.connection.producer({
+      this.producer = this.connection.producer();
+      this.producerEOS = this.connection.producer({
         kafkaJS: {
           idempotent: true,
+          transactionalId: "transactional-producer",
+          maxInFlightRequests: 1,
         },
       });
 
       serviceLogger.info(`⌛  Connecting to Kafka Producer`);
       await this.producer.connect();
+      await this.producerEOS.connect();
       serviceLogger.info(`✅  Kafka Producer is ready`);
 
       this.admin = this.connection.admin();
@@ -159,11 +168,27 @@ export class KafkaConnection {
     await this.connect();
   }
 
+  public async transaction(): Promise<KafkaJS.Transaction> {
+    await this.checkConnection();
+
+    return this.producerEOS.transaction();
+  }
+
   public async send<T extends KafkaJS.Message = KafkaJS.Message>(
     topic: string,
     messages: T[],
+    options?: TransactionOptions,
   ) {
     await this.checkConnection();
+
+    const { transaction } = options ?? {};
+    if (transaction) {
+      await transaction.send({
+        topic: topic,
+        messages: messages,
+      });
+      return;
+    }
 
     await this.producer.send({
       topic: topic,

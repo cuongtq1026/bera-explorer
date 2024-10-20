@@ -5,11 +5,13 @@ import { SchemaRegistry, SchemaType } from "@kafkajs/confluent-schema-registry";
 import { appLogger } from "../../monitor/app.logger.ts";
 import { KafkaLogger } from "../../monitor/kafka.logger.ts";
 import { topics } from "./index.ts";
-import type { BlockMessagePayload } from "./producers/block.kafka.producer.ts";
-import { LogMessagePayload } from "./producers/log.kafka.producer.ts";
-import { SwapMessagePayload } from "./producers/swap.kafka.producer.ts";
-import { TransactionMessagePayload } from "./producers/transaction.kafka.producer.ts";
-import { TransferMessagePayload } from "./producers/transfer.kafka.producer.ts";
+import type {
+  BlockMessagePayload,
+  LogMessagePayload,
+  SwapMessagePayload,
+  TransactionMessagePayload,
+  TransferMessagePayload,
+} from "./producers";
 import {
   blockSchema,
   logSchema,

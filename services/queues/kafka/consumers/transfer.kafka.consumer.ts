@@ -9,7 +9,7 @@ import {
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
 import kafkaConnection from "../kafka.connection.ts";
-import { LogMessagePayload } from "../producers/log.kafka.producer.ts";
+import { LogMessagePayload } from "../producers";
 import { sendToTransferTopic } from "../producers/transfer.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 

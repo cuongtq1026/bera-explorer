@@ -9,10 +9,9 @@ import {
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
-import { topics } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
+import { TransactionMessagePayload } from "../producers";
 import { sendToSwapTopic } from "../producers/swap.kafka.producer.ts";
-import { TransactionMessagePayload } from "../producers/transaction.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class SwapKafkaConsumer extends AbstractKafkaConsumer {

@@ -1,14 +1,8 @@
-import { IsNotEmpty } from "class-validator";
-
 import { topics } from "../index.ts";
 import kafkaConnection, {
   type TransactionOptions,
 } from "../kafka.connection.ts";
-
-export class LogMessagePayload {
-  @IsNotEmpty()
-  logHash: string;
-}
+import type { LogMessagePayload } from "./index.ts";
 
 export async function sendToLogTopic(
   messages: LogMessagePayload[],

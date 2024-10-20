@@ -10,7 +10,7 @@ import {
 import logger from "../../../monitor/logger.ts";
 import { parseToBigInt } from "../../../utils.ts";
 import kafkaConnection from "../kafka.connection.ts";
-import { BlockMessagePayload } from "../producers/block.kafka.producer.ts";
+import { BlockMessagePayload } from "../producers";
 import { sendToTransactionTopic } from "../producers/transaction.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 

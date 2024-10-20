@@ -1,14 +1,8 @@
-import { IsNotEmpty } from "class-validator";
-
 import { topics } from "../index.ts";
 import kafkaConnection, {
   type TransactionOptions,
 } from "../kafka.connection.ts";
-
-export class SwapMessagePayload {
-  @IsNotEmpty()
-  swapId: string;
-}
+import type { SwapMessagePayload } from "./index.ts";
 
 export async function sendToSwapTopic(
   messages: SwapMessagePayload[],

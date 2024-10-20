@@ -1,14 +1,8 @@
-import { IsNotEmpty } from "class-validator";
-
 import { topics } from "../index.ts";
 import kafkaConnection, {
   type TransactionOptions,
 } from "../kafka.connection.ts";
-
-export class BlockMessagePayload {
-  @IsNotEmpty()
-  blockNumber: string;
-}
+import type { BlockMessagePayload } from "./index.ts";
 
 export async function sendToBlockTopic(
   messages: BlockMessagePayload[],

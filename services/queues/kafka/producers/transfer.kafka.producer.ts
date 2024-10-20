@@ -1,14 +1,8 @@
-import { IsNotEmpty } from "class-validator";
-
 import { topics } from "../index.ts";
 import kafkaConnection, {
   type TransactionOptions,
 } from "../kafka.connection.ts";
-
-export class TransferMessagePayload {
-  @IsNotEmpty()
-  transferHash: string;
-}
+import type { TransferMessagePayload } from "./index.ts";
 
 export async function sendToTransferTopic(
   messages: TransferMessagePayload[],

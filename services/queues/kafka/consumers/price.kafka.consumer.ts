@@ -10,7 +10,7 @@ import {
 import logger from "../../../monitor/logger.ts";
 import { parseToBigInt } from "../../../utils.ts";
 import kafkaConnection from "../kafka.connection.ts";
-import { SwapMessagePayload } from "../producers/swap.kafka.producer.ts";
+import { SwapMessagePayload } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class PriceKafkaConsumer extends AbstractKafkaConsumer {

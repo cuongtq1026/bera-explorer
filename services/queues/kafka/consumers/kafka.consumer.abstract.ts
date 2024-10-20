@@ -1,8 +1,11 @@
 import type { EachMessagePayload } from "kafkajs";
 
+import { appLogger } from "../../../monitor/app.logger.ts";
 import logger from "../../../monitor/logger.ts";
 import { AbstractConsumer } from "../../consumer.abstract.ts";
 import kafkaConnection from "../kafka.connection.ts";
+
+const serviceLogger = appLogger.namespace("AbstractKafkaConsumer");
 
 export abstract class AbstractKafkaConsumer extends AbstractConsumer<
   void,
@@ -16,7 +19,9 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
   }
 
   public async consume(): Promise<void> {
-    logger.info(`Consumer topic ${this.topicName} started.`);
+    serviceLogger.info(
+      `Started Consumer: ${this.consumerName} | Topic: ${this.topicName}.`,
+    );
 
     await kafkaConnection.consume({
       topic: this.topicName,

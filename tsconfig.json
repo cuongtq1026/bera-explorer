@@ -37,6 +37,9 @@
       "@processors/*": [
         "./services/processors/*"
       ],
+      "@interfaces/*": [
+        "./services/interfaces/*"
+      ],
       "@consumers/*": [
         "./services/queues/consumers/*"
       ]

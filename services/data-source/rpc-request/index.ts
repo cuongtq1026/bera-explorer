@@ -1,12 +1,11 @@
-import 'dotenv/config'
-
+import { AbstractConnectable } from "@interfaces/connectable.abstract.ts";
 import { createClient, createPublicClient, http } from "viem";
 import { berachainTestnetbArtio } from "viem/chains";
 
 import { appLogger } from "../../monitor/app.logger.ts";
 import { rpcBlacklistCounter } from "../../monitor/prometheus.ts";
 import { getHostFromUrl } from "../../utils.ts";
-import redisClient from "../redis-client.ts";
+import redisConnection from "../redis-connection.ts";
 import { extendDebugClient } from "./extends.ts";
 import type { RpcClient, RpcDebugClient } from "./types.ts";
 
@@ -14,12 +13,14 @@ const serviceLogger = appLogger.namespace("RpcRequest");
 
 const BLACKLIST_KEY = "rpc_url:blacklist";
 
-export class RpcRequest {
-  private readonly clients: RpcClient[];
-  private readonly debugClients: RpcDebugClient[];
+export class RpcRequest extends AbstractConnectable {
+  private clients: RpcClient[];
+  private debugClients: RpcDebugClient[];
   private nextClientIndex = 0;
 
-  constructor() {
+  async connect() {
+    if (this.connected && this.clients) return;
+
     const envRpcUrls = process.env.RPC_URLS;
     if (!envRpcUrls) {
       throw new Error("No RPC URLs provided");
@@ -56,6 +57,8 @@ export class RpcRequest {
     if (!envDebugRpcUrls) {
       serviceLogger.warn("No Debug RPC URLs provided");
     }
+
+    this.connected = true;
   }
 
   private getBlacklistKey(url: string) {
@@ -63,6 +66,7 @@ export class RpcRequest {
   }
 
   async blacklist(client: RpcClient | RpcDebugClient) {
+    const redisClient = await redisConnection.getClient();
     await redisClient.set(this.getBlacklistKey(client.key), "1", {
       EX: 60,
     });
@@ -75,6 +79,8 @@ export class RpcRequest {
   }
 
   async isBlacklisted(key: string) {
+    const redisClient = await redisConnection.getClient();
+
     const result = await redisClient.get(this.getBlacklistKey(key));
     return result === "1";
   }
@@ -84,6 +90,8 @@ export class RpcRequest {
   }
 
   async getClient(): Promise<RpcClient> {
+    await this.checkConnection();
+
     const nextClient = this.clients[this.nextClientIndex];
     this.nextClientIndex = (this.nextClientIndex + 1) % this.clients.length;
 

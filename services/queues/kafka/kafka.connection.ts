@@ -1,4 +1,5 @@
 import { KafkaJS } from "@confluentinc/kafka-javascript";
+import { AbstractConnectable } from "@interfaces/connectable.abstract.ts";
 import { SchemaRegistry, SchemaType } from "@kafkajs/confluent-schema-registry";
 
 import { appLogger } from "../../monitor/app.logger.ts";
@@ -18,9 +19,8 @@ export type TransactionOptions = {
   transaction?: KafkaJS.Transaction;
 };
 
-export class KafkaConnection {
+export class KafkaConnection extends AbstractConnectable {
   private connection: KafkaJS.Kafka;
-  private connected!: boolean;
   private producer!: KafkaJS.Producer;
   private producerEOS!: KafkaJS.Producer;
   private admin!: KafkaJS.Admin;
@@ -28,6 +28,8 @@ export class KafkaConnection {
   private schemaMap = new Map<keyof typeof topics, number>();
 
   async connect() {
+    if (this.connected && this.producer) return;
+
     const kafkaBrokerUrl = process.env.KAFKA_BROKER_CONNECTION;
     if (!kafkaBrokerUrl) {
       throw Error("No Kafka connection URL provided");
@@ -36,8 +38,6 @@ export class KafkaConnection {
     if (!schemaRegistry) {
       throw Error("No schema registry connection URL provided");
     }
-
-    if (this.connected && this.producer) return;
 
     try {
       this.connection = new KafkaJS.Kafka({
@@ -149,23 +149,6 @@ export class KafkaConnection {
       throw new Error(`No schemaName: ${schemaName}`);
     }
     return schema;
-  }
-
-  private promise: Promise<void> | null = null;
-
-  private async checkConnection(): Promise<void> {
-    if (!this.promise) {
-      this.promise = this.checkConnectionOnce();
-    }
-    return this.promise;
-  }
-
-  private async checkConnectionOnce(): Promise<void> {
-    if (this.connected) {
-      return;
-    }
-
-    await this.connect();
   }
 
   public async transaction(): Promise<KafkaJS.Transaction> {

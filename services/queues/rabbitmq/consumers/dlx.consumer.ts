@@ -1,9 +1,11 @@
 import type { ConsumeMessage } from "amqplib";
 
 import { DEAD_LETTER_QUEUE_NAME } from "../../../config";
-import logger from "../../../monitor/logger.ts";
+import { appLogger } from "../../../monitor/app.logger.ts";
 import mqConnection from "../rabbitmq.connection.ts";
 import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
+
+const serviceLogger = appLogger.namespace("DlxConsumer");
 
 export class DlxConsumer extends AbstractRabbitMQConsumer {
   protected queueName: string = DEAD_LETTER_QUEUE_NAME;
@@ -25,7 +27,7 @@ export class DlxConsumer extends AbstractRabbitMQConsumer {
       JSON.parse(content),
     );
 
-    logger.info(
+    serviceLogger.info(
       `Re-published message. Routing key: ${message.fields.routingKey} | Content: ${content}`,
     );
 

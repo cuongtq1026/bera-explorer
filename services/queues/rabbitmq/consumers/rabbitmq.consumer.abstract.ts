@@ -1,10 +1,12 @@
 import type { ConsumeMessage } from "amqplib";
 
-import logger from "../../../monitor/logger.ts";
+import { appLogger } from "../../../monitor/app.logger.ts";
 import { queueMessageProcessedCounter } from "../../../monitor/prometheus.ts";
 import { AbstractConsumer } from "../../consumer.abstract.ts";
 import { DELAY } from "../index.ts";
 import mqConnection from "../rabbitmq.connection.ts";
+
+const serviceLogger = appLogger.namespace("AbstractRabbitMQConsumer");
 
 export abstract class AbstractRabbitMQConsumer extends AbstractConsumer<
   boolean,
@@ -20,7 +22,7 @@ export abstract class AbstractRabbitMQConsumer extends AbstractConsumer<
   }
 
   public async consume(): Promise<void> {
-    logger.info(
+    serviceLogger.info(
       `Queue ${this.queueName}: ${this.consumerCount} consumer(s) started.`,
     );
 
@@ -32,14 +34,16 @@ export abstract class AbstractRabbitMQConsumer extends AbstractConsumer<
   }
 
   protected async execute(message: ConsumeMessage): Promise<boolean> {
-    logger.info(`[MessageId: ${message.properties.messageId}] Check delay.`);
+    serviceLogger.info(
+      `[MessageId: ${message.properties.messageId}] Check delay.`,
+    );
     await this.checkDelay(message);
 
-    logger.info(
+    serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Handling message.`,
     );
     const handled = await this.handler(message);
-    logger.info(
+    serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Handle message successfully.`,
     );
 
@@ -61,7 +65,7 @@ export abstract class AbstractRabbitMQConsumer extends AbstractConsumer<
       return;
     }
 
-    logger.info(
+    serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Delaying for ${delay} ms.`,
     );
 
@@ -78,6 +82,8 @@ export abstract class AbstractRabbitMQConsumer extends AbstractConsumer<
       routingKey: message.fields.routingKey,
     });
 
-    logger.info(`[MessageId: ${message.properties.messageId}] Finished.`);
+    serviceLogger.info(
+      `[MessageId: ${message.properties.messageId}] Finished.`,
+    );
   }
 }

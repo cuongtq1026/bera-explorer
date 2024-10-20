@@ -10,8 +10,10 @@ import { type Hash } from "viem";
 
 import { getDecoder } from "../decoder";
 import { NoGetResult } from "../exceptions/processor.exception.ts";
-import logger from "../monitor/logger.ts";
+import { appLogger } from "../monitor/app.logger.ts";
 import { getSignature } from "../utils.ts";
+
+const serviceLogger = appLogger.namespace("SwapProcessor");
 
 type CreateArgType = SwapCreateInput[];
 type CreateReturnType = (bigint | number)[];
@@ -72,9 +74,9 @@ export class SwapProcessor
 
     // store to database
     await this.deleteFromDb(transactionHash);
-    logger.info(`[SwapProcessor] deleted ${transactionHash}`);
+    serviceLogger.info(`deleted ${transactionHash}`);
     const swapId = await this.createInDb(input);
-    logger.info(`[SwapProcessor] created ${transactionHash}`);
+    serviceLogger.info(`created ${transactionHash}`);
     return swapId;
   }
 }

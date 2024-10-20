@@ -1,8 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
-import logger from "../monitor/logger.ts";
+import { appLogger } from "../monitor/app.logger.ts";
 import { ClientError } from "./error/client.exception.ts";
+
+const serviceLogger = appLogger.namespace("API");
 
 export function logErrors(
   err: Error,
@@ -10,7 +12,7 @@ export function logErrors(
   _res: Response,
   next: NextFunction,
 ) {
-  logger.error("[API]: " + err.stack);
+  serviceLogger.error("[API]: " + err.stack);
   next(err);
 }
 

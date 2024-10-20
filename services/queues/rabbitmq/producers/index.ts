@@ -6,8 +6,10 @@ import {
   aggregatorExchangeName,
   queues,
 } from "../../../config";
-import logger from "../../../monitor/logger.ts";
+import { appLogger } from "../../../monitor/app.logger.ts";
 import mqConnection from "../rabbitmq.connection.ts";
+
+const serviceLogger = appLogger.namespace("producers");
 
 export class QueueBlockPayload {
   @IsNotEmpty()
@@ -19,7 +21,7 @@ export async function queueBlock(blockNumber: bigint) {
     blockNumber: String(blockNumber),
   } as QueueBlockPayload);
 
-  logger.info(
+  serviceLogger.info(
     `[Block ${blockNumber}] Queued to ${queues.BLOCK_QUEUE.routingKey} key`,
   );
 }
@@ -57,7 +59,7 @@ export async function queueTransaction(transactionHash: Hash) {
     } as QueueTransactionPayload,
   );
 
-  logger.info(
+  serviceLogger.info(
     `[Transaction ${transactionHash}] Queued to ${queues.TRANSACTION_QUEUE.routingKey} key`,
   );
 }
@@ -72,5 +74,7 @@ export async function queueTransactionAggregator(transactionHash: Hash) {
     } as QueueTransactionAggregatorPayload,
   );
 
-  logger.info(`[Transaction ${transactionHash}] Queued to ${routingKey} key`);
+  serviceLogger.info(
+    `[Transaction ${transactionHash}] Queued to ${routingKey} key`,
+  );
 }

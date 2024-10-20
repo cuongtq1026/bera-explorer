@@ -12,8 +12,10 @@ import {
 } from "@database/repositories/transfer.repository.ts";
 import { type Hash } from "viem";
 
-import logger from "../monitor/logger.ts";
+import { appLogger } from "../monitor/app.logger.ts";
 import type { InterfaceProcessor } from "./interface.processor.ts";
+
+const serviceLogger = appLogger.namespace("TransferProcessor");
 
 type ToInputArgType = TransactionReceiptDto & {
   logs: LogDto[];
@@ -91,16 +93,16 @@ export class TransferProcessor
   }
 
   async process(transactionHash: Hash): Promise<CreatedHash[]> {
-    logger.info("[TransferProcessor] processing: " + transactionHash);
+    serviceLogger.info("processing: " + transactionHash);
 
     const obj = await this.get(transactionHash);
 
     const inputs = this.toInput(obj);
 
     await this.deleteFromDb(transactionHash);
-    logger.info(`[TransferProcessor] deleted ${transactionHash}`);
+    serviceLogger.info(`deleted ${transactionHash}`);
     const result = await this.createInDb(inputs);
-    logger.info(`[TransferProcessor] created ${transactionHash}`);
+    serviceLogger.info(`created ${transactionHash}`);
 
     return result;
   }

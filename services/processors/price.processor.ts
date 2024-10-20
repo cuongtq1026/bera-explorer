@@ -9,8 +9,10 @@ import Decimal from "decimal.js";
 
 import { getStableCoin, isStableCoin, ONE_USD } from "../config/constants.ts";
 import { NoGetResult } from "../exceptions/processor.exception.ts";
-import logger from "../monitor/logger.ts";
+import { appLogger } from "../monitor/app.logger.ts";
 import type { InterfaceProcessor } from "./interface.processor.ts";
+
+const serviceLogger = appLogger.namespace("PriceProcessor");
 
 // 0x4cc4286e65c39098d8a4a0cfd592a11387e8c5b517489372b314a605c6a3903a
 export class PriceProcessor
@@ -50,8 +52,8 @@ export class PriceProcessor
     }
 
     /*
-        Calculate prices
-         */
+            Calculate prices
+             */
     const fromDecimal = new Decimal(swapDto.fromAmount.toString());
     const toDecimal = new Decimal(swapDto.toAmount.toString());
     const fromTokenPrice: PriceCreateInput = {
@@ -96,15 +98,15 @@ export class PriceProcessor
   }
 
   async process(swapId: bigint): Promise<void> {
-    logger.info("[PriceProcessor] processing: " + swapId);
+    serviceLogger.info("[PriceProcessor] processing: " + swapId);
 
     const obj = await this.get(swapId);
 
     const inputs = this.toInput(obj);
 
     await this.deleteFromDb(swapId);
-    logger.info(`[PriceProcessor] deleted ${swapId}`);
+    serviceLogger.info(`[PriceProcessor] deleted ${swapId}`);
     await this.createInDb(inputs);
-    logger.info(`[PriceProcessor] created ${swapId}`);
+    serviceLogger.info(`[PriceProcessor] created ${swapId}`);
   }
 }

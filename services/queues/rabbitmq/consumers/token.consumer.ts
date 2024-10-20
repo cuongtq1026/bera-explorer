@@ -4,10 +4,12 @@ import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
 
 import { queues } from "../../../config";
-import logger from "../../../monitor/logger.ts";
+import { appLogger } from "../../../monitor/app.logger.ts";
 import { is0xHash } from "../../../utils.ts";
 import { QueueTransactionAggregatorPayload } from "../producers";
 import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
+
+const serviceLogger = appLogger.namespace("TokenConsumer");
 
 export class TokenConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.TRANSFER.name;
@@ -18,7 +20,7 @@ export class TokenConsumer extends AbstractRabbitMQConsumer {
 
   protected async handler(message: ConsumeMessage): Promise<boolean> {
     const rawContent = message.content.toString();
-    logger.info(`TokenConsumer message rawContent: ${rawContent}.`);
+    serviceLogger.info(`message rawContent: ${rawContent}.`);
 
     // transform
     const contentInstance = plainToInstance(
@@ -35,7 +37,7 @@ export class TokenConsumer extends AbstractRabbitMQConsumer {
       );
     }
 
-    logger.info(
+    serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Processing token.`,
     );
 
@@ -43,7 +45,7 @@ export class TokenConsumer extends AbstractRabbitMQConsumer {
     const processor = new TokenProcessor();
     await processor.process(transactionHash);
 
-    logger.info(
+    serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Process transfer successful.`,
     );
 

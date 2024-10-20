@@ -8,10 +8,12 @@ import {
   type Hash,
 } from "viem";
 
-import logger from "../monitor/logger.ts";
+import { appLogger } from "../monitor/app.logger.ts";
 import { rpcRequestCounter } from "../monitor/prometheus.ts";
 import rpcRequest from "./rpc-request";
 import type { TraceCallNested } from "./rpc-request/types.ts";
+
+const serviceLogger = appLogger.namespace("data-source");
 
 /**
  * Retrieves a block from the Ethereum blockchain using viem.
@@ -19,7 +21,7 @@ import type { TraceCallNested } from "./rpc-request/types.ts";
  * @returns A Promise that resolves to the block data or null if the block is not found.
  */
 export async function getBlock(blockNumber?: bigint): Promise<Block> {
-  logger.info(`[getBlock] blockNumber: ${blockNumber}`);
+  serviceLogger.info(`[getBlock] blockNumber: ${blockNumber}`);
 
   const client = await rpcRequest.getClient();
   try {
@@ -39,7 +41,7 @@ export async function getBlock(blockNumber?: bigint): Promise<Block> {
       includeTransactions: false,
     });
   } catch (error) {
-    logger.error(
+    serviceLogger.error(
       `[Block: ${blockNumber} | RpcClient: ${client.key}] Error fetching block: ${error}`,
     );
 
@@ -56,7 +58,7 @@ export async function getBlock(blockNumber?: bigint): Promise<Block> {
 export async function getTransaction(
   txHash: Hash,
 ): Promise<GetTransactionReturnType> {
-  logger.info(`[getTransaction] hash: ${txHash}`);
+  serviceLogger.info(`[getTransaction] hash: ${txHash}`);
 
   const client = await rpcRequest.getClient();
   try {
@@ -68,7 +70,7 @@ export async function getTransaction(
       hash: txHash,
     });
   } catch (error) {
-    logger.error(
+    serviceLogger.error(
       `[TxHash: ${txHash} | RpcClient: ${client.key}] Error fetching transaction: ${error}`,
     );
 
@@ -85,7 +87,7 @@ export async function getTransaction(
 export async function getTransactionReceipt(
   txHash: Hash,
 ): Promise<GetTransactionReceiptReturnType> {
-  logger.info(`[getTransactionReceipt] hash: ${txHash}`);
+  serviceLogger.info(`[getTransactionReceipt] hash: ${txHash}`);
 
   const client = await rpcRequest.getClient();
   try {
@@ -97,7 +99,7 @@ export async function getTransactionReceipt(
       hash: txHash,
     });
   } catch (error) {
-    logger.error(
+    serviceLogger.error(
       `[TxHash: ${txHash} | RpcClient: ${client.key}] Error fetching transaction receipt: ${error}`,
     );
 
@@ -109,7 +111,7 @@ export async function getTransactionReceipt(
 export async function getAllTracerCallsTransaction(
   txHash: Hash,
 ): Promise<TraceCallNested> {
-  logger.info(`[getDebugTraceTransaction] hash: ${txHash}`);
+  serviceLogger.info(`[getDebugTraceTransaction] hash: ${txHash}`);
 
   const debugClient = await rpcRequest.getDebugClient();
   try {
@@ -121,7 +123,7 @@ export async function getAllTracerCallsTransaction(
       tracer: "callTracer",
     });
   } catch (error) {
-    logger.error(
+    serviceLogger.error(
       `[TxHash: ${txHash} | RpcClient: ${debugClient.key}] Error fetching internal transaction: ${error}`,
     );
 
@@ -137,7 +139,7 @@ export async function getERC20Tokens(
   if (!addressSet.size) return [];
 
   const addresses = [...addressSet];
-  logger.info(`[getERC20Tokens] addresses: ${addresses}`);
+  serviceLogger.info(`[getERC20Tokens] addresses: ${addresses}`);
 
   const client = await rpcRequest.getClient();
   try {
@@ -183,7 +185,7 @@ export async function getERC20Tokens(
     }
     return tokens;
   } catch (error) {
-    logger.error(
+    serviceLogger.error(
       `[Address: ${addressSet} | RpcClient: ${client.key}] Error fetching erc20 contract data: ${error}`,
     );
 

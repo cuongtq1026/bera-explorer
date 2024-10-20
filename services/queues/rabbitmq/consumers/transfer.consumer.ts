@@ -7,10 +7,12 @@ import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
 
 import { queues } from "../../../config";
-import logger from "../../../monitor/logger.ts";
+import { appLogger } from "../../../monitor/app.logger.ts";
 import { is0xHash } from "../../../utils.ts";
 import { QueueTransactionAggregatorPayload } from "../producers";
 import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
+
+const serviceLogger = appLogger.namespace("TransferConsumer");
 
 /**
  * @deprecated
@@ -26,7 +28,7 @@ export class TransferConsumer extends AbstractRabbitMQConsumer {
 
   protected async handler(message: ConsumeMessage): Promise<boolean> {
     const rawContent = message.content.toString();
-    logger.info(`TransferConsumer message rawContent: ${rawContent}.`);
+    serviceLogger.info(`message rawContent: ${rawContent}.`);
 
     // transform
     const contentInstance = plainToInstance(
@@ -43,7 +45,7 @@ export class TransferConsumer extends AbstractRabbitMQConsumer {
       );
     }
 
-    logger.info(
+    serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Processing transfer.`,
     );
 
@@ -51,7 +53,7 @@ export class TransferConsumer extends AbstractRabbitMQConsumer {
     const processor = new TransferProcessor();
     const result = await processor.process(transactionHash);
 
-    logger.info(
+    serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Process transfer successful.`,
     );
 

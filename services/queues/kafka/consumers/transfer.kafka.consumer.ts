@@ -1,17 +1,20 @@
+import type { KafkaJS } from "@confluentinc/kafka-javascript";
 import prisma from "@database/prisma.ts";
 import { plainToInstance } from "class-transformer";
-import type { EachMessagePayload } from "kafkajs";
 
 import { ERC20_TRANSFER_SIGNATURE } from "../../../config/constants.ts";
 import {
   KafkaReachedEndIndexedOffset,
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
+import { appLogger } from "../../../monitor/app.logger.ts";
 import logger from "../../../monitor/logger.ts";
 import kafkaConnection from "../kafka.connection.ts";
 import { LogMessagePayload } from "../producers";
 import { sendToTransferTopic } from "../producers/transfer.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
+
+const serviceLogger = appLogger.namespace("TransferKafkaConsumer");
 
 /**
  * Steps:
@@ -29,7 +32,7 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
   }
 
   protected async handler(
-    eachMessagePayload: EachMessagePayload,
+    eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
@@ -37,15 +40,15 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
     if (!rawContent) {
       throw new PayloadNotFoundException(messageId);
     }
-    logger.info(
-      `[MessageId: ${messageId}] TransferKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
+    serviceLogger.info(
+      `[MessageId: ${messageId}] message rawContent size: ${rawContent.byteLength}.`,
     );
 
     const rawDecodedContent =
       await kafkaConnection.decode<typeof this.topic>(rawContent);
 
-    logger.info(
-      `[MessageId: ${messageId}] TransferKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,
+    serviceLogger.info(
+      `[MessageId: ${messageId}] message rawDecodedContent: ${rawDecodedContent.toString()}`,
     );
 
     // transform
@@ -109,7 +112,7 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
   }
 
   protected async onFinish(
-    eachMessagePayload: EachMessagePayload,
+    eachMessagePayload: KafkaJS.EachMessagePayload,
     data: { transferHash: string | null },
   ): Promise<void> {
     const { transferHash } = data;
@@ -126,7 +129,7 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
         transferHash,
       },
     ]);
-    logger.info(
+    serviceLogger.info(
       `[MessageId: ${messageId}] Sent ${transferHash} message to transfer topic.`,
     );
     return super.onFinish(eachMessagePayload, data);

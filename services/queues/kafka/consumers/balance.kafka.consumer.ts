@@ -1,13 +1,15 @@
+import type { KafkaJS } from "@confluentinc/kafka-javascript";
 import { BalanceKafkaProcessor } from "@processors/balance.kafka.processor.ts";
 import { plainToInstance } from "class-transformer";
-import type { EachMessagePayload } from "kafkajs";
 import type { Hash } from "viem";
 
 import { PayloadNotFoundException } from "../../../exceptions/consumer.exception.ts";
-import logger from "../../../monitor/logger.ts";
+import { appLogger } from "../../../monitor/app.logger.ts";
 import kafkaConnection from "../kafka.connection.ts";
 import { TransferMessagePayload } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
+
+const serviceLogger = appLogger.namespace("BalanceKafkaConsumer");
 
 export class BalanceKafkaConsumer extends AbstractKafkaConsumer {
   protected topic = "TRANSFER" as const;
@@ -18,7 +20,7 @@ export class BalanceKafkaConsumer extends AbstractKafkaConsumer {
   }
 
   protected async handler(
-    eachMessagePayload: EachMessagePayload,
+    eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
@@ -26,15 +28,15 @@ export class BalanceKafkaConsumer extends AbstractKafkaConsumer {
     if (!rawContent) {
       throw new PayloadNotFoundException(messageId);
     }
-    logger.info(
-      `[MessageId: ${messageId}] BalanceKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
+    serviceLogger.info(
+      `[MessageId: ${messageId}] message rawContent size: ${rawContent.byteLength}.`,
     );
 
     const rawDecodedContent =
       await kafkaConnection.decode<typeof this.topic>(rawContent);
 
-    logger.info(
-      `[MessageId: ${messageId}] BalanceKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,
+    serviceLogger.info(
+      `[MessageId: ${messageId}] message rawDecodedContent: ${rawDecodedContent.toString()}`,
     );
 
     // transform

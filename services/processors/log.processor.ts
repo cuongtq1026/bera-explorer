@@ -8,8 +8,10 @@ import {
 import type { Hash } from "viem";
 
 import { NoGetResult } from "../exceptions/processor.exception.ts";
-import logger from "../monitor/logger.ts";
+import { appLogger } from "../monitor/app.logger.ts";
 import type { InterfaceProcessor } from "./interface.processor.ts";
+
+const serviceLogger = appLogger.namespace("LogProcessor");
 
 export class LogProcessor
   implements
@@ -54,7 +56,7 @@ export class LogProcessor
   }
 
   async process(id: Hash): Promise<{ transferHash: Hash | null }> {
-    logger.info("[LogKafkaProcessor] processing: " + id);
+    serviceLogger.info("processing: " + id);
 
     const obj = await this.get(id);
 
@@ -67,9 +69,9 @@ export class LogProcessor
     }
 
     await this.deleteFromDb(id);
-    logger.info(`[LogKafkaProcessor] deleted ${id}`);
+    serviceLogger.info(`deleted ${id}`);
     await this.createInDb(input);
-    logger.info(`[LogKafkaProcessor] created ${id}`);
+    serviceLogger.info(`created ${id}`);
 
     return {
       transferHash: input.hash,

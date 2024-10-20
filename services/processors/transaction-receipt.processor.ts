@@ -7,8 +7,10 @@ import { toTransactionReceiptCreateInput } from "@database/repositories/utils.ts
 import type { GetTransactionReceiptReturnType, Hash } from "viem";
 
 import { getTransactionReceipt } from "../data-source";
-import logger from "../monitor/logger.ts";
+import { appLogger } from "../monitor/app.logger.ts";
 import type { InterfaceProcessor } from "./interface.processor.ts";
+
+const serviceLogger = appLogger.namespace("TransactionReceiptProcessor");
 
 export class TransactionReceiptProcessor
   implements
@@ -37,7 +39,7 @@ export class TransactionReceiptProcessor
   }
 
   async process(id: Hash): Promise<void> {
-    logger.info("[TransactionReceiptProcessor] processing: " + id);
+    serviceLogger.info("[TransactionReceiptProcessor] processing: " + id);
 
     const obj = await this.get(id);
 
@@ -48,8 +50,8 @@ export class TransactionReceiptProcessor
     }
 
     await this.deleteFromDb(id);
-    logger.info(`[TransactionReceiptProcessor] deleted ${id}`);
+    serviceLogger.info(`deleted ${id}`);
     await this.createInDb(input);
-    logger.info(`[TransactionReceiptProcessor] created ${id}`);
+    serviceLogger.info(`created ${id}`);
   }
 }

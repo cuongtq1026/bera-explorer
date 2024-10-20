@@ -9,8 +9,10 @@ import { getTransfer } from "@database/repositories/transfer.repository.ts";
 import type { Hash } from "viem";
 
 import { NoGetResult } from "../exceptions/processor.exception.ts";
-import logger from "../monitor/logger.ts";
+import { appLogger } from "../monitor/app.logger.ts";
 import type { InterfaceProcessor } from "./interface.processor.ts";
+
+const serviceLogger = appLogger.namespace("BalanceKafkaProcessor");
 
 type DeleteArgType = {
   transactionHash: Hash;
@@ -100,7 +102,7 @@ export class BalanceKafkaProcessor
   }
 
   async process(id: Hash): Promise<void> {
-    logger.info("[BalanceKafkaProcessor] processing: " + id);
+    serviceLogger.info("processing: " + id);
 
     const obj = await this.get(id);
 
@@ -114,8 +116,8 @@ export class BalanceKafkaProcessor
       transactionHash: obj.transactionHash,
       transferHash: obj.hash,
     });
-    logger.info(`[BalanceKafkaProcessor] deleted ${id}`);
+    serviceLogger.info(`deleted ${id}`);
     await this.createInDb(input);
-    logger.info(`[BalanceKafkaProcessor] created ${id}`);
+    serviceLogger.info(`created ${id}`);
   }
 }

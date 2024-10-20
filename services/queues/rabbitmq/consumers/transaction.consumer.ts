@@ -5,7 +5,7 @@ import { validateOrReject } from "class-validator";
 import type { Hash } from "viem";
 
 import { queues } from "../../../config";
-import logger from "../../../monitor/logger.ts";
+import { appLogger } from "../../../monitor/app.logger.ts";
 import { is0xHash } from "../../../utils.ts";
 import {
   QueueInternalTransactionPayload,
@@ -14,6 +14,8 @@ import {
 } from "../producers";
 import mqConnection from "../rabbitmq.connection.ts";
 import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
+
+const serviceLogger = appLogger.namespace("TransactionConsumer");
 
 export class TransactionConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.TRANSACTION_QUEUE.name;
@@ -24,7 +26,9 @@ export class TransactionConsumer extends AbstractRabbitMQConsumer {
 
   protected async handler(message: ConsumeMessage): Promise<boolean> {
     const rawContent = message.content.toString();
-    logger.info(`TransactionConsumer message rawContent: ${rawContent}.`);
+    serviceLogger.info(
+      `TransactionConsumer message rawContent: ${rawContent}.`,
+    );
 
     // transform
     const contentInstance = plainToInstance(
@@ -41,7 +45,7 @@ export class TransactionConsumer extends AbstractRabbitMQConsumer {
       );
     }
 
-    logger.info(
+    serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Processing transaction.`,
     );
 
@@ -49,7 +53,7 @@ export class TransactionConsumer extends AbstractRabbitMQConsumer {
     const processor = new TransactionProcessor();
     await processor.process(transactionHash);
 
-    logger.info(
+    serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Process transaction successful.`,
     );
 

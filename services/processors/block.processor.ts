@@ -7,8 +7,10 @@ import { toBlockCreateInput } from "@database/repositories/utils.ts";
 import type { Block, Hash } from "viem";
 
 import { getBlock } from "../data-source";
-import logger from "../monitor/logger.ts";
+import { appLogger } from "../monitor/app.logger.ts";
 import type { InterfaceProcessor } from "./interface.processor.ts";
+
+const serviceLogger = appLogger.namespace("BlockProcessor");
 
 export class BlockProcessor
   implements
@@ -38,7 +40,7 @@ export class BlockProcessor
   }
 
   async process(id: bigint): Promise<{ transactions: Hash[] }> {
-    logger.info("[BlockProcessor] processing: " + id);
+    serviceLogger.info("processing: " + id);
 
     const block = await this.get(id);
 
@@ -49,9 +51,9 @@ export class BlockProcessor
     }
 
     await this.deleteFromDb(id);
-    logger.info(`[BlockProcessor] deleted ${id}`);
+    serviceLogger.info(`deleted ${id}`);
     await this.createInDb(input);
-    logger.info(`[BlockProcessor] created ${id}`);
+    serviceLogger.info(`created ${id}`);
 
     return {
       transactions: block.transactions as Hash[],

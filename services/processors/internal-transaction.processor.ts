@@ -8,8 +8,11 @@ import type { Hash } from "viem";
 
 import { getAllTracerCallsTransaction } from "../data-source";
 import type { TraceCallNested } from "../data-source/rpc-request/types.ts";
+import { appLogger } from "../monitor/app.logger.ts";
 import logger from "../monitor/logger.ts";
 import type { InterfaceProcessor } from "./interface.processor.ts";
+
+const serviceLogger = appLogger.namespace("InternalTransactionProcessor");
 
 type ToInputArgType = {
   id: Hash;
@@ -45,7 +48,7 @@ export class InternalTransactionProcessor
   }
 
   async process(id: Hash): Promise<void> {
-    logger.info("[InternalTransactionProcessor] processing: " + id);
+    serviceLogger.info("processing: " + id);
 
     const obj = await this.get(id);
 
@@ -56,8 +59,8 @@ export class InternalTransactionProcessor
     }
 
     await this.deleteFromDb(id);
-    logger.info(`[InternalTransactionProcessor] deleted ${id}`);
+    serviceLogger.info(`deleted ${id}`);
     await this.createInDb(input);
-    logger.info(`[InternalTransactionProcessor] created ${id}`);
+    serviceLogger.info(`created ${id}`);
   }
 }

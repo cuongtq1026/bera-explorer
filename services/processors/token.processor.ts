@@ -17,8 +17,10 @@ import { type Hash } from "viem";
 import { CONTRACT_INITIATED_SIGNATURE } from "../config/constants.ts";
 import { getERC20Tokens } from "../data-source";
 import { NoGetResult } from "../exceptions/processor.exception.ts";
-import logger from "../monitor/logger.ts";
+import { appLogger } from "../monitor/app.logger.ts";
 import type { InterfaceProcessor } from "./interface.processor.ts";
+
+const serviceLogger = appLogger.namespace("TokenProcessor");
 
 type ToInputArgType = TransactionReceiptDto & {
   logs: LogDto[];
@@ -146,15 +148,15 @@ export class TokenProcessor
   }
 
   async process(transactionHash: Hash): Promise<void> {
-    logger.info("[TokenProcessor] processing: " + transactionHash);
+    serviceLogger.info("processing: " + transactionHash);
 
     const obj = await this.get(transactionHash);
 
     const { tokens, contracts } = await this.toInput(obj);
 
     await this.createInDb(tokens);
-    logger.info(`[TokenProcessor] created ${transactionHash}`);
+    serviceLogger.info(`created ${transactionHash}`);
     await this.createContractsInDb(contracts);
-    logger.info(`[TokenProcessor] contract created ${transactionHash}`);
+    serviceLogger.info(`contract created ${transactionHash}`);
   }
 }

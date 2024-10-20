@@ -19,7 +19,6 @@ import type { Hash } from "viem";
 
 import { queues } from "./services/config";
 import { appLogger } from "./services/monitor/app.logger.ts";
-import logger from "./services/monitor/logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
 import { BalanceKafkaConsumer } from "./services/queues/kafka/consumers/balance.kafka.consumer.ts";
 import { LogKafkaConsumer } from "./services/queues/kafka/consumers/log.kafka.consumer.ts";
@@ -60,7 +59,7 @@ switch (command) {
   case "block": {
     const blockNumber = parseToBigInt(restArgs[0]);
     if (blockNumber == null) {
-      logger.info("Invalid block number.");
+      serviceLogger.info("Invalid block number.");
       break;
     }
 
@@ -72,7 +71,7 @@ switch (command) {
     const from = parseToBigInt(restArgs[0]);
     const to = parseToBigInt(restArgs[1]);
     if (from == null || to == null || from > to) {
-      logger.info(`Invalid block number. from: ${from} | to: ${to}.`);
+      serviceLogger.info(`Invalid block number. from: ${from} | to: ${to}.`);
       break;
     }
 
@@ -86,7 +85,7 @@ switch (command) {
     const transactionHash = restArgs[0];
 
     if (transactionHash == null || !is0xHash(transactionHash)) {
-      logger.info("Invalid transaction hash.");
+      serviceLogger.info("Invalid transaction hash.");
       break;
     }
 
@@ -98,7 +97,7 @@ switch (command) {
     const transactionHash = restArgs[0];
 
     if (transactionHash == null || !is0xHash(transactionHash)) {
-      logger.info("Invalid transaction hash.");
+      serviceLogger.info("Invalid transaction hash.");
       break;
     }
 
@@ -110,7 +109,7 @@ switch (command) {
     const transactionHash = restArgs[0];
 
     if (transactionHash == null || !is0xHash(transactionHash)) {
-      logger.info("Invalid transaction hash.");
+      serviceLogger.info("Invalid transaction hash.");
       break;
     }
 
@@ -122,7 +121,7 @@ switch (command) {
     const transactionHash = restArgs[0];
 
     if (transactionHash == null || !is0xHash(transactionHash)) {
-      logger.info("Invalid transaction hash.");
+      serviceLogger.info("Invalid transaction hash.");
       break;
     }
 
@@ -134,7 +133,7 @@ switch (command) {
     const transferHash = restArgs[0];
 
     if (transferHash == null || !is0xHash(transferHash)) {
-      logger.info("Invalid transfer hash.");
+      serviceLogger.info("Invalid transfer hash.");
       break;
     }
 
@@ -147,7 +146,7 @@ switch (command) {
     const transactionHash = restArgs[0];
 
     if (transactionHash == null || !is0xHash(transactionHash)) {
-      logger.info("Invalid transaction hash.");
+      serviceLogger.info("Invalid transaction hash.");
       break;
     }
 
@@ -160,7 +159,7 @@ switch (command) {
     const transactionHash = restArgs[0];
 
     if (transactionHash == null || !is0xHash(transactionHash)) {
-      logger.info("Invalid transaction hash.");
+      serviceLogger.info("Invalid transaction hash.");
       break;
     }
 
@@ -172,7 +171,7 @@ switch (command) {
   case "price": {
     const swapId = parseToBigInt(restArgs[0]);
     if (swapId == null) {
-      logger.info("Invalid swapId number.");
+      serviceLogger.info("Invalid swapId number.");
       break;
     }
     const processor = new PriceProcessor();
@@ -186,7 +185,7 @@ switch (command) {
       case "block": {
         const blockNumber = parseToBigInt(restArgs[1]);
         if (blockNumber == null) {
-          logger.info("Invalid block number.");
+          serviceLogger.info("Invalid block number.");
           break;
         }
 
@@ -197,7 +196,9 @@ switch (command) {
         const from = parseToBigInt(restArgs[1]);
         const to = parseToBigInt(restArgs[2]);
         if (from == null || to == null || from > to) {
-          logger.info(`Invalid block number. from: ${from} | to: ${to}.`);
+          serviceLogger.info(
+            `Invalid block number. from: ${from} | to: ${to}.`,
+          );
           break;
         }
 
@@ -209,7 +210,7 @@ switch (command) {
       case "transaction": {
         const transactionHash = restArgs[1];
         if (transactionHash == null || !is0xHash(transactionHash)) {
-          logger.info("Invalid transaction hash.");
+          serviceLogger.info("Invalid transaction hash.");
           break;
         }
 
@@ -219,7 +220,7 @@ switch (command) {
       case "transaction-aggregator": {
         const transactionHash = restArgs[1];
         if (transactionHash == null || !is0xHash(transactionHash)) {
-          logger.info("Invalid transaction hash.");
+          serviceLogger.info("Invalid transaction hash.");
           break;
         }
 
@@ -227,7 +228,7 @@ switch (command) {
         break;
       }
       default: {
-        logger.info(`No model to queue: ${modelToQueue}.`);
+        serviceLogger.info(`No model to queue: ${modelToQueue}.`);
       }
     }
     break;
@@ -358,7 +359,7 @@ switch (command) {
         break;
       }
       default: {
-        logger.info(`No model to consume: ${modelToConsume}.`);
+        serviceLogger.info(`No model to consume: ${modelToConsume}.`);
       }
     }
     break;
@@ -367,7 +368,7 @@ switch (command) {
     const from = parseToBigInt(restArgs[0]);
     const to = parseToBigInt(restArgs[1]);
     if (from == null || to == null || from >= to) {
-      logger.info(`Invalid block number. from: ${from} | to: ${to}.`);
+      serviceLogger.info(`Invalid block number. from: ${from} | to: ${to}.`);
       break;
     }
 
@@ -388,10 +389,10 @@ switch (command) {
           },
         );
 
-        logger.debug(`Sent blocks ${i}-${i + maxSize} to block topic.`);
+        serviceLogger.debug(`Sent blocks ${i}-${i + maxSize} to block topic.`);
       }
       await transaction.commit();
-      logger.info(`Finish send all messages to block topic.`);
+      serviceLogger.info(`Finish send all messages to block topic.`);
     } catch (_: unknown) {
       await transaction.abort();
     }
@@ -430,7 +431,7 @@ switch (command) {
       }
 
       processed += receipts.length;
-      logger.info(
+      serviceLogger.info(
         `Queue internal transaction page ${i + 1}. Total receipts: ${receipts.length}. Processed: ${processed}/${totalTransactionReceipts}`,
       );
 
@@ -440,7 +441,7 @@ switch (command) {
 
       cursor = receipts[SIZE - 1].transactionHash;
     }
-    logger.info("Queue internal transactions finished.");
+    serviceLogger.info("Queue internal transactions finished.");
     break;
   }
   /**
@@ -469,7 +470,7 @@ switch (command) {
       }
 
       processed += receipts.length;
-      logger.info(
+      serviceLogger.info(
         `Publish page ${i + 1}. Total receipts: ${receipts.length}. Processed: ${processed}/${totalTransactionReceipts}`,
       );
 
@@ -479,7 +480,7 @@ switch (command) {
 
       cursor = receipts[SIZE - 1].transactionHash;
     }
-    logger.info("Publish to aggregator exchange finished.");
+    serviceLogger.info("Publish to aggregator exchange finished.");
     break;
   }
   case "find-missing-receipt": {
@@ -506,7 +507,7 @@ switch (command) {
 
       for (const transaction of transactions) {
         if (transaction.receipt == null) {
-          logger.info(
+          serviceLogger.info(
             `Found missing receipt for transaction ${transaction.hash}.`,
           );
 
@@ -527,7 +528,7 @@ switch (command) {
       }
 
       processed += transactions.length;
-      logger.info(
+      serviceLogger.info(
         `Queue transaction receipts page ${i + 1}. Total transactions: ${transactions.length}. Processed: ${processed}/${totalTransactions}`,
       );
 
@@ -537,10 +538,10 @@ switch (command) {
 
       cursor = transactions[SIZE - 1].hash;
     }
-    logger.info("Finished queueing missing receipts.");
+    serviceLogger.info("Finished queueing missing receipts.");
     break;
   }
   default:
-    logger.info(`No command: ${command}`);
+    serviceLogger.info(`No command: ${command}`);
     break;
 }

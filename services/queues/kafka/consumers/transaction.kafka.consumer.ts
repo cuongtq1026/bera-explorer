@@ -1,18 +1,20 @@
+import type { KafkaJS } from "@confluentinc/kafka-javascript";
 import prisma from "@database/prisma.ts";
 import { plainToInstance } from "class-transformer";
-import type { EachMessagePayload } from "kafkajs";
 import type { Hash } from "viem";
 
 import {
   KafkaReachedEndIndexedOffset,
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
-import logger from "../../../monitor/logger.ts";
+import { appLogger } from "../../../monitor/app.logger.ts";
 import { parseToBigInt } from "../../../utils.ts";
 import kafkaConnection from "../kafka.connection.ts";
 import { BlockMessagePayload } from "../producers";
 import { sendToTransactionTopic } from "../producers/transaction.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
+
+const serviceLogger = appLogger.namespace("TransactionKafkaConsumer");
 
 export class TransactionKafkaConsumer extends AbstractKafkaConsumer {
   protected topic = "BLOCK" as const;
@@ -23,7 +25,7 @@ export class TransactionKafkaConsumer extends AbstractKafkaConsumer {
   }
 
   protected async handler(
-    eachMessagePayload: EachMessagePayload,
+    eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
@@ -31,15 +33,15 @@ export class TransactionKafkaConsumer extends AbstractKafkaConsumer {
     if (!rawContent) {
       throw new PayloadNotFoundException(messageId);
     }
-    logger.info(
-      `[MessageId: ${messageId}] TransactionKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
+    serviceLogger.info(
+      `[MessageId: ${messageId}] message rawContent size: ${rawContent.byteLength}.`,
     );
 
     const rawDecodedContent =
       await kafkaConnection.decode<typeof this.topic>(rawContent);
 
-    logger.info(
-      `[MessageId: ${messageId}] TransactionKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,
+    serviceLogger.info(
+      `[MessageId: ${messageId}] message rawDecodedContent: ${rawDecodedContent.toString()}`,
     );
 
     // transform
@@ -84,7 +86,7 @@ export class TransactionKafkaConsumer extends AbstractKafkaConsumer {
   }
 
   protected async onFinish(
-    eachMessagePayload: EachMessagePayload,
+    eachMessagePayload: KafkaJS.EachMessagePayload,
     data: { blockNumber: number | bigint; transactions: Hash[] },
   ): Promise<void> {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
@@ -96,7 +98,7 @@ export class TransactionKafkaConsumer extends AbstractKafkaConsumer {
         hash: transaction,
       })),
     );
-    logger.info(
+    serviceLogger.info(
       `[MessageId: ${messageId}] Sent ${transactions.length} messages to transaction topic.`,
     );
 

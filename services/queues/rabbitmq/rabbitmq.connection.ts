@@ -12,7 +12,7 @@ import {
   DEAD_LETTER_QUEUE_NAME,
   queues,
 } from "../../config";
-import logger from "../../monitor/logger.ts";
+import { appLogger } from "../../monitor/app.logger.ts";
 import {
   EXPONENTIAL_BACKOFF,
   EXPONENTIAL_BACKOFF_IN_SECONDS,
@@ -20,6 +20,8 @@ import {
   type PublishOptions,
   RETRY_COUNT,
 } from "./index.ts";
+
+const serviceLogger = appLogger.namespace("RabbitMQConnection");
 
 class RabbitMQConnection {
   connection!: Connection;
@@ -36,12 +38,12 @@ class RabbitMQConnection {
     else this.connected = true;
 
     try {
-      logger.info(`⌛️ Connecting to Rabbit-MQ Server`);
+      serviceLogger.info(`⌛️ Connecting to Rabbit-MQ Server`);
       this.connection = await client.connect(connectionUrl);
-      logger.info(`✅  Rabbit MQ Connection is ready`);
+      serviceLogger.info(`✅  Rabbit MQ Connection is ready`);
 
       this.channel = await this.connection.createChannel();
-      logger.info(`🛸 Created RabbitMQ Channel successfully`);
+      serviceLogger.info(`🛸 Created RabbitMQ Channel successfully`);
 
       // Configuration
       {
@@ -50,13 +52,15 @@ class RabbitMQConnection {
           : 0;
 
         await this.channel.prefetch(globalConsumeLimit, true);
-        logger.info(`Channel global prefetch is set to ${globalConsumeLimit}.`);
+        serviceLogger.info(
+          `Channel global prefetch is set to ${globalConsumeLimit}.`,
+        );
         const individualConsumeLimit = process.env.INDIVIDUAL_CONSUMER_LIMIT
           ? parseInt(process.env.INDIVIDUAL_CONSUMER_LIMIT!)
           : 0;
 
         await this.channel.prefetch(individualConsumeLimit, false);
-        logger.info(
+        serviceLogger.info(
           `Channel individual prefetch is set to ${individualConsumeLimit}.`,
         );
       }
@@ -108,10 +112,10 @@ class RabbitMQConnection {
           }
         }),
       );
-      logger.info(`Asserted all queues to RabbitMQ.`);
+      serviceLogger.info(`Asserted all queues to RabbitMQ.`);
     } catch (error) {
-      logger.error(error);
-      logger.error(`Not connected to MQ Server`);
+      serviceLogger.error(error);
+      serviceLogger.error(`Not connected to MQ Server`);
 
       throw error;
     }
@@ -138,7 +142,7 @@ class RabbitMQConnection {
         },
       );
     } catch (error) {
-      logger.error(`sendToQueue error: ${error}`);
+      serviceLogger.error(`sendToQueue error: ${error}`);
       throw error;
     }
   }
@@ -165,7 +169,7 @@ class RabbitMQConnection {
         },
       );
     } catch (error) {
-      logger.error(`publishToCrawlerExchange error: ${error}`);
+      serviceLogger.error(`publishToCrawlerExchange error: ${error}`);
       throw error;
     }
   }
@@ -193,7 +197,7 @@ class RabbitMQConnection {
         },
       );
     } catch (error) {
-      logger.error(`publishToCrawlerExchange error: ${error}`);
+      serviceLogger.error(`publishToCrawlerExchange error: ${error}`);
       throw error;
     }
   }
@@ -208,7 +212,7 @@ class RabbitMQConnection {
       queueName,
       async (message: ConsumeMessage | null) => {
         if (!message) {
-          return logger.error(`Invalid incoming message`);
+          return serviceLogger.error(`Invalid incoming message`);
         }
 
         try {
@@ -220,7 +224,7 @@ class RabbitMQConnection {
           }
           this.channel.ack(message);
         } catch (e) {
-          logger.error(
+          serviceLogger.error(
             `[MessageId: ${message.properties.messageId}} | ${queueName}] Queue consumer error: ${e}`,
           );
 

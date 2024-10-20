@@ -5,10 +5,12 @@ import { validateOrReject } from "class-validator";
 import type { Hash } from "viem";
 
 import { queues } from "../../../config";
-import logger from "../../../monitor/logger.ts";
+import { appLogger } from "../../../monitor/app.logger.ts";
 import { QueueBlockPayload, QueueTransactionPayload } from "../producers";
 import mqConnection from "../rabbitmq.connection.ts";
 import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
+
+const serviceLogger = appLogger.namespace("BlockConsumer");
 
 export class BlockConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.BLOCK_QUEUE.name;
@@ -19,7 +21,7 @@ export class BlockConsumer extends AbstractRabbitMQConsumer {
 
   protected async handler(message: ConsumeMessage): Promise<boolean> {
     const rawContent = message.content.toString();
-    logger.info(`BlockConsumer message rawContent: ${rawContent}.`);
+    serviceLogger.info(`message rawContent: ${rawContent}.`);
 
     // transform
     const contentInstance = plainToInstance(
@@ -49,7 +51,7 @@ export class BlockConsumer extends AbstractRabbitMQConsumer {
     const { transactions } = data;
     await Promise.all(
       transactions.map((transactionHash) => {
-        logger.info(
+        serviceLogger.info(
           `[MessageId: ${message.properties.messageId}] Published to transaction queue transactionHash: ${transactionHash}.`,
         );
 

@@ -1,18 +1,20 @@
+import type { KafkaJS } from "@confluentinc/kafka-javascript";
 import { findTransaction } from "@database/repositories/transaction.repository.ts";
 import { SwapProcessor } from "@processors/swap.processor.ts";
 import { plainToInstance } from "class-transformer";
-import type { EachMessagePayload } from "kafkajs";
 import type { Hash } from "viem";
 
 import {
   KafkaReachedEndIndexedOffset,
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
-import logger from "../../../monitor/logger.ts";
+import { appLogger } from "../../../monitor/app.logger.ts";
 import kafkaConnection from "../kafka.connection.ts";
 import { TransactionMessagePayload } from "../producers";
 import { sendToSwapTopic } from "../producers/swap.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
+
+const serviceLogger = appLogger.namespace("SwapKafkaConsumer");
 
 export class SwapKafkaConsumer extends AbstractKafkaConsumer {
   protected topic = "TRANSACTION" as const;
@@ -23,7 +25,7 @@ export class SwapKafkaConsumer extends AbstractKafkaConsumer {
   }
 
   protected async handler(
-    eachMessagePayload: EachMessagePayload,
+    eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
@@ -31,15 +33,15 @@ export class SwapKafkaConsumer extends AbstractKafkaConsumer {
     if (!rawContent) {
       throw new PayloadNotFoundException(messageId);
     }
-    logger.info(
-      `[MessageId: ${messageId}] SwapKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
+    serviceLogger.info(
+      `[MessageId: ${messageId}] message rawContent size: ${rawContent.byteLength}.`,
     );
 
     const rawDecodedContent =
       await kafkaConnection.decode<typeof this.topic>(rawContent);
 
-    logger.info(
-      `[MessageId: ${messageId}] SwapKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,
+    serviceLogger.info(
+      `[MessageId: ${messageId}] message rawDecodedContent: ${rawDecodedContent.toString()}`,
     );
 
     // transform
@@ -70,7 +72,7 @@ export class SwapKafkaConsumer extends AbstractKafkaConsumer {
   }
 
   protected async onFinish(
-    eachMessagePayload: EachMessagePayload,
+    eachMessagePayload: KafkaJS.EachMessagePayload,
     data: {
       swapIds: (bigint | number)[] | null;
     },
@@ -88,7 +90,7 @@ export class SwapKafkaConsumer extends AbstractKafkaConsumer {
         swapId: swapId.toString(),
       })),
     );
-    logger.info(
+    serviceLogger.info(
       `[MessageId: ${messageId}] Sent ${swapIds.length} messages to swap topic.`,
     );
 

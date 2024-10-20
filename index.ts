@@ -53,7 +53,7 @@ import { is0xHash, parseToBigInt } from "./services/utils.ts";
 
 const [command, ...restArgs] = process.argv.slice(2);
 
-const serviceLogger = appLogger.namespace("Root");
+const serviceLogger = appLogger.namespace("main");
 serviceLogger.info(`Executing command ${command}...`);
 
 switch (command) {

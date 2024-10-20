@@ -58,8 +58,7 @@ The following services will be started:
 - **Redis**: Caching layer.
 - **RabbitMQ**: Manages message queues between producers and consumers for processing blocks, transactions, transactions-receipts, internal-transactions, transfers.
 - **Prometheus**: Monitors metrics such as RPC node requests, error rates, and message processing success rates.
-- **Kafka (No zookeeper included)**: Aggregates data from transfers to balances.
-- **Kafka UI**: Provides a web interface for viewing Kafka brokers, topics and consumers.
+- **Kafka (Kraft)**: Storing and aggregate data in order.
 ### 3. Configure Environment Variables
 Copy the example environment file and update the RPC_URLS:
 ```bash
@@ -81,19 +80,16 @@ yarn run consume:all
 ```
 
 ### Queue New Messages
-Queue a block for processing:
-```bash
-yarn run queue block <blockNumber>
-```
 Queue a range of blocks:
 ```bash
+# Both need to be called
+
+# Queue blocks to rabbitmq for indexing
 yarn run queue blocks <from> <to>
+
+# Send blockNumbers to kafka for storing references in order
+yarn run send-blocks-topic <from> <to>
 ```
-Queue a transaction for processing:
-```bash
-yarn run queue transaction <txHash>
-```
-Note: Transactions will be automatically queued after a block is processed. Once a transaction is processed, a `transaction-receipt` message will be published._
 
 ### Retry Failed Messages
 There is a Dead Letter Exchange (DLX) for storing failed messages. Retry them with:
@@ -101,10 +97,12 @@ There is a Dead Letter Exchange (DLX) for storing failed messages. Retry them wi
 yarn run retry-queue-all
 ```
 
+There are a lot more commands. Please check them in `package.json`
+
 ## Backend API
 To start the backend API server:
 ```bash
-yarn run dev
+yarn run backend:dev
 ```
 
 ### API Endpoints

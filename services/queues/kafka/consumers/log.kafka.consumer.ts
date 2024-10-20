@@ -1,18 +1,17 @@
 import prisma from "@database/prisma.ts";
 import { plainToInstance } from "class-transformer";
-import { validate } from "class-validator";
 import type { EachMessagePayload } from "kafkajs";
 import type { Hash } from "viem";
 
 import {
-  InvalidPayloadException,
   KafkaReachedEndIndexedOffset,
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
-import { topics, TransactionMessagePayload } from "../index.ts";
+import { topics } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
-import { sendToLogTopic } from "../producers";
+import { sendToLogTopic } from "../producers/log.kafka.producer.ts";
+import { TransactionMessagePayload } from "../producers/transaction.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class LogKafkaConsumer extends AbstractKafkaConsumer {

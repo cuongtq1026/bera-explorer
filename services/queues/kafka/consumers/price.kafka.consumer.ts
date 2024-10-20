@@ -9,8 +9,9 @@ import {
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
 import { parseToBigInt } from "../../../utils.ts";
-import { SwapMessagePayload, topics } from "../index.ts";
+import { topics } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
+import { SwapMessagePayload } from "../producers/swap.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class PriceKafkaConsumer extends AbstractKafkaConsumer {

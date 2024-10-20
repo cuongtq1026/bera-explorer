@@ -28,7 +28,7 @@ import { SwapKafkaConsumer } from "./services/queues/kafka/consumers/swap.kafka.
 import { TransactionKafkaConsumer } from "./services/queues/kafka/consumers/transaction.kafka.consumer.ts";
 import { TransferKafkaConsumer } from "./services/queues/kafka/consumers/transfer.kafka.consumer.ts";
 import kafkaConnection from "./services/queues/kafka/kafka.connection.ts";
-import { sendToBlockTopic } from "./services/queues/kafka/producers";
+import { sendToBlockTopic } from "./services/queues/kafka/producers/block.kafka.producer.ts";
 import { BlockConsumer } from "./services/queues/rabbitmq/consumers/block.consumer.ts";
 import { DlxConsumer } from "./services/queues/rabbitmq/consumers/dlx.consumer.ts";
 import { InternalTransactionConsumer } from "./services/queues/rabbitmq/consumers/internal-transaction.consumer.ts";

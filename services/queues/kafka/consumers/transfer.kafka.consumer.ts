@@ -1,18 +1,17 @@
 import prisma from "@database/prisma.ts";
 import { plainToInstance } from "class-transformer";
-import { validate } from "class-validator";
 import type { EachMessagePayload } from "kafkajs";
 
 import { ERC20_TRANSFER_SIGNATURE } from "../../../config/constants.ts";
 import {
-  InvalidPayloadException,
   KafkaReachedEndIndexedOffset,
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
-import { LogMessagePayload, topics } from "../index.ts";
+import { topics } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
-import { sendToTransferTopic } from "../producers";
+import { LogMessagePayload } from "../producers/log.kafka.producer.ts";
+import { sendToTransferTopic } from "../producers/transfer.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 /**

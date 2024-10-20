@@ -36,6 +36,42 @@ The project uses the following technologies:
 - Viem (Ethereum tools)
 - Next (React)
 
+## Structures
+```
+.
+├── Dockerfile
+├── README.md
+├── backend.ts
+├── bera-explorer.drawio
+├── docker-compose.yml
+├── eslint.config.js
+├── frontend # Frontend Server using Next
+│    └── src
+├── frontend.Dockerfile
+├── index.ts
+├── package.json
+├── prisma
+│    ├── migrations
+│    └── schema.prisma
+├── prometheus.yml
+├── services
+│    ├── api # API Server using Express
+│    ├── config
+│    ├── data-source # Fetching data from RPC nodes
+│    ├── data-storage # Storing data
+│    ├── decoder # Blockchain transactions decoders
+│    ├── exceptions
+│    ├── interfaces
+│    ├── monitor # Logger, Prometheus
+│    ├── processors # Process blockchain data and store them
+│    ├── queues # Kafka and RabbitMQ
+│    └── utils.ts
+├── tsconfig.json
+├── tsconfig.tsbuildinfo
+└── yarn.lock
+```
+
+
 ## Setup
 ### 1. Install dependencies
 Install the project dependencies

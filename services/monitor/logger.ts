@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { createLogger, format, transports } from "winston";
 import DailyRotateFile from "winston-daily-rotate-file";
 
@@ -20,11 +21,18 @@ const logger = createLogger({
 });
 
 if (process.env.NODE_ENV !== "production") {
+  const levelColors = {
+    info: chalk.cyan,
+    warn: chalk.yellow,
+    error: chalk.red.bold,
+    debug: chalk.magenta,
+  };
+
   logger.add(
     new transports.Console({
       level: "debug",
       format: format.combine(
-        format.timestamp({ format: "YYYY-MM-DD, HH:mm:ss" }),
+        format.timestamp({ format: "YYYY-MM-DD, HH:mm:ss.SSS" }),
         format.printf(
           ({
             level,
@@ -35,13 +43,21 @@ if (process.env.NODE_ENV !== "production") {
             file,
             ...metadata
           }) => {
-            const messages = [process.pid, "-", timestamp];
+            const colorize =
+              levelColors[level as keyof typeof levelColors] || chalk.white;
+
+            const messages = [
+              chalk.blue("PID:"),
+              chalk.green(process.pid),
+              "-",
+              chalk.gray(timestamp),
+            ];
             if (label) {
-              messages.push(`[${label}]`);
+              messages.push(chalk.bold(label));
             }
-            messages.push(level.toUpperCase());
+            messages.push(colorize(level));
             if (namespace) {
-              messages.push(`[${namespace}]`);
+              messages.push(chalk.blue(`${namespace}:`));
             }
             messages.push(message);
             if (file) {
@@ -54,7 +70,6 @@ if (process.env.NODE_ENV !== "production") {
             return messages.join(" ");
           },
         ),
-        format.colorize({ all: true }),
         format.errors({ stack: true }),
       ),
     }),

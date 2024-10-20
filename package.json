@@ -51,6 +51,7 @@
     "@types/express": "^5.0.0",
     "@types/uuid": "^10.0.0",
     "amqplib": "^0.10.4",
+    "chalk": "^5.3.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "decimal.js": "^10.4.3",

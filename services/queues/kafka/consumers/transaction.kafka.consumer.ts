@@ -9,14 +9,13 @@ import {
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
 import { parseToBigInt } from "../../../utils.ts";
-import { topics } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
 import { BlockMessagePayload } from "../producers/block.kafka.producer.ts";
 import { sendToTransactionTopic } from "../producers/transaction.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class TransactionKafkaConsumer extends AbstractKafkaConsumer {
-  protected topicName = topics.BLOCK.name;
+  protected topic = "BLOCK" as const;
   protected consumerName = "transaction";
 
   constructor() {
@@ -36,7 +35,8 @@ export class TransactionKafkaConsumer extends AbstractKafkaConsumer {
       `[MessageId: ${messageId}] TransactionKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
     );
 
-    const rawDecodedContent = await kafkaConnection.decode(rawContent);
+    const rawDecodedContent =
+      await kafkaConnection.decode<typeof this.topic>(rawContent);
 
     logger.info(
       `[MessageId: ${messageId}] TransactionKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,

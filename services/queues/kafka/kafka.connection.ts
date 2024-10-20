@@ -5,6 +5,11 @@ import { SchemaRegistry, SchemaType } from "@kafkajs/confluent-schema-registry";
 import { appLogger } from "../../monitor/app.logger.ts";
 import { KafkaLogger } from "../../monitor/kafka.logger.ts";
 import { topics } from "./index.ts";
+import type { BlockMessagePayload } from "./producers/block.kafka.producer.ts";
+import { LogMessagePayload } from "./producers/log.kafka.producer.ts";
+import { SwapMessagePayload } from "./producers/swap.kafka.producer.ts";
+import { TransactionMessagePayload } from "./producers/transaction.kafka.producer.ts";
+import { TransferMessagePayload } from "./producers/transfer.kafka.producer.ts";
 import {
   blockSchema,
   logSchema,
@@ -137,7 +142,21 @@ export class KafkaConnection extends AbstractConnectable {
     return this.registry.encode(this.getSchemaId(schemaName), value);
   }
 
-  public async decode(value: Buffer): Promise<Buffer> {
+  public async decode<T extends keyof typeof topics>(
+    value: Buffer,
+  ): Promise<
+    T extends "BLOCK"
+      ? BlockMessagePayload
+      : T extends "TRANSACTION"
+        ? TransactionMessagePayload
+        : T extends "LOG"
+          ? LogMessagePayload
+          : T extends "TRANSFER"
+            ? TransferMessagePayload
+            : T extends "SWAP"
+              ? SwapMessagePayload
+              : never
+  > {
     await this.checkConnection();
 
     return this.registry.decode(value);

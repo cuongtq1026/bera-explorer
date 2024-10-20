@@ -8,14 +8,13 @@ import {
   PayloadNotFoundException,
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
-import { topics } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
 import { sendToLogTopic } from "../producers/log.kafka.producer.ts";
 import { TransactionMessagePayload } from "../producers/transaction.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class LogKafkaConsumer extends AbstractKafkaConsumer {
-  protected topicName = topics.TRANSACTION.name;
+  protected topic = "TRANSACTION" as const;
   protected consumerName = "log";
 
   constructor() {
@@ -35,7 +34,8 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
       `[MessageId: ${messageId}] LogKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
     );
 
-    const rawDecodedContent = await kafkaConnection.decode(rawContent);
+    const rawDecodedContent =
+      await kafkaConnection.decode<typeof this.topic>(rawContent);
 
     logger.info(
       `[MessageId: ${messageId}] LogKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,

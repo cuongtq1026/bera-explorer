@@ -5,13 +5,12 @@ import type { Hash } from "viem";
 
 import { PayloadNotFoundException } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
-import { topics } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
 import { TransferMessagePayload } from "../producers/transfer.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class BalanceKafkaConsumer extends AbstractKafkaConsumer {
-  protected topicName = topics.TRANSFER.name;
+  protected topic = "TRANSFER" as const;
   protected consumerName = "balance";
 
   constructor() {
@@ -31,7 +30,8 @@ export class BalanceKafkaConsumer extends AbstractKafkaConsumer {
       `[MessageId: ${messageId}] BalanceKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
     );
 
-    const rawDecodedContent = await kafkaConnection.decode(rawContent);
+    const rawDecodedContent =
+      await kafkaConnection.decode<typeof this.topic>(rawContent);
 
     logger.info(
       `[MessageId: ${messageId}] BalanceKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,

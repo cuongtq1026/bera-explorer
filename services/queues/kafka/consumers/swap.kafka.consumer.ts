@@ -16,7 +16,7 @@ import { TransactionMessagePayload } from "../producers/transaction.kafka.produc
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class SwapKafkaConsumer extends AbstractKafkaConsumer {
-  protected topicName = topics.TRANSACTION.name;
+  protected topic = "TRANSACTION" as const;
   protected consumerName = "swap";
 
   constructor() {
@@ -36,7 +36,8 @@ export class SwapKafkaConsumer extends AbstractKafkaConsumer {
       `[MessageId: ${messageId}] SwapKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
     );
 
-    const rawDecodedContent = await kafkaConnection.decode(rawContent);
+    const rawDecodedContent =
+      await kafkaConnection.decode<typeof this.topic>(rawContent);
 
     logger.info(
       `[MessageId: ${messageId}] SwapKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,

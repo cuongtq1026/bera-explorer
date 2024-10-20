@@ -9,13 +9,12 @@ import {
 } from "../../../exceptions/consumer.exception.ts";
 import logger from "../../../monitor/logger.ts";
 import { parseToBigInt } from "../../../utils.ts";
-import { topics } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
 import { SwapMessagePayload } from "../producers/swap.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
 export class PriceKafkaConsumer extends AbstractKafkaConsumer {
-  protected topicName = topics.SWAP.name;
+  protected topic = "SWAP" as const;
   protected consumerName = "price";
 
   constructor() {
@@ -35,7 +34,8 @@ export class PriceKafkaConsumer extends AbstractKafkaConsumer {
       `[MessageId: ${messageId}] PriceKafkaConsumer message rawContent size: ${rawContent.byteLength}.`,
     );
 
-    const rawDecodedContent = await kafkaConnection.decode(rawContent);
+    const rawDecodedContent =
+      await kafkaConnection.decode<typeof this.topic>(rawContent);
 
     logger.info(
       `[MessageId: ${messageId}] PriceKafkaConsumer message rawDecodedContent: ${rawDecodedContent.toString()}`,

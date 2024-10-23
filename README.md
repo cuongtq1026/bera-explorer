@@ -180,7 +180,7 @@ Access the RabbitMQ management interface:
 - http://localhost:15672/
 ### Kafka:
 Access the Kafka management interface:
-- http://localhost:9021/
+- http://localhost:8080/
 ### Prometheus
 Access the Prometheus dashboard:
 - http://localhost:9090/

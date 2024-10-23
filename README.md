@@ -24,7 +24,6 @@
 
 ## Technologies
 The project uses the following technologies:
-- [Bun](https://bun.sh) (JavaScript runtime)
 - Prisma (ORM)
 - Docker (Containerization)
 - RabbitMQ (Message broker)

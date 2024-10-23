@@ -171,16 +171,5 @@ services:
       KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://connect:8083
 
       KAFKA_CLUSTERS_0_KSQLDBSERVER: http://ksqldb-server:8088
-  odd-platform:
-    image: ghcr.io/opendatadiscovery/odd-platform:latest
-    restart: always
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/bera-explorer
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=mypassword
-    depends_on:
-      - db
-    ports:
-      - "8090:8080"
 volumes:
   data:

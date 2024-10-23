@@ -195,3 +195,8 @@ To build frontend image:
 ```bash
 docker build -t bera-explorer-frontend -f frontend.Dockerfile --build-arg DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public" .
 ```
+
+# Contacts
+| **Name**       | **Linkedin**                                           | Github                                   |
+|----------------|--------------------------------------------------------|------------------------------------------|
+| **Cuong Tran** | [LinkedIn](https://www.linkedin.com/in/cuongtran1026/) | [Github](https://github.com/cuongtq1026) |   |

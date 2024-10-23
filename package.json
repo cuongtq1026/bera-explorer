@@ -1,6 +1,7 @@
 {
   "name": "bera-explorer",
   "version": "1.9.2",
+  "license": "MIT",
   "module": "index.ts",
   "type": "module",
   "exports": "./dist/index.mjs",

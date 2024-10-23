@@ -83,6 +83,14 @@ Install dependencies in frontend directory:
 cd frontend && yarn install
 ```
 
+Download jars and connectors
+```bash
+mkdir connects && cd connects
+
+curl --output kafka-connect-jdbc-10.8.0.jar https://packages.confluent.io/maven/io/confluent/kafka-connect-jdbc/10.8.0/kafka-connect-jdbc-10.8.0.jar
+curl --output postgresql-42.7.4.jar https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar
+```
+
 ### 2. Run docker-compose:
 Start the necessary services with Docker Compose:
 ```bash
@@ -94,7 +102,7 @@ The following services will be started:
 - **Redis**: Caching layer.
 - **RabbitMQ**: Manages message queues between producers and consumers for processing blocks, transactions, transactions-receipts, internal-transactions, transfers.
 - **Prometheus**: Monitors metrics such as RPC node requests, error rates, and message processing success rates.
-- **Kafka (Kraft)**: Storing and aggregate data in order.
+- **Kafka**: Storing and aggregate data in order.
 ### 3. Configure Environment Variables
 Copy the example environment file and update the RPC_URLS:
 ```bash
@@ -106,6 +114,12 @@ cp .env.example .env
 Run the following command to generate Prisma client:
 ```bash
 yarn run prisma:generate
+```
+
+### 5. Run setup scripts
+```bash
+# Create kafka connectors
+cd ./scripts && ./create-kafka-connectors.sh
 ```
 
 ## Start Services

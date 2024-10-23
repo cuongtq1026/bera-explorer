@@ -87,6 +87,8 @@ services:
       - schema-registry
     ports:
       - "8083:8083"
+    volumes:
+      - ./connectors:/usr/share/java/kafka-connect-jdbc
     environment:
       CONNECT_BOOTSTRAP_SERVERS: 'broker:29092'
       CONNECT_REST_ADVERTISED_HOST_NAME: connect
@@ -165,7 +167,7 @@ services:
 
       KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
 
-      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: cnfldemos/kafka-connect-datagen
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: kafka-connect
       KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://connect:8083
 
       KAFKA_CLUSTERS_0_KSQLDBSERVER: http://ksqldb-server:8088

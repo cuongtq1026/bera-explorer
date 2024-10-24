@@ -1,4 +1,8 @@
 import {
+  countBlock,
+  findBlock,
+} from "@database/repositories/block.repository.ts";
+import {
   countTransactions,
   findTransactions,
 } from "@database/repositories/transaction.repository.ts";
@@ -456,29 +460,31 @@ switch (command) {
    * Using cursor pagination
    */
   case "publish-transaction-aggregator": {
-    const SIZE = 5000;
-    const totalTransactionReceipts = await countTransactionReceipts();
+    const totalBlock = await countBlock();
 
-    for (let i = 0, cursor: Hash | null = null, processed = 0; ; i++) {
-      const receipts = await findTransactionReceipts({
-        size: SIZE,
-        cursor,
+    for (
+      let blockNumber = 0n, processed = totalBlock;
+      blockNumber < totalBlock;
+      blockNumber++
+    ) {
+      const block = await findBlock(blockNumber, {
+        withReceipts: true,
       });
+      if (!block) {
+        throw Error(`Block ${blockNumber} is not found.`);
+      }
+      if (!block.receipts) {
+        throw Error(`Block transactions receipts ${blockNumber} is not found.`);
+      }
 
-      for (const receipt of receipts) {
+      for (const receipt of block.receipts) {
         await queueTransactionAggregator(receipt.transactionHash);
       }
 
-      processed += receipts.length;
+      processed += block.receipts.length;
       serviceLogger.info(
-        `Publish page ${i + 1}. Total receipts: ${receipts.length}. Processed: ${processed}/${totalTransactionReceipts}`,
+        `Publish block ${blockNumber}. Total receipts: ${block.receipts.length}. Processed block: ${blockNumber}/${totalBlock} | transactions: ${processed}.`,
       );
-
-      if (receipts.length < SIZE) {
-        break;
-      }
-
-      cursor = receipts[SIZE - 1].transactionHash;
     }
     serviceLogger.info("Publish to aggregator exchange finished.");
     break;

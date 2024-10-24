@@ -43,10 +43,15 @@ export async function findBlock(
   number: bigint,
   options?: {
     withTransactions?: boolean;
+    withReceipts?: boolean;
     count?: boolean;
   },
 ): Promise<BlockDto | null> {
-  const { withTransactions = false, count = false } = options ?? {};
+  const {
+    withTransactions = false,
+    withReceipts = false,
+    count = false,
+  } = options ?? {};
   return prisma.block
     .findUnique({
       where: {
@@ -60,6 +65,7 @@ export async function findBlock(
               },
             }
           : false,
+        receipts: withReceipts,
         _count: count,
       },
     })
@@ -129,4 +135,8 @@ export async function findBlocksWithGas(pagination?: BlockPaginationDto) {
     },
     ...cursorObject,
   });
+}
+
+export async function countBlock() {
+  return prisma.block.count({});
 }

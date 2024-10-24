@@ -42,6 +42,7 @@ export type BlockDto = {
     transactions?: number;
   };
   transactions?: TransactionDto[];
+  receipts?: TransactionReceiptDto[];
 };
 export type TransactionDto = {
   hash: Hash;
@@ -238,6 +239,7 @@ export function toBlockDto(
       transactions?: number;
     };
     transactions?: Transaction[];
+    receipts?: TransactionReceipt[];
   },
 ): BlockDto {
   const dto: BlockDto = {
@@ -261,6 +263,9 @@ export function toBlockDto(
   };
   if (block.transactions) {
     dto.transactions = block.transactions.map(toTransactionDto);
+  }
+  if (block.receipts) {
+    dto.receipts = block.receipts.map(toTransactionReceiptDto);
   }
   if (block._count) {
     dto._count = block._count;

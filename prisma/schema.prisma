@@ -9,29 +9,29 @@ datasource db {
 }
 
 model Block {
-  number             BigInt               @id @unique
-  hash               String               @unique
-  parentHash         String
-  nonce              String?
-  sha3Uncles         String
-  logsBloom          String?
-  transactionsRoot   String
-  stateRoot          String
-  receiptsRoot       String
-  miner              String
-  difficulty         BigInt
-  totalDifficulty    BigInt
-  extraData          String?
-  size               BigInt
-  gasLimit           BigInt
-  gasUsed            BigInt
-  createdAt          BigInt
-  transactions       Transaction[]
-  transfer           Transfer[]
-  log                Log[]
-  transactionReceipt TransactionReceipt[]
-  Contract           Contract[]
-  Swap               Swap[]
+  number           BigInt               @id @unique
+  hash             String               @unique
+  parentHash       String
+  nonce            String?
+  sha3Uncles       String
+  logsBloom        String?
+  transactionsRoot String
+  stateRoot        String
+  receiptsRoot     String
+  miner            String
+  difficulty       BigInt
+  totalDifficulty  BigInt
+  extraData        String?
+  size             BigInt
+  gasLimit         BigInt
+  gasUsed          BigInt
+  createdAt        BigInt
+  transactions     Transaction[]
+  transfer         Transfer[]
+  log              Log[]
+  receipts         TransactionReceipt[]
+  contract         Contract[]
+  swap             Swap[]
 
   @@map("block")
 }

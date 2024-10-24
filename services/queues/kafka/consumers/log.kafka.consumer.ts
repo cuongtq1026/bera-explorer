@@ -3,45 +3,27 @@ import prisma from "@database/prisma.ts";
 import { plainToInstance } from "class-transformer";
 import type { Hash } from "viem";
 
-import {
-  KafkaReachedEndIndexedOffset,
-  PayloadNotFoundException,
-} from "../../../exceptions/consumer.exception.ts";
+import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
 import { appLogger } from "../../../monitor/app.logger.ts";
-import kafkaConnection from "../kafka.connection.ts";
 import { TransactionMessagePayload } from "../producers";
 import { sendToLogTopic } from "../producers/log.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
-
-const serviceLogger = appLogger.namespace("LogKafkaConsumer");
 
 export class LogKafkaConsumer extends AbstractKafkaConsumer {
   protected topic = "TRANSACTION" as const;
   protected consumerName = "log";
 
   constructor() {
-    super();
+    super({
+      logger: appLogger.namespace(LogKafkaConsumer.name),
+    });
   }
 
   protected async handler(
     eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
-    const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
-
-    const rawContent = eachMessagePayload.message.value;
-    if (!rawContent) {
-      throw new PayloadNotFoundException(messageId);
-    }
-    serviceLogger.info(
-      `[MessageId: ${messageId}] message rawContent size: ${rawContent.byteLength}.`,
-    );
-
     const rawDecodedContent =
-      await kafkaConnection.decode<typeof this.topic>(rawContent);
-
-    serviceLogger.info(
-      `[MessageId: ${messageId}] message rawDecodedContent: ${rawDecodedContent.toString()}`,
-    );
+      await this.getRawDecodedData<typeof this.topic>(eachMessagePayload);
 
     // transform
     const contentInstance = plainToInstance(
@@ -106,7 +88,7 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
         logHash: log,
       })),
     );
-    serviceLogger.info(
+    this.serviceLogger.info(
       `[MessageId: ${messageId}] Sent ${logs.length} messages to log topic.`,
     );
     return super.onFinish(eachMessagePayload, data);

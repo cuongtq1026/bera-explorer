@@ -3,18 +3,11 @@ import prisma from "@database/prisma.ts";
 import { plainToInstance } from "class-transformer";
 
 import { ERC20_TRANSFER_SIGNATURE } from "../../../config/constants.ts";
-import {
-  KafkaReachedEndIndexedOffset,
-  PayloadNotFoundException,
-} from "../../../exceptions/consumer.exception.ts";
+import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
 import { appLogger } from "../../../monitor/app.logger.ts";
-import logger from "../../../monitor/logger.ts";
-import kafkaConnection from "../kafka.connection.ts";
 import { LogMessagePayload } from "../producers";
 import { sendToTransferTopic } from "../producers/transfer.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
-
-const serviceLogger = appLogger.namespace("TransferKafkaConsumer");
 
 /**
  * Steps:
@@ -28,33 +21,21 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
   protected consumerName = "transfer";
 
   constructor() {
-    super();
+    super({
+      logger: appLogger.namespace(TransferKafkaConsumer.name),
+    });
   }
 
   protected async handler(
     eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
-    const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
-
-    const rawContent = eachMessagePayload.message.value;
-    if (!rawContent) {
-      throw new PayloadNotFoundException(messageId);
-    }
-    serviceLogger.info(
-      `[MessageId: ${messageId}] message rawContent size: ${rawContent.byteLength}.`,
-    );
-
     const rawDecodedContent =
-      await kafkaConnection.decode<typeof this.topic>(rawContent);
-
-    serviceLogger.info(
-      `[MessageId: ${messageId}] message rawDecodedContent: ${rawDecodedContent.toString()}`,
-    );
+      await this.getRawDecodedData<typeof this.topic>(eachMessagePayload);
 
     // transform
     const contentInstance = plainToInstance(
       LogMessagePayload,
-      JSON.parse(rawContent.toString()),
+      JSON.parse(rawDecodedContent.toString()),
     );
 
     const { logHash } = contentInstance;
@@ -129,7 +110,7 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
         transferHash,
       },
     ]);
-    serviceLogger.info(
+    this.serviceLogger.info(
       `[MessageId: ${messageId}] Sent ${transferHash} message to transfer topic.`,
     );
     return super.onFinish(eachMessagePayload, data);

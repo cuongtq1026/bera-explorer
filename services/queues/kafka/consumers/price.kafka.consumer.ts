@@ -3,45 +3,27 @@ import { getSwap } from "@database/repositories/swap.repository.ts";
 import { PriceProcessor } from "@processors/price.processor.ts";
 import { plainToInstance } from "class-transformer";
 
-import {
-  KafkaReachedEndIndexedOffset,
-  PayloadNotFoundException,
-} from "../../../exceptions/consumer.exception.ts";
+import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
 import { appLogger } from "../../../monitor/app.logger.ts";
 import { parseToBigInt } from "../../../utils.ts";
-import kafkaConnection from "../kafka.connection.ts";
 import { SwapMessagePayload } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
-
-const serviceLogger = appLogger.namespace("PriceKafkaConsumer");
 
 export class PriceKafkaConsumer extends AbstractKafkaConsumer {
   protected topic = "SWAP" as const;
   protected consumerName = "price";
 
   constructor() {
-    super();
+    super({
+      logger: appLogger.namespace(PriceKafkaConsumer.name),
+    });
   }
 
   protected async handler(
     eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
-    const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
-
-    const rawContent = eachMessagePayload.message.value;
-    if (!rawContent) {
-      throw new PayloadNotFoundException(messageId);
-    }
-    serviceLogger.info(
-      `[MessageId: ${messageId}] message rawContent size: ${rawContent.byteLength}.`,
-    );
-
     const rawDecodedContent =
-      await kafkaConnection.decode<typeof this.topic>(rawContent);
-
-    serviceLogger.info(
-      `[MessageId: ${messageId}] message rawDecodedContent: ${rawDecodedContent.toString()}`,
-    );
+      await this.getRawDecodedData<typeof this.topic>(eachMessagePayload);
 
     // transform
     const contentInstance = plainToInstance(

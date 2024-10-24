@@ -1,11 +1,10 @@
 import type { KafkaJS } from "@confluentinc/kafka-javascript";
 
-import { appLogger } from "../../../monitor/app.logger.ts";
+import { PayloadNotFoundException } from "../../../exceptions/consumer.exception.ts";
+import { AppLogger } from "../../../monitor/app.logger.ts";
 import { AbstractConsumer } from "../../consumer.abstract.ts";
 import { topics } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
-
-const serviceLogger = appLogger.namespace("AbstractKafkaConsumer");
 
 export abstract class AbstractKafkaConsumer extends AbstractConsumer<
   void,
@@ -14,9 +13,12 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
   protected abstract topic: keyof typeof topics;
   private topicName: string;
   protected abstract consumerName: string;
+  protected readonly serviceLogger: AppLogger;
 
-  protected constructor() {
+  protected constructor(options: { logger: AppLogger }) {
     super();
+
+    this.serviceLogger = options.logger;
   }
 
   private init() {
@@ -26,7 +28,7 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
   public async consume(): Promise<void> {
     this.init();
 
-    serviceLogger.info(
+    this.serviceLogger.info(
       `Started Consumer: ${this.consumerName} | Topic: ${this.topicName}.`,
     );
 
@@ -38,12 +40,34 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
     });
   }
 
+  protected async getRawDecodedData<T extends keyof typeof topics>(
+    eachMessagePayload: KafkaJS.EachMessagePayload,
+  ): Promise<ReturnType<typeof kafkaConnection.decode<T>>> {
+    const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
+
+    const rawContent = eachMessagePayload.message.value;
+    if (!rawContent) {
+      throw new PayloadNotFoundException(this.consumerName, messageId);
+    }
+    this.serviceLogger.info(
+      `[MessageId: ${messageId}] message rawContent size: ${rawContent.byteLength} bytes.`,
+    );
+
+    const rawDecodedContent = await kafkaConnection.decode<T>(rawContent);
+
+    this.serviceLogger.info(
+      `[MessageId: ${messageId}] message rawDecodedContent: ${rawDecodedContent.toString()}`,
+    );
+
+    return rawDecodedContent;
+  }
+
   protected async execute(
     eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
-    serviceLogger.info(`Handling message.`);
+    this.serviceLogger.info(`Handling message.`);
     await this.handler(eachMessagePayload);
-    serviceLogger.info(`Handle message successfully.`);
+    this.serviceLogger.info(`Handle message successfully.`);
   }
 
   protected abstract handler(
@@ -56,6 +80,6 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
   ): Promise<void> {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
-    serviceLogger.info(`[MessageId: ${messageId}] Finished.`);
+    this.serviceLogger.info(`[MessageId: ${messageId}] Finished.`);
   }
 }

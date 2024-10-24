@@ -11,8 +11,8 @@ class ConsumerException extends ServerException {
 }
 
 export class PayloadNotFoundException extends ConsumerException {
-  constructor(messageId: string) {
-    super(`Payload not found. MessageId: ${messageId}`);
+  constructor(consumerName: string, messageId: string) {
+    super(`Payload not found. Consumer: ${consumerName} | MessageId: ${messageId}`);
   }
 }
 

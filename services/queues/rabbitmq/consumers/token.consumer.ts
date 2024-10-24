@@ -12,7 +12,7 @@ import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
 const serviceLogger = appLogger.namespace("TokenConsumer");
 
 export class TokenConsumer extends AbstractRabbitMQConsumer {
-  protected queueName = queues.TRANSFER.name;
+  protected queueName = queues.TOKEN.name;
 
   constructor() {
     super();

@@ -12,7 +12,7 @@ export async function sendToSwapTopic(
     topics.SWAP.name,
     await Promise.all(
       messages.map(async (message) => ({
-        value: await kafkaConnection.encode("LOG", message),
+        value: await kafkaConnection.encode("SWAP", message),
       })),
     ),
     options,

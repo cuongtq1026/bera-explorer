@@ -135,9 +135,9 @@ export class KafkaConnection extends AbstractConnectable {
     }
   }
 
-  public async encode(
-    schemaName: keyof typeof topics,
-    value: any,
+  public async encode<T extends keyof typeof topics>(
+    schemaName: T,
+    value: Awaited<ReturnType<typeof this.decode<T>>>,
   ): Promise<Buffer> {
     await this.checkConnection();
 

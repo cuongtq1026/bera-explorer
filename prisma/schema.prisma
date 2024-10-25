@@ -151,7 +151,7 @@ model Transfer {
   block          Block            @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
   balance        Balance[]
   balanceHistory BalanceHistory[]
-  log            Log              @relation(fields: [hash], references: [logHash])
+  log            Log              @relation(fields: [hash], references: [logHash], onDelete: Cascade)
 
   @@index([from])
   @@index([to])
@@ -217,9 +217,9 @@ model Contract {
   name    String?
 
   // Track deployment details
-  deploymentTransaction     Transaction @relation(fields: [deploymentTransactionHash], references: [hash])
+  deploymentTransaction     Transaction @relation(fields: [deploymentTransactionHash], references: [hash], onDelete: Cascade)
   deploymentTransactionHash String
-  deploymentBlock           Block       @relation(fields: [deploymentBlockNumber], references: [number])
+  deploymentBlock           Block       @relation(fields: [deploymentBlockNumber], references: [number], onDelete: Cascade)
   deploymentBlockNumber     BigInt
 
   @@map("contract")
@@ -236,8 +236,8 @@ model Swap {
   toAmount        Decimal  @db.Decimal(78, 0)
   createdAt       DateTime
 
-  block       Block        @relation(fields: [blockNumber], references: [number])
-  transaction Transaction  @relation(fields: [transactionHash], references: [hash])
+  block       Block        @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
+  transaction Transaction  @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
   Erc20Price  Erc20Price[]
 
   @@index([dex])
@@ -254,7 +254,7 @@ model Erc20Price {
   usd_price       Decimal  @db.Decimal(78, 0)
   createdAt       DateTime
 
-  swap Swap @relation(fields: [swapId], references: [id])
+  swap Swap @relation(fields: [swapId], references: [id], onDelete: Cascade)
 
   @@index([swapId])
   @@index([transactionHash])

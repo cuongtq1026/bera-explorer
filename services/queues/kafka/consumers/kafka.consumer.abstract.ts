@@ -10,9 +10,19 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
   void,
   KafkaJS.EachMessagePayload
 > {
-  protected abstract topic: keyof typeof topics;
   private topicName: string;
+  protected abstract topic: keyof typeof topics;
   protected abstract consumerName: string;
+  /**
+   * processOnMissing
+   * false: throw exception KafkaReachedEndIndexedOffset and start retrying until the data is indexed from another service
+   * true: it will process itself to fill in the missing data, no exception will be thrown
+   *
+   * NOTE: only TransferKafkaConsumer is supported for now
+   * @protected
+   */
+  protected readonly processOnMissing: boolean =
+    process.env.KAFKA_CONSUME_PROCESS_ON_NOT_INDEXED === "true";
 
   protected constructor(options: { logger: AppLogger }) {
     super(options);

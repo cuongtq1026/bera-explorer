@@ -1,6 +1,9 @@
 import type { KafkaJS } from "@confluentinc/kafka-javascript";
+import { isERC20TransferLog } from "@database/dto.ts";
 import prisma from "@database/prisma.ts";
+import { TransferProcessor } from "@processors/transfer.processor.ts";
 import { plainToInstance } from "class-transformer";
+import type { Hash } from "viem";
 
 import { ERC20_TRANSFER_SIGNATURE } from "../../../config/constants.ts";
 import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
@@ -68,8 +71,7 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
       );
     }
     {
-      const signature = logDb.topics[0]?.topic;
-      if (signature !== ERC20_TRANSFER_SIGNATURE) {
+      if (!isERC20TransferLog(logDb.topics)) {
         await this.onFinish(eachMessagePayload, {
           transferHash: null,
         });
@@ -78,12 +80,25 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
     }
 
     if (!logDb.transfer) {
-      // TODO: Wait until data indexed
-      throw new KafkaReachedEndIndexedOffset(
-        eachMessagePayload.topic,
-        this.consumerName,
-        logHash,
-      );
+      if (!this.processOnMissing) {
+        // TODO: Wait until data indexed
+        throw new KafkaReachedEndIndexedOffset(
+          eachMessagePayload.topic,
+          this.consumerName,
+          logHash,
+        );
+      }
+
+      const processor = new TransferProcessor();
+      const hashes = await processor.process(logDb.transactionHash as Hash);
+      const transfer = hashes.find((h) => h.hash == logHash);
+      if (!transfer) {
+        throw Error(`LogHash: ${logHash}. Transfer is not found`);
+      }
+      await this.onFinish(eachMessagePayload, {
+        transferHash: transfer.hash,
+      });
+      return;
     }
 
     await this.onFinish(eachMessagePayload, {

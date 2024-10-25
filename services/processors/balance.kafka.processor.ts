@@ -10,7 +10,8 @@ import type { Hash } from "viem";
 
 import { NoGetResult } from "../exceptions/processor.exception.ts";
 import { appLogger } from "../monitor/app.logger.ts";
-import type { InterfaceProcessor } from "./interface.processor.ts";
+import { BalanceKafkaConsumer } from "../queues/kafka/consumers/balance.kafka.consumer.ts";
+import { AbstractProcessor } from "./abstract.processor.ts";
 
 const serviceLogger = appLogger.namespace("BalanceKafkaProcessor");
 
@@ -20,17 +21,20 @@ type DeleteArgType = {
 };
 type CreateArgType = [BalanceHistoryCreateInput, BalanceHistoryCreateInput];
 
-export class BalanceKafkaProcessor
-  implements
-    InterfaceProcessor<
-      Hash,
-      TransferDto,
-      Promise<CreateArgType>,
-      void,
-      DeleteArgType,
-      CreateArgType
-    >
-{
+export class BalanceKafkaProcessor extends AbstractProcessor<
+  Hash,
+  TransferDto,
+  Promise<CreateArgType>,
+  void,
+  DeleteArgType,
+  CreateArgType
+> {
+  constructor() {
+    super({
+      logger: appLogger.namespace(BalanceKafkaConsumer.name),
+    });
+  }
+
   async get(id: Hash): Promise<TransferDto> {
     const transfer = await getTransfer(id);
     if (transfer == null) {

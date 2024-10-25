@@ -18,7 +18,7 @@ import { CONTRACT_INITIATED_SIGNATURE } from "../config/constants.ts";
 import { getERC20Tokens } from "../data-source";
 import { NoGetResult } from "../exceptions/processor.exception.ts";
 import { appLogger } from "../monitor/app.logger.ts";
-import type { InterfaceProcessor } from "./interface.processor.ts";
+import { AbstractProcessor } from "./abstract.processor.ts";
 
 const serviceLogger = appLogger.namespace("TokenProcessor");
 
@@ -34,17 +34,20 @@ type ToInputArgType = TransactionReceiptDto & {
  *
  * We only focus on transaction contract and logs
  */
-export class TokenProcessor
-  implements
-    InterfaceProcessor<
-      Hash,
-      ToInputArgType,
-      Promise<{ tokens: TokenCreateInput[]; contracts: ContractCreateInput[] }>,
-      void,
-      Hash,
-      TokenCreateInput[]
-    >
-{
+export class TokenProcessor extends AbstractProcessor<
+  Hash,
+  ToInputArgType,
+  Promise<{ tokens: TokenCreateInput[]; contracts: ContractCreateInput[] }>,
+  void,
+  Hash,
+  TokenCreateInput[]
+> {
+  constructor() {
+    super({
+      logger: appLogger.namespace(TokenProcessor.name),
+    });
+  }
+
   async get(transactionHash: Hash): Promise<ToInputArgType> {
     const receipt = await findTransactionReceipt(transactionHash, {
       withLogs: true,

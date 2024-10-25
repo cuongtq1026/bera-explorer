@@ -9,19 +9,22 @@ import type { Hash } from "viem";
 
 import { NoGetResult } from "../exceptions/processor.exception.ts";
 import { appLogger } from "../monitor/app.logger.ts";
-import type { InterfaceProcessor } from "./interface.processor.ts";
+import { AbstractProcessor } from "./abstract.processor.ts";
 
 const serviceLogger = appLogger.namespace("LogProcessor");
 
-export class LogProcessor
-  implements
-    InterfaceProcessor<
-      Hash,
-      LogDto,
-      TransferCreateInput | null,
-      { transferHash: Hash | null }
-    >
-{
+export class LogProcessor extends AbstractProcessor<
+  Hash,
+  LogDto,
+  TransferCreateInput | null,
+  { transferHash: Hash | null }
+> {
+  constructor() {
+    super({
+      logger: appLogger.namespace(LogProcessor.name),
+    });
+  }
+
   async get(id: Hash): Promise<LogDto> {
     const log = await getLog(id, {
       topics: true,

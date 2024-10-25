@@ -5,7 +5,7 @@ import {
   type SwapCreateInput,
 } from "@database/repositories/swap.repository.ts";
 import { findTransaction } from "@database/repositories/transaction.repository.ts";
-import type { InterfaceProcessor } from "@processors/interface.processor.ts";
+import { AbstractProcessor } from "@processors/abstract.processor.ts";
 import { type Hash } from "viem";
 
 import { getDecoder } from "../decoder";
@@ -19,19 +19,22 @@ type CreateArgType = SwapCreateInput[];
 type CreateReturnType = (bigint | number)[];
 type InputType = Promise<CreateArgType | null>;
 
-export class SwapProcessor
-  implements
-    InterfaceProcessor<
-      Hash,
-      TransactionDto,
-      InputType,
-      CreateReturnType | null,
-      Hash,
-      CreateArgType,
-      void,
-      CreateReturnType
-    >
-{
+export class SwapProcessor extends AbstractProcessor<
+  Hash,
+  TransactionDto,
+  InputType,
+  CreateReturnType | null,
+  Hash,
+  CreateArgType,
+  void,
+  CreateReturnType
+> {
+  constructor() {
+    super({
+      logger: appLogger.namespace(SwapProcessor.name),
+    });
+  }
+
   async get(transactionHash: Hash): Promise<TransactionDto> {
     const transaction = await findTransaction(transactionHash as Hash, {
       withReceipt: true,

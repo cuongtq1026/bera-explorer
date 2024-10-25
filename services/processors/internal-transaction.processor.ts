@@ -9,8 +9,7 @@ import type { Hash } from "viem";
 import { getAllTracerCallsTransaction } from "../data-source";
 import type { TraceCallNested } from "../data-source/rpc-request/types.ts";
 import { appLogger } from "../monitor/app.logger.ts";
-import logger from "../monitor/logger.ts";
-import type { InterfaceProcessor } from "./interface.processor.ts";
+import { AbstractProcessor } from "./abstract.processor.ts";
 
 const serviceLogger = appLogger.namespace("InternalTransactionProcessor");
 
@@ -19,15 +18,18 @@ type ToInputArgType = {
   obj: TraceCallNested;
 };
 
-export class InternalTransactionProcessor
-  implements
-    InterfaceProcessor<
-      Hash,
-      ToInputArgType,
-      InternalTransactionCreateInput | null,
-      void
-    >
-{
+export class InternalTransactionProcessor extends AbstractProcessor<
+  Hash,
+  ToInputArgType,
+  InternalTransactionCreateInput | null,
+  void
+> {
+  constructor() {
+    super({
+      logger: appLogger.namespace(InternalTransactionProcessor.name),
+    });
+  }
+
   async get(id: Hash): Promise<ToInputArgType> {
     return {
       id,

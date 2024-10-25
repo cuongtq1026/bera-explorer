@@ -8,21 +8,24 @@ import type { Block, Hash } from "viem";
 
 import { getBlock } from "../data-source";
 import { appLogger } from "../monitor/app.logger.ts";
-import type { InterfaceProcessor } from "./interface.processor.ts";
+import { AbstractProcessor } from "./abstract.processor.ts";
 
 const serviceLogger = appLogger.namespace("BlockProcessor");
 
-export class BlockProcessor
-  implements
-    InterfaceProcessor<
-      bigint,
-      Block,
-      BlockCreateInput | null,
-      {
-        transactions: Hash[];
-      }
-    >
-{
+export class BlockProcessor extends AbstractProcessor<
+  bigint,
+  Block,
+  BlockCreateInput | null,
+  {
+    transactions: Hash[];
+  }
+> {
+  constructor() {
+    super({
+      logger: appLogger.namespace(BlockProcessor.name),
+    });
+  }
+
   get(id: bigint): Promise<Block> {
     return getBlock(id);
   }

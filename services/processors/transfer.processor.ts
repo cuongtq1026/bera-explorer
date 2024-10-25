@@ -13,7 +13,7 @@ import {
 import { type Hash } from "viem";
 
 import { appLogger } from "../monitor/app.logger.ts";
-import type { InterfaceProcessor } from "./interface.processor.ts";
+import { AbstractProcessor } from "./abstract.processor.ts";
 
 const serviceLogger = appLogger.namespace("TransferProcessor");
 
@@ -22,19 +22,22 @@ type ToInputArgType = TransactionReceiptDto & {
 };
 export type CreatedHash = { hash: Hash; index: number };
 
-export class TransferProcessor
-  implements
-    InterfaceProcessor<
-      Hash,
-      ToInputArgType,
-      TransferCreateInput[],
-      CreatedHash[],
-      Hash,
-      TransferCreateInput[],
-      void,
-      CreatedHash[]
-    >
-{
+export class TransferProcessor extends AbstractProcessor<
+  Hash,
+  ToInputArgType,
+  TransferCreateInput[],
+  CreatedHash[],
+  Hash,
+  TransferCreateInput[],
+  void,
+  CreatedHash[]
+> {
+  constructor() {
+    super({
+      logger: appLogger.namespace(TransferProcessor.name),
+    });
+  }
+
   async get(transactionHash: Hash): Promise<ToInputArgType> {
     const receipt = await findTransactionReceipt(transactionHash, {
       withLogs: true,

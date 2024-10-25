@@ -12,25 +12,29 @@ import { isAddress } from "viem";
 
 import { InvalidPayloadException } from "../exceptions/consumer.exception.ts";
 import { NoGetResult } from "../exceptions/processor.exception.ts";
+import { appLogger } from "../monitor/app.logger.ts";
 import logger from "../monitor/logger.ts";
-import type { InterfaceProcessor } from "./interface.processor.ts";
+import { AbstractProcessor } from "./abstract.processor.ts";
 
 /**
  * @deprecated
  *
  * No longer used due to design flaws
  */
-export class BalanceProcessor
-  implements
-    InterfaceProcessor<
-      string,
-      TransferDto,
-      Promise<BalanceCreateInput[]>,
-      void,
-      string,
-      BalanceCreateInput[]
-    >
-{
+export class BalanceProcessor extends AbstractProcessor<
+  string,
+  TransferDto,
+  Promise<BalanceCreateInput[]>,
+  void,
+  string,
+  BalanceCreateInput[]
+> {
+  constructor() {
+    super({
+      logger: appLogger.namespace(BalanceProcessor.name),
+    });
+  }
+
   async get(id: string): Promise<TransferDto> {
     const transfer = await getTransfer(id);
     if (!transfer) {

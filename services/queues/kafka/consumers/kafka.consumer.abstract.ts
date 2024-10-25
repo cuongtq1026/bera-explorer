@@ -13,12 +13,9 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
   protected abstract topic: keyof typeof topics;
   private topicName: string;
   protected abstract consumerName: string;
-  protected readonly serviceLogger: AppLogger;
 
   protected constructor(options: { logger: AppLogger }) {
-    super();
-
-    this.serviceLogger = options.logger;
+    super(options);
   }
 
   private init() {

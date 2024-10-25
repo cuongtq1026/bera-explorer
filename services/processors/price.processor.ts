@@ -10,14 +10,21 @@ import Decimal from "decimal.js";
 import { getStableCoin, isStableCoin, ONE_USD } from "../config/constants.ts";
 import { NoGetResult } from "../exceptions/processor.exception.ts";
 import { appLogger } from "../monitor/app.logger.ts";
-import type { InterfaceProcessor } from "./interface.processor.ts";
+import { AbstractProcessor } from "./abstract.processor.ts";
 
 const serviceLogger = appLogger.namespace("PriceProcessor");
 
-// 0x4cc4286e65c39098d8a4a0cfd592a11387e8c5b517489372b314a605c6a3903a
-export class PriceProcessor
-  implements InterfaceProcessor<bigint, SwapDto, PriceCreateInput[]>
-{
+export class PriceProcessor extends AbstractProcessor<
+  bigint,
+  SwapDto,
+  PriceCreateInput[]
+> {
+  constructor() {
+    super({
+      logger: appLogger.namespace(PriceProcessor.name),
+    });
+  }
+
   async get(swapId: bigint): Promise<SwapDto> {
     const swapDto = await getSwap(swapId);
     if (swapDto == null) {

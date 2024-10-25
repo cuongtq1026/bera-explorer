@@ -8,18 +8,21 @@ import type { GetTransactionReturnType, Hash } from "viem";
 
 import { getTransaction } from "../data-source";
 import { appLogger } from "../monitor/app.logger.ts";
-import type { InterfaceProcessor } from "./interface.processor.ts";
+import { AbstractProcessor } from "./abstract.processor.ts";
 
 const serviceLogger = appLogger.namespace("TransactionProcessor");
 
-export class TransactionProcessor
-  implements
-    InterfaceProcessor<
-      Hash,
-      GetTransactionReturnType,
-      TransactionCreateInput | null
-    >
-{
+export class TransactionProcessor extends AbstractProcessor<
+  Hash,
+  GetTransactionReturnType,
+  TransactionCreateInput | null
+> {
+  constructor() {
+    super({
+      logger: appLogger.namespace(TransactionProcessor.name),
+    });
+  }
+
   get(id: Hash): Promise<GetTransactionReturnType> {
     return getTransaction(id);
   }

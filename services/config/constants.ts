@@ -12,6 +12,9 @@ import CrocMultiSwapABI from "./abis/CrocMultiSwap.abi.json";
 export const ERC20_TRANSFER_SIGNATURE = toEventSelector(
   "Transfer(address,address,uint256)",
 );
+export const WITHDRAWAL_SIGNATURE = toEventSelector(
+  "Withdrawal(address indexed to, uint256 amount);",
+);
 
 export const CONTRACT_INITIATED_SIGNATURE = toEventSelector(
   "Initialized(uint64 version)",
@@ -23,6 +26,9 @@ export const CROC_SWAP_DEX_MULTI_SWAP = toFunctionSelector(
     name: "multiSwap",
   }) as AbiFunction,
 );
+
+export const ETH_ADDRESS = "0x0000000000000000000000000000000000000000";
+export const WRAPPED_ETH_ADDRESS = "0x7507c1dc16935b82698e4c63f2746a2fcf994df8";
 
 // Berachain as default
 type Chain = {

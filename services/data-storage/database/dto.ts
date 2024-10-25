@@ -16,7 +16,11 @@ import type {
 } from "@prisma/client";
 import { decodeEventLog, erc20Abi, type Hash, type Hex } from "viem";
 
-import { ERC20_TRANSFER_SIGNATURE } from "../../config/constants.ts";
+import { WBeraAbi } from "../../config/abis";
+import {
+  ERC20_TRANSFER_SIGNATURE,
+  WITHDRAWAL_SIGNATURE,
+} from "../../config/constants.ts";
 import { parseToBigInt } from "../../utils.ts";
 
 export type BlockDto = {
@@ -170,7 +174,7 @@ export type PriceDto = {
 };
 
 export type SwapDto = {
-  id: bigint | number;
+  id?: bigint | number;
   blockNumber: bigint | number;
   transactionHash: string;
   dex: string;
@@ -180,6 +184,21 @@ export type SwapDto = {
   toAmount: bigint;
   createdAt: Date;
 };
+
+export function isERC20TransferLog(
+  topics: Pick<LogTopicDto, "topic">[],
+): boolean {
+  if (topics.length === 0) {
+    return false;
+  }
+  const signature = topics[0].topic as Hex;
+  return (
+    signature === ERC20_TRANSFER_SIGNATURE &&
+    // length 3: ERC20
+    // length 4: ERC721 (NFT)
+    topics.length === 3
+  );
+}
 
 export function decodeTransferLog(
   log: LogDto,
@@ -191,7 +210,7 @@ export function decodeTransferLog(
   value: bigint;
 } | null {
   const signature = topics[0].topic as Hex;
-  if (signature !== ERC20_TRANSFER_SIGNATURE) {
+  if (!isERC20TransferLog(topics)) {
     return null;
   }
   const logTopics = topics.slice(1).map((t) => t.topic as Hex);
@@ -207,6 +226,31 @@ export function decodeTransferLog(
     from: decodedTopics.args.from.toLowerCase() as Hash,
     to: decodedTopics.args.to.toLowerCase() as Hash,
     value: decodedTopics.args.value,
+  };
+}
+
+export function decodeWithdrawalLog(
+  log: LogDto,
+  topics: LogTopicDto[],
+): {
+  to: Hash;
+  amount: bigint;
+} | null {
+  const signature = topics[0].topic as Hex;
+  if (signature !== WITHDRAWAL_SIGNATURE) {
+    return null;
+  }
+  const logTopics = topics.slice(1).map((t) => t.topic as Hex);
+  const decodedTopics = decodeEventLog({
+    abi: WBeraAbi,
+    eventName: "Withdrawal",
+    data: log.data as Hash,
+    topics: [signature, ...logTopics],
+  });
+
+  return {
+    amount: decodedTopics.args.amount,
+    to: decodedTopics.args.to.toLowerCase() as Hash,
   };
 }
 

@@ -27,13 +27,19 @@ The project uses the following technologies:
 - Prisma (ORM)
 - Docker (Containerization)
 - RabbitMQ (Message broker)
-- Kafka (Aggregate data)
+- CP Kafka (Aggregating, streaming data)
+    - Kafka
+    - Kafka Streams
+    - Kafka Connector
+    - Kafka KSQL
+    - Schema Registry
 - Prometheus (Monitoring)
 - Winston (Logging)
 - Postgres (Database)
 - Redis (Caching)
 - Viem (Ethereum tools)
 - Next (React)
+- Avro (Data serialization)
 
 ## Structures
 ```
@@ -101,7 +107,7 @@ The following services will be started:
 - **Redis**: Caching layer.
 - **RabbitMQ**: Manages message queues between producers and consumers for processing blocks, transactions, transactions-receipts, internal-transactions, transfers.
 - **Prometheus**: Monitors metrics such as RPC node requests, error rates, and message processing success rates.
-- **Kafka**: Storing and aggregate data in order.
+- **CP Kafka**: Storing, aggregating, streaming data in order.
 ### 3. Configure Environment Variables
 Copy the example environment file and update the RPC_URLS:
 ```bash

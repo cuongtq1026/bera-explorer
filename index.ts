@@ -32,6 +32,7 @@ import { TransactionKafkaConsumer } from "./services/queues/kafka/consumers/tran
 import { TransferKafkaConsumer } from "./services/queues/kafka/consumers/transfer.kafka.consumer.ts";
 import kafkaConnection from "./services/queues/kafka/kafka.connection.ts";
 import { sendToBlockTopic } from "./services/queues/kafka/producers/block.kafka.producer.ts";
+import { TransactionKafkaStream } from "./services/queues/kafka/streams/transaction.kafka.stream.ts";
 import { BlockConsumer } from "./services/queues/rabbitmq/consumers/block.consumer.ts";
 import { DlxConsumer } from "./services/queues/rabbitmq/consumers/dlx.consumer.ts";
 import { InternalTransactionConsumer } from "./services/queues/rabbitmq/consumers/internal-transaction.consumer.ts";
@@ -364,6 +365,21 @@ switch (command) {
       }
       default: {
         serviceLogger.info(`No model to consume: ${modelToConsume}.`);
+      }
+    }
+    break;
+  }
+  case "streams": {
+    const modelToStream = restArgs[0];
+    switch (modelToStream) {
+      case "transaction": {
+        const stream = new TransactionKafkaStream();
+
+        await stream.start();
+        break;
+      }
+      default: {
+        serviceLogger.info(`No model to stream: ${modelToStream}.`);
       }
     }
     break;

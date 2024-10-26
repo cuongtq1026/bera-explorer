@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import type { Hash } from "viem";
 
 import { BlockPaginationDto } from "../../../api/pagination.ts";

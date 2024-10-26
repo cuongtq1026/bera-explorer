@@ -2,24 +2,19 @@ import type { ConsumeMessage } from "amqplib";
 
 import { appLogger } from "../../../monitor/app.logger.ts";
 import { queueMessageProcessedCounter } from "../../../monitor/prometheus.ts";
-import { AbstractConsumer } from "../../consumer.abstract.ts";
+import type { IConsumer } from "../../consumer.interface.ts";
 import { DELAY } from "../index.ts";
 import mqConnection from "../rabbitmq.connection.ts";
 
 const serviceLogger = appLogger.namespace("AbstractRabbitMQConsumer");
 
-export abstract class AbstractRabbitMQConsumer extends AbstractConsumer<
-  boolean,
-  ConsumeMessage
-> {
+export abstract class AbstractRabbitMQConsumer
+  implements IConsumer<boolean, ConsumeMessage>
+{
   protected abstract queueName: string;
   protected consumerCount = process.env.CONSUMER_PER_CHANNEL
     ? +process.env.CONSUMER_PER_CHANNEL
     : 1;
-
-  protected constructor() {
-    super();
-  }
 
   public async consume(): Promise<void> {
     serviceLogger.info(
@@ -33,7 +28,7 @@ export abstract class AbstractRabbitMQConsumer extends AbstractConsumer<
     }
   }
 
-  protected async execute(message: ConsumeMessage): Promise<boolean> {
+  public async execute(message: ConsumeMessage): Promise<boolean> {
     serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Check delay.`,
     );
@@ -74,9 +69,9 @@ export abstract class AbstractRabbitMQConsumer extends AbstractConsumer<
     });
   }
 
-  protected abstract handler(message: ConsumeMessage): Promise<boolean>;
+  public abstract handler(message: ConsumeMessage): Promise<boolean>;
 
-  protected async onFinish(message: ConsumeMessage, _data: any): Promise<void> {
+  public async onFinish(message: ConsumeMessage, _data: any): Promise<void> {
     // Increase prometheus counter
     queueMessageProcessedCounter.inc({
       routingKey: message.fields.routingKey,

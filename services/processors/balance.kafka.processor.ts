@@ -10,7 +10,6 @@ import type { Hash } from "viem";
 
 import { NoGetResult } from "../exceptions/processor.exception.ts";
 import { appLogger } from "../monitor/app.logger.ts";
-import { BalanceKafkaConsumer } from "../queues/kafka/consumers/balance.kafka.consumer.ts";
 import { AbstractProcessor } from "./abstract.processor.ts";
 
 const serviceLogger = appLogger.namespace("BalanceKafkaProcessor");
@@ -31,7 +30,7 @@ export class BalanceKafkaProcessor extends AbstractProcessor<
 > {
   constructor() {
     super({
-      logger: appLogger.namespace(BalanceKafkaConsumer.name),
+      logger: appLogger.namespace(BalanceKafkaProcessor.name),
     });
   }
 

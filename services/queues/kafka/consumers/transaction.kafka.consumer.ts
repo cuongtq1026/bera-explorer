@@ -22,7 +22,7 @@ export class TransactionKafkaConsumer extends AbstractKafkaConsumer {
     });
   }
 
-  protected async handler(
+  public async handler(
     eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
     const rawDecodedContent =
@@ -69,7 +69,7 @@ export class TransactionKafkaConsumer extends AbstractKafkaConsumer {
     );
   }
 
-  protected async onFinish(
+  public async onFinish(
     eachMessagePayload: KafkaJS.EachMessagePayload,
     data: { blockNumber: number | bigint; transactions: Hash[] },
   ): Promise<void> {

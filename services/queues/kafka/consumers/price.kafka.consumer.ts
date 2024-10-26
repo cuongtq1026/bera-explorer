@@ -19,7 +19,7 @@ export class PriceKafkaConsumer extends AbstractKafkaConsumer {
     });
   }
 
-  protected async handler(
+  public async handler(
     eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
     const rawDecodedContent =

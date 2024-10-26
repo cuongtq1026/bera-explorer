@@ -204,11 +204,15 @@ export class KafkaConnection extends AbstractConnectable {
     topic,
     groupId,
     eachMessageHandler,
+    options,
   }: {
     topic: string;
     groupId: string;
     eachMessageHandler: KafkaJS.EachMessageHandler;
-  }) {
+    options?: {
+      autoCommit: boolean;
+    };
+  }): Promise<KafkaJS.Consumer> {
     await this.checkConnection();
 
     const envGroupId = process.env.KAFKA_GROUP_ID;
@@ -216,11 +220,13 @@ export class KafkaConnection extends AbstractConnectable {
       throw new Error(`Missing KAFKA_GROUP_ID`);
     }
     const groupIdTopic = [envGroupId, groupId, topic].join("-");
+
+    const { autoCommit = true } = options ?? {};
     const consumer = this.connection.consumer({
       kafkaJS: {
         groupId: groupIdTopic,
         fromBeginning: true,
-        autoCommit: true,
+        autoCommit,
         autoCommitInterval: 1000,
       },
     });
@@ -229,6 +235,8 @@ export class KafkaConnection extends AbstractConnectable {
     await consumer.connect();
     serviceLogger.info(`✅  Connected to Consumer ${groupIdTopic}`);
 
+    await this.admin.deleteGroups(["default-group-swap-transactions"]);
+
     await consumer.subscribe({
       topics: [topic],
     });
@@ -236,6 +244,8 @@ export class KafkaConnection extends AbstractConnectable {
     await consumer.run({
       eachMessage: eachMessageHandler,
     });
+
+    return consumer;
   }
 }
 

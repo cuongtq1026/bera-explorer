@@ -5,7 +5,6 @@ import { TransferProcessor } from "@processors/transfer.processor.ts";
 import { plainToInstance } from "class-transformer";
 import type { Hash } from "viem";
 
-import { ERC20_TRANSFER_SIGNATURE } from "../../../config/constants.ts";
 import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
 import { appLogger } from "../../../monitor/app.logger.ts";
 import { LogMessagePayload } from "../producers";
@@ -29,7 +28,7 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
     });
   }
 
-  protected async handler(
+  public async handler(
     eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
     const rawDecodedContent =
@@ -107,7 +106,7 @@ export class TransferKafkaConsumer extends AbstractKafkaConsumer {
     return;
   }
 
-  protected async onFinish(
+  public async onFinish(
     eachMessagePayload: KafkaJS.EachMessagePayload,
     data: { transferHash: string | null },
   ): Promise<void> {

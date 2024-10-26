@@ -1,5 +1,5 @@
 import { toInternalTransactionDto } from "@database/dto.ts";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import type { Hash } from "viem";
 
 import prisma from "../prisma.ts";

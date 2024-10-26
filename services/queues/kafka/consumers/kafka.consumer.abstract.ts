@@ -1,15 +1,15 @@
 import type { KafkaJS } from "@confluentinc/kafka-javascript";
 
-import { PayloadNotFoundException } from "../../../exceptions/consumer.exception.ts";
 import { AppLogger } from "../../../monitor/app.logger.ts";
-import { AbstractConsumer } from "../../consumer.abstract.ts";
+import type { IConsumer } from "../../consumer.interface.ts";
 import { topics } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
+import { KafkaDecodeConsumer } from "../kafka.interface.ts";
 
-export abstract class AbstractKafkaConsumer extends AbstractConsumer<
-  void,
-  KafkaJS.EachMessagePayload
-> {
+export abstract class AbstractKafkaConsumer
+  extends KafkaDecodeConsumer
+  implements IConsumer<void, KafkaJS.EachMessagePayload>
+{
   private topicName: string;
   protected abstract topic: keyof typeof topics;
   protected abstract consumerName: string;
@@ -47,29 +47,7 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
     });
   }
 
-  protected async getRawDecodedData<T extends keyof typeof topics>(
-    eachMessagePayload: KafkaJS.EachMessagePayload,
-  ): Promise<ReturnType<typeof kafkaConnection.decode<T>>> {
-    const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
-
-    const rawContent = eachMessagePayload.message.value;
-    if (!rawContent) {
-      throw new PayloadNotFoundException(this.consumerName, messageId);
-    }
-    this.serviceLogger.info(
-      `[MessageId: ${messageId}] message rawContent size: ${rawContent.byteLength} bytes.`,
-    );
-
-    const rawDecodedContent = await kafkaConnection.decode<T>(rawContent);
-
-    this.serviceLogger.info(
-      `[MessageId: ${messageId}] message rawDecodedContent: ${rawDecodedContent.toString()}`,
-    );
-
-    return rawDecodedContent;
-  }
-
-  protected async execute(
+  public async execute(
     eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
     this.serviceLogger.info(`Handling message.`);
@@ -77,11 +55,11 @@ export abstract class AbstractKafkaConsumer extends AbstractConsumer<
     this.serviceLogger.info(`Handle message successfully.`);
   }
 
-  protected abstract handler(
+  public abstract handler(
     eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void>;
 
-  protected async onFinish(
+  public async onFinish(
     eachMessagePayload: KafkaJS.EachMessagePayload,
     _data: any,
   ): Promise<void> {

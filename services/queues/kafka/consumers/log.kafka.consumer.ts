@@ -19,7 +19,7 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
     });
   }
 
-  protected async handler(
+  public async handler(
     eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
     const rawDecodedContent =
@@ -70,7 +70,7 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
     });
   }
 
-  protected async onFinish(
+  public async onFinish(
     eachMessagePayload: KafkaJS.EachMessagePayload,
     data: { transactionHash: string; logs: string[] },
   ): Promise<void> {

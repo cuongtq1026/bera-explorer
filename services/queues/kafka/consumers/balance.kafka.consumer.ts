@@ -17,7 +17,7 @@ export class BalanceKafkaConsumer extends AbstractKafkaConsumer {
     });
   }
 
-  protected async handler(
+  public async handler(
     eachMessagePayload: KafkaJS.EachMessagePayload,
   ): Promise<void> {
     const rawDecodedContent =

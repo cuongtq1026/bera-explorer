@@ -235,8 +235,6 @@ export class KafkaConnection extends AbstractConnectable {
     await consumer.connect();
     serviceLogger.info(`✅  Connected to Consumer ${groupIdTopic}`);
 
-    await this.admin.deleteGroups(["default-group-swap-transactions"]);
-
     await consumer.subscribe({
       topics: [topic],
     });

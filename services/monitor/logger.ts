@@ -4,6 +4,9 @@ import DailyRotateFile from "winston-daily-rotate-file";
 
 const logger = createLogger({
   level: "info",
+  defaultMeta: {
+    environment: process.env.NODE_ENV || "development",
+  },
   format: format.combine(format.timestamp(), format.json()),
   transports: [
     new DailyRotateFile({
@@ -13,9 +16,27 @@ const logger = createLogger({
       maxSize: "100m",
     }),
     new DailyRotateFile({
+      filename: "logs/warn-%DATE%.log",
+      level: "warn",
+      datePattern: "YYYY-MM-DD",
+      maxSize: "100m",
+      format: format.combine(
+        format((info) => {
+          if (info.level === "warn") return info;
+          return false;
+        })(),
+      ),
+    }),
+    new DailyRotateFile({
       filename: "logs/info-%DATE%.log",
       datePattern: "YYYY-MM-DD",
       maxSize: "100m",
+      format: format.combine(
+        format((info) => {
+          if (info.level !== "warn" && info.level !== "error") return info;
+          return false;
+        })(),
+      ),
     }),
   ],
 });
@@ -35,6 +56,7 @@ if (process.env.NODE_ENV !== "production") {
         format.timestamp({ format: "YYYY-MM-DD, HH:mm:ss.SSS" }),
         format.printf(
           ({
+            environment: _environment,
             level,
             message,
             label,

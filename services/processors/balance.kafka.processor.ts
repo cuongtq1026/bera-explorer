@@ -18,7 +18,7 @@ type DeleteArgType = {
   transactionHash: Hash;
   transferHash: Hash;
 };
-type CreateArgType = [BalanceHistoryCreateInput, BalanceHistoryCreateInput];
+type CreateArgType = BalanceHistoryCreateInput[];
 
 export class BalanceKafkaProcessor extends AbstractProcessor<
   Hash,
@@ -42,9 +42,7 @@ export class BalanceKafkaProcessor extends AbstractProcessor<
     return transfer;
   }
 
-  async toInput(
-    transfer: TransferDto,
-  ): Promise<[BalanceHistoryCreateInput, BalanceHistoryCreateInput]> {
+  async toInput(transfer: TransferDto): Promise<BalanceHistoryCreateInput[]> {
     const { from, to, tokenAddress, amount } = transfer;
     /** handle "from" address **/
     // get latest snapshot
@@ -61,9 +59,27 @@ export class BalanceKafkaProcessor extends AbstractProcessor<
 
     const fromCurrentAmount: bigint = latestFromBalanceHistory?.amount ?? 0n;
     const toCurrentAmount: bigint = latestToBalanceHistory?.amount ?? 0n;
+    // 0x8f62b8a68814dc0664bca24787b7dcb36cc02e12cd2359b3e78e0fd1517dee20
+    if (from === to) {
+      return [
+        {
+          hash: `${transfer.transactionHash}-${transfer.hash}-${from}`,
+          blockNumber: transfer.blockNumber,
+          transactionIndex: transfer.transactionIndex,
+          logIndex: transfer.logIndex,
+          index: fromBalanceHistoryIndex + 1,
+          transferHash: transfer.hash,
+          transactionHash: transfer.transactionHash,
+          address: from,
+          tokenAddress: tokenAddress,
+          amount: (fromCurrentAmount - amount).toString(),
+          createdAt: transfer.timestamp,
+        },
+      ];
+    }
     return [
       {
-        hash: `${transfer.transactionHash}-${transfer.hash}-${from}`,
+        hash: `${transfer.hash}-${from}`,
         blockNumber: transfer.blockNumber,
         transactionIndex: transfer.transactionIndex,
         logIndex: transfer.logIndex,
@@ -76,7 +92,7 @@ export class BalanceKafkaProcessor extends AbstractProcessor<
         createdAt: transfer.timestamp,
       },
       {
-        hash: `${transfer.transactionHash}-${transfer.hash}-${to}`,
+        hash: `${transfer.hash}-${to}`,
         blockNumber: transfer.blockNumber,
         transactionIndex: transfer.transactionIndex,
         logIndex: transfer.logIndex,
@@ -98,9 +114,7 @@ export class BalanceKafkaProcessor extends AbstractProcessor<
     await deleteBalanceHistory(transactionHash, transferHash);
   }
 
-  async createInDb(
-    inputs: [BalanceHistoryCreateInput, BalanceHistoryCreateInput],
-  ): Promise<void> {
+  async createInDb(inputs: BalanceHistoryCreateInput[]): Promise<void> {
     await createBalanceHistories(inputs);
   }
 
@@ -109,18 +123,14 @@ export class BalanceKafkaProcessor extends AbstractProcessor<
 
     const obj = await this.get(id);
 
-    const input = await this.toInput(obj);
-
-    if (!input) {
-      throw Error("[BalanceKafkaProcessor] input is null");
-    }
+    const inputs = await this.toInput(obj);
 
     await this.deleteFromDb({
       transactionHash: obj.transactionHash,
       transferHash: obj.hash,
     });
     serviceLogger.info(`deleted ${id}`);
-    await this.createInDb(input);
+    await this.createInDb(inputs);
     serviceLogger.info(`created ${id}`);
   }
 }

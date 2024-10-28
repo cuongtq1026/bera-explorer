@@ -223,9 +223,9 @@ class RabbitMQConnection {
             return;
           }
           this.channel.ack(message);
-        } catch (e) {
+        } catch (e: any) {
           serviceLogger.error(
-            `[MessageId: ${message.properties.messageId}} | ${queueName}] Queue consumer error: ${e}`,
+            `[MessageId: ${message.properties.messageId}} | ${queueName}] Queue consumer error: ${e.stack}`,
           );
 
           // in dlx, just ack if processing successfully

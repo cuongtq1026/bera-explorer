@@ -41,6 +41,7 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
         receipt: {
           select: {
             transactionHash: true,
+            status: true,
             logs: {
               select: {
                 logHash: true,
@@ -62,6 +63,15 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
         this.consumerName,
         hash,
       );
+    }
+
+    // ignore failed transaction
+    if (!transactionDb.receipt.status) {
+      await this.onFinish(eachMessagePayload, {
+        transactionHash: hash,
+        logs: [],
+      });
+      return;
     }
 
     await this.onFinish(eachMessagePayload, {

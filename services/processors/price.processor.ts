@@ -58,9 +58,7 @@ export class PriceProcessor extends AbstractProcessor<
       ];
     }
 
-    /*
-            Calculate prices
-             */
+    /** Calculate prices */
     const fromDecimal = new Decimal(swapDto.fromAmount.toString());
     const toDecimal = new Decimal(swapDto.toAmount.toString());
     const fromTokenPrice: PriceCreateInput = {
@@ -89,7 +87,7 @@ export class PriceProcessor extends AbstractProcessor<
           ? "0"
           : toDecimal
               .div(fromDecimal)
-              .mul(new Decimal(10).pow(getStableCoin(swapDto.to)!.decimals))
+              .mul(new Decimal(10).pow(getStableCoin(swapDto.from)!.decimals))
               .toString(),
       createdAt: swapDto.createdAt,
     };

@@ -47,6 +47,12 @@ export class SwapKafkaConsumer extends AbstractKafkaConsumer {
       );
     }
 
+    // ignore failed transaction
+    if (!transaction.receipt.status) {
+      await this.onFinish(eachMessagePayload, { swapIds: null });
+      return;
+    }
+
     const processor = new SwapProcessor();
     const swapIds = await processor.process(transaction.hash);
 

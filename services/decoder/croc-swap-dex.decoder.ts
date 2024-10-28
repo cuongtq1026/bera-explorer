@@ -216,10 +216,6 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
     const toToken = expectedRoutes[expectedRoutes.length - 1];
 
     if (fromToken === ETH_ADDRESS) {
-      if (expectedRoutes.length > 1) {
-        throw Error(`${transaction.hash} decodeETHToToken not implemented.`);
-      }
-
       return this.decodeETHToToken({
         transaction,
         logs: validLogs,
@@ -254,6 +250,7 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
   }
 
   // 0xbe6c65cf89e2c42171467fd69c3c8214d7618bf36aeb00743fded75415892420
+  // TODO: 0xbccbf7ddcb291d1b599450677ba1707894149fe6b0dcd91038b2e191bcc86e17
   decodeETHToToken(args: DecodeArg<DecodedInputType>): SwapDto[] {
     const { transaction, logs, receipt, decoded, expectedRoutes, dex } = args;
     const { amount, minOut } = decoded;

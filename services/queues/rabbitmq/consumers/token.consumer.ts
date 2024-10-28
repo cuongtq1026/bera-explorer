@@ -15,10 +15,12 @@ export class TokenConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.TOKEN.name;
 
   constructor() {
-    super();
+    super({
+      logger: appLogger.namespace(TokenConsumer.name),
+    });
   }
 
-  protected async handler(message: ConsumeMessage): Promise<boolean> {
+  public async handler(message: ConsumeMessage): Promise<boolean> {
     const rawContent = message.content.toString();
     serviceLogger.info(`message rawContent: ${rawContent}.`);
 

@@ -14,19 +14,16 @@ import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
 
 const serviceLogger = appLogger.namespace("TransferConsumer");
 
-/**
- * @deprecated
- *
- * No longer used due to design flaws
- */
 export class TransferConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.TRANSFER.name;
 
   constructor() {
-    super();
+    super({
+      logger: appLogger.namespace(TransferConsumer.name),
+    });
   }
 
-  protected async handler(message: ConsumeMessage): Promise<boolean> {
+  public async handler(message: ConsumeMessage): Promise<boolean> {
     const rawContent = message.content.toString();
     serviceLogger.info(`message rawContent: ${rawContent}.`);
 
@@ -63,7 +60,7 @@ export class TransferConsumer extends AbstractRabbitMQConsumer {
     return true;
   }
 
-  protected async onFinish(
+  public async onFinish(
     message: ConsumeMessage,
     createdHashes: CreatedHash[],
   ): Promise<void> {

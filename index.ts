@@ -344,9 +344,10 @@ switch (command) {
         const transactionConsumer = new TransactionConsumer();
         const transactionReceiptConsumer = new TransactionReceiptConsumer();
         const internalTransactionConsumer = new InternalTransactionConsumer();
-        const blockKafkaConsumer = new TransactionKafkaConsumer();
-        const transactionReceiptKafkaConsumer = new LogKafkaConsumer();
-        const logKafkaConsumer = new TransferKafkaConsumer();
+        const transferConsumer = new TransferConsumer();
+        const transactionKafkaConsumer = new TransactionKafkaConsumer();
+        const logKafkaConsumer = new LogKafkaConsumer();
+        const transferKafkaConsumer = new TransferKafkaConsumer();
         const balanceKafkaConsumer = new BalanceKafkaConsumer();
         const swapKafkaConsumer = new SwapKafkaConsumer();
         const priceKafkaConsumer = new PriceKafkaConsumer();
@@ -355,9 +356,10 @@ switch (command) {
         await transactionConsumer.consume();
         await transactionReceiptConsumer.consume();
         await internalTransactionConsumer.consume();
-        await blockKafkaConsumer.consume();
-        await transactionReceiptKafkaConsumer.consume();
+        await transferConsumer.consume();
+        await transactionKafkaConsumer.consume();
         await logKafkaConsumer.consume();
+        await transferKafkaConsumer.consume();
         await balanceKafkaConsumer.consume();
         await swapKafkaConsumer.consume();
         await priceKafkaConsumer.consume();

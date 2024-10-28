@@ -21,10 +21,12 @@ export class TransactionConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.TRANSACTION_QUEUE.name;
 
   constructor() {
-    super();
+    super({
+      logger: appLogger.namespace(TransactionConsumer.name),
+    });
   }
 
-  protected async handler(message: ConsumeMessage): Promise<boolean> {
+  public async handler(message: ConsumeMessage): Promise<boolean> {
     const rawContent = message.content.toString();
     serviceLogger.info(
       `TransactionConsumer message rawContent: ${rawContent}.`,
@@ -63,7 +65,7 @@ export class TransactionConsumer extends AbstractRabbitMQConsumer {
     return true;
   }
 
-  protected async onFinish(
+  public async onFinish(
     message: ConsumeMessage,
     transactionHash: Hash,
   ): Promise<void> {

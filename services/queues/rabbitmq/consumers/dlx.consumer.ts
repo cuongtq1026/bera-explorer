@@ -11,10 +11,12 @@ export class DlxConsumer extends AbstractRabbitMQConsumer {
   protected queueName: string = DEAD_LETTER_QUEUE_NAME;
 
   constructor() {
-    super();
+    super({
+      logger: appLogger.namespace(DlxConsumer.name),
+    });
   }
 
-  protected async handler(message: ConsumeMessage): Promise<boolean> {
+  public async handler(message: ConsumeMessage): Promise<boolean> {
     const { headers } = message.properties;
     if (!headers) {
       throw Error("Message must have headers");

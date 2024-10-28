@@ -1,14 +1,13 @@
 import type { ConsumeMessage } from "amqplib";
 
-import { appLogger } from "../../../monitor/app.logger.ts";
 import { queueMessageProcessedCounter } from "../../../monitor/prometheus.ts";
 import type { IConsumer } from "../../consumer.interface.ts";
+import { AbstractInjectLogger } from "../../kafka/inject-logger.abstract.ts";
 import { DELAY } from "../index.ts";
 import mqConnection from "../rabbitmq.connection.ts";
 
-const serviceLogger = appLogger.namespace("AbstractRabbitMQConsumer");
-
 export abstract class AbstractRabbitMQConsumer
+  extends AbstractInjectLogger
   implements IConsumer<boolean, ConsumeMessage>
 {
   protected abstract queueName: string;
@@ -17,7 +16,7 @@ export abstract class AbstractRabbitMQConsumer
     : 1;
 
   public async consume(): Promise<void> {
-    serviceLogger.info(
+    this.serviceLogger.info(
       `Queue ${this.queueName}: ${this.consumerCount} consumer(s) started.`,
     );
 
@@ -29,16 +28,16 @@ export abstract class AbstractRabbitMQConsumer
   }
 
   public async execute(message: ConsumeMessage): Promise<boolean> {
-    serviceLogger.info(
+    this.serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Check delay.`,
     );
     await this.checkDelay(message);
 
-    serviceLogger.info(
+    this.serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Handling message.`,
     );
     const handled = await this.handler(message);
-    serviceLogger.info(
+    this.serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Handle message successfully.`,
     );
 
@@ -60,7 +59,7 @@ export abstract class AbstractRabbitMQConsumer
       return;
     }
 
-    serviceLogger.info(
+    this.serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Delaying for ${delay} ms.`,
     );
 
@@ -77,7 +76,7 @@ export abstract class AbstractRabbitMQConsumer
       routingKey: message.fields.routingKey,
     });
 
-    serviceLogger.info(
+    this.serviceLogger.info(
       `[MessageId: ${message.properties.messageId}] Finished.`,
     );
   }

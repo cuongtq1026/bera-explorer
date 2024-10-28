@@ -9,18 +9,18 @@ import { is0xHash } from "../../../utils.ts";
 import { QueueInternalTransactionPayload } from "../producers";
 import { AbstractRabbitMQConsumer } from "./rabbitmq.consumer.abstract.ts";
 
-const serviceLogger = appLogger.namespace("InternalTransactionConsumer");
-
 export class InternalTransactionConsumer extends AbstractRabbitMQConsumer {
   protected queueName = queues.INTERNAL_TRANSACTION_QUEUE.name;
 
   constructor() {
-    super();
+    super({
+      logger: appLogger.namespace(InternalTransactionConsumer.name),
+    });
   }
 
-  protected async handler(message: ConsumeMessage): Promise<boolean> {
+  public async handler(message: ConsumeMessage): Promise<boolean> {
     const rawContent = message.content.toString();
-    serviceLogger.info(`message rawContent: ${rawContent}.`);
+    this.serviceLogger.info(`message rawContent: ${rawContent}.`);
 
     // transform
     const contentInstance = plainToInstance(

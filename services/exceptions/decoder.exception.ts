@@ -15,3 +15,9 @@ export class InvalidSwapException extends DecoderException {
     super(decoder, message);
   }
 }
+
+export class InvalidStepSwapException extends DecoderException {
+  constructor(decoder: string, message: string) {
+    super(decoder, message);
+  }
+}

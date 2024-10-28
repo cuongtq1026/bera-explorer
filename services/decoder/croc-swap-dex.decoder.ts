@@ -19,6 +19,8 @@ import {
   InvalidStepSwapException,
   InvalidSwapException,
 } from "../exceptions/decoder.exception.ts";
+import { type AppLogger, appLogger } from "../monitor/app.logger.ts";
+import { AbstractInjectLogger } from "../queues/kafka/inject-logger.abstract.ts";
 import type { DecodeArg, ISwapDecoder } from "./swap.interface.decoder.ts";
 
 type Step = {
@@ -119,6 +121,7 @@ function getETHTransferToLog(
 }
 
 function decodeMultiStepSwaps(args: {
+  serviceLogger: AppLogger;
   expectedRoutes: Hash[];
   logs: (LogDto & {
     topics: LogTopicDto[];
@@ -128,148 +131,197 @@ function decodeMultiStepSwaps(args: {
   dex: string;
   fromAndToIndex: [number, number];
 }) {
-  const { expectedRoutes, logs, transaction, receipt, dex, fromAndToIndex } =
-    args;
+  const {
+    serviceLogger,
+    expectedRoutes,
+    logs,
+    transaction,
+    receipt,
+    dex,
+    fromAndToIndex,
+  } = args;
   const [f, t] = fromAndToIndex;
-  return expectedRoutes.slice(f, t).map<SwapDto>((_route, index) => {
-    const routeFromToken = expectedRoutes[index];
-    const routeToToken = expectedRoutes[index + 1];
+  return expectedRoutes
+    .slice(f, t)
+    .map<SwapDto | null>((_route, index) => {
+      const routeFromToken = expectedRoutes[index + f];
+      const routeToToken = expectedRoutes[index + f + 1];
 
-    const fromTransfer = logs.find((log) => {
-      const topics = log.topics;
-      const signature = topics[0]?.topic;
-      const isErc20TransferLog = signature === ERC20_TRANSFER_SIGNATURE;
-      if (!isErc20TransferLog) return false;
+      const fromTransfer = logs.find((log) => {
+        const topics = log.topics;
+        const signature = topics[0]?.topic;
+        const isErc20TransferLog = signature === ERC20_TRANSFER_SIGNATURE;
+        if (!isErc20TransferLog) return false;
 
-      return log.address === routeFromToken;
-    });
-    const toTransfer = logs.find((log) => {
-      const topics = log.topics;
-      const signature = topics[0]?.topic;
-      const isErc20TransferLog = signature === ERC20_TRANSFER_SIGNATURE;
-      if (!isErc20TransferLog) return false;
+        return log.address === routeFromToken;
+      });
+      const toTransfer = logs.find((log) => {
+        const topics = log.topics;
+        const signature = topics[0]?.topic;
+        const isErc20TransferLog = signature === ERC20_TRANSFER_SIGNATURE;
+        if (!isErc20TransferLog) return false;
 
-      return log.address === routeToToken;
-    });
+        return log.address === routeToToken;
+      });
 
-    if (fromTransfer == null || toTransfer == null) {
-      throw new InvalidStepSwapException(
-        CrocSwapDexDecoder.name,
-        `[${transaction.hash}] No step swap transaction found. Index: ${index} | routeFromToken: ${routeFromToken} | routeToToken: ${routeToToken}.`,
+      if (fromTransfer == null || toTransfer == null) {
+        serviceLogger.warn(
+          `[${transaction.hash}] No step swap transaction found. Index: ${index} | routeFromToken: ${routeFromToken} | routeToToken: ${routeToToken}.`,
+        );
+        return null;
+      }
+
+      const decodedFromTransfer = decodeTransferLog(
+        fromTransfer,
+        fromTransfer.topics,
       );
-    }
-
-    const decodedFromTransfer = decodeTransferLog(
-      fromTransfer,
-      fromTransfer.topics,
-    );
-    const decodedToTransfer = decodeTransferLog(toTransfer, toTransfer.topics);
-    if (decodedFromTransfer == null || decodedToTransfer == null) {
-      throw new InvalidStepSwapException(
-        CrocSwapDexDecoder.name,
-        `[${transaction.hash}] Decode step swap transaction failed. Index: ${index} | routeFromToken: ${decodedFromTransfer} | routeToToken: ${decodedToTransfer}.`,
+      const decodedToTransfer = decodeTransferLog(
+        toTransfer,
+        toTransfer.topics,
       );
-    }
+      if (decodedFromTransfer == null || decodedToTransfer == null) {
+        throw new InvalidStepSwapException(
+          CrocSwapDexDecoder.name,
+          `[${transaction.hash}] Decode step swap transaction failed. Index: ${index} | routeFromToken: ${decodedFromTransfer} | routeToToken: ${decodedToTransfer}.`,
+        );
+      }
 
-    return {
-      blockNumber: transaction.blockNumber,
-      transactionHash: transaction.hash,
-      dex,
-      from: decodedFromTransfer.tokenAddress,
-      to: decodedToTransfer.tokenAddress,
-      fromAmount: decodedFromTransfer.value,
-      toAmount: decodedToTransfer.value,
-      createdAt: receipt.createdAt,
-    };
-  });
+      return {
+        blockNumber: transaction.blockNumber,
+        transactionHash: transaction.hash,
+        dex,
+        from: decodedFromTransfer.tokenAddress,
+        to: decodedToTransfer.tokenAddress,
+        fromAmount: decodedFromTransfer.value,
+        toAmount: decodedToTransfer.value,
+        createdAt: receipt.createdAt,
+      };
+    })
+    .filter((swapDto): swapDto is SwapDto => swapDto != null);
 }
 
-export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
+export class CrocSwapDexDecoder
+  extends AbstractInjectLogger
+  implements ISwapDecoder<DecodedInputType>
+{
+  constructor() {
+    super({
+      logger: appLogger.namespace(CrocSwapDexDecoder.name),
+    });
+  }
+
   decodeTx(transaction: TransactionDto): {
     functionName: string;
     decoded: DecodedInputType;
   } {
-    const { functionName, args } = decodeFunctionData({
-      abi: CrocMultiSwapABI,
-      data: transaction.input as Hash,
-    });
+    try {
+      const { functionName, args } = decodeFunctionData({
+        abi: CrocMultiSwapABI,
+        data: transaction.input as Hash,
+      });
 
-    const [steps, amount, minOut] = args as [Step[], bigint, bigint];
-    return {
-      functionName,
-      decoded: {
-        steps: steps.map((step) => ({
-          poolIdx: step.poolIdx,
-          base: step.base.toLowerCase() as Hash,
-          quote: step.quote.toLowerCase() as Hash,
-          isBuy: step.isBuy,
-        })),
-        amount,
-        minOut,
-      },
-    };
+      const [steps, amount, minOut] = args as [Step[], bigint, bigint];
+      return {
+        functionName,
+        decoded: {
+          steps: steps.map((step) => ({
+            poolIdx: step.poolIdx,
+            base: step.base.toLowerCase() as Hash,
+            quote: step.quote.toLowerCase() as Hash,
+            isBuy: step.isBuy,
+          })),
+          amount,
+          minOut,
+        },
+      };
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        this.serviceLogger.error(`Error on decodeTx: ${e.stack}`);
+      }
+      throw e;
+    }
   }
 
   decodeSwaps(transaction: TransactionDto): SwapDto[] {
     /**
       find routes
     */
-    const { decoded } = this.decodeTx(transaction);
-    const { steps } = decoded;
-    const expectedRouteSet = steps
-      // take out "base" and "quote"
-      .map((step) =>
-        step.isBuy ? [step.base, step.quote] : [step.quote, step.base],
-      )
-      .flat()
-      // remove duplicated address
-      .reduce((routeSet, route) => {
-        routeSet.add(route);
+    try {
+      const { decoded } = this.decodeTx(transaction);
+      const { steps } = decoded;
+      const expectedRouteSet = steps
+        // take out "base" and "quote"
+        .map((step) =>
+          step.isBuy ? [step.base, step.quote] : [step.quote, step.base],
+        )
+        .flat()
+        // remove duplicated address
+        .reduce((routeSet, route) => {
+          routeSet.add(route);
 
-        return routeSet;
-      }, new Set<Hash>());
-    const expectedRoutes = [...expectedRouteSet];
+          return routeSet;
+        }, new Set<Hash>());
+      const expectedRoutes = [...expectedRouteSet];
 
-    // expectedRoutes [ "0x7507c1dc16935B82698e4C63f2746A2fCf994dF8", "0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03" ]
-    /*
+      // expectedRoutes [ "0x7507c1dc16935B82698e4C63f2746A2fCf994dF8", "0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03" ]
+      /*
                         validate routes by transfers
                         need to check "tokenAddress", "from", "to", "amount", "minOut"
                         */
 
-    // undefined check
-    if (!transaction.to) {
-      throw Error(`[${transaction.hash}] No transaction.to found.`);
-    }
-    const receipt = transaction.receipt;
-    if (!receipt) {
-      throw Error(`[${transaction.hash}] No receipt found.`);
-    }
-    const logs = transaction.receipt?.logs;
-    if (!logs) {
-      throw Error(`[${transaction.hash}] No logs found.`);
-    }
+      // undefined check
+      if (!transaction.to) {
+        throw Error(`[${transaction.hash}] No transaction.to found.`);
+      }
+      const receipt = transaction.receipt;
+      if (!receipt) {
+        throw Error(`[${transaction.hash}] No receipt found.`);
+      }
+      const logs = transaction.receipt?.logs;
+      if (!logs) {
+        throw Error(`[${transaction.hash}] No logs found.`);
+      }
 
-    const validLogs = logs.filter(
-      (
-        log,
-      ): log is LogDto & {
-        topics: LogTopicDto[];
-      } => {
-        if (!log) {
-          throw Error(`[${transaction.hash}] No log found.`);
-        }
-        if (!log.topics) {
-          throw Error(`[${log.logHash}] No log topic found.`);
-        }
+      const validLogs = logs.filter(
+        (
+          log,
+        ): log is LogDto & {
+          topics: LogTopicDto[];
+        } => {
+          if (!log) {
+            throw Error(`[${transaction.hash}] No log found.`);
+          }
+          if (!log.topics) {
+            throw Error(`[${log.logHash}] No log topic found.`);
+          }
 
-        return true;
-      },
-    );
-    const fromToken = expectedRoutes[0];
-    const toToken = expectedRoutes[expectedRoutes.length - 1];
+          return true;
+        },
+      );
+      const fromToken = expectedRoutes[0];
+      const toToken = expectedRoutes[expectedRoutes.length - 1];
 
-    if (fromToken === ETH_ADDRESS) {
-      return this.decodeETHToToken({
+      if (fromToken === ETH_ADDRESS) {
+        return this.decodeETHToToken({
+          transaction,
+          logs: validLogs,
+          receipt,
+          decoded,
+          expectedRoutes,
+          dex: transaction.to,
+        });
+      }
+      if (toToken === ETH_ADDRESS) {
+        return this.decodeTokenToETH({
+          transaction,
+          logs: validLogs,
+          receipt,
+          decoded,
+          expectedRoutes,
+          dex: transaction.to,
+        });
+      }
+      return this.decodeTokenToToken({
         transaction,
         logs: validLogs,
         receipt,
@@ -277,25 +329,13 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
         expectedRoutes,
         dex: transaction.to,
       });
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        this.serviceLogger.error(`Failed on decodeSwaps: ${transaction.hash}`);
+      }
+
+      throw e;
     }
-    if (toToken === ETH_ADDRESS) {
-      return this.decodeTokenToETH({
-        transaction,
-        logs: validLogs,
-        receipt,
-        decoded,
-        expectedRoutes,
-        dex: transaction.to,
-      });
-    }
-    return this.decodeTokenToToken({
-      transaction,
-      logs: validLogs,
-      receipt,
-      decoded,
-      expectedRoutes,
-      dex: transaction.to,
-    });
   }
 
   // 0xbe6c65cf89e2c42171467fd69c3c8214d7618bf36aeb00743fded75415892420
@@ -330,14 +370,16 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
 
     const isEverythingValid = isFromValid && isToValid;
     if (!isEverythingValid) {
-      throw new InvalidSwapException(
-        CrocSwapDexDecoder.name,
+      this.serviceLogger.error(
         `[${transaction.hash}] Invalid swap transaction. ${isFromValid ? 1 : 0}|${isToValid ? 1 : 0}`,
       );
+
+      return [];
     }
 
     // check if there are enough routes' swaps (3 routes = 3 swaps)
     const swaps: SwapDto[] = decodeMultiStepSwaps({
+      serviceLogger: this.serviceLogger,
       expectedRoutes,
       transaction,
       logs,
@@ -393,10 +435,11 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
 
       const isEverythingValid = isFromValid && isToValid;
       if (!isEverythingValid) {
-        throw new InvalidSwapException(
-          CrocSwapDexDecoder.name,
+        this.serviceLogger.error(
           `[${transaction.hash}] Invalid swap transaction. ${isFromValid ? 1 : 0}|${isToValid ? 1 : 0}`,
         );
+
+        return [];
       }
 
       const decodedFromTransfer = decodeTransferLog(
@@ -436,6 +479,7 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
 
     // check if there are enough routes' swaps (3 routes = 3 swaps)
     const swaps: SwapDto[] = decodeMultiStepSwaps({
+      serviceLogger: this.serviceLogger,
       expectedRoutes,
       transaction,
       logs,
@@ -459,10 +503,11 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
 
     const isEverythingValid = isFromValid && isToValid;
     if (!isEverythingValid) {
-      throw new InvalidSwapException(
-        CrocSwapDexDecoder.name,
+      this.serviceLogger.error(
         `[${transaction.hash}] Invalid swap transaction. ${isFromValid ? 1 : 0}|${isToValid ? 1 : 0}`,
       );
+
+      return [];
     }
 
     const decodedFromTransfer = decodeTransferLog(
@@ -540,10 +585,11 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
 
     const isEverythingValid = isFromValid && isToValid;
     if (!isEverythingValid) {
-      throw new InvalidSwapException(
-        CrocSwapDexDecoder.name,
+      this.serviceLogger.error(
         `[${transaction.hash}] Invalid swap transaction. ${isFromValid ? 1 : 0}|${isToValid ? 1 : 0}`,
       );
+
+      return [];
     }
 
     const decodedFromTransfer = decodeTransferLog(
@@ -569,6 +615,7 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
 
     // check if there are enough routes' swaps (3 routes = 3 swaps)
     return decodeMultiStepSwaps({
+      serviceLogger: this.serviceLogger,
       expectedRoutes,
       transaction,
       logs,

@@ -1,3 +1,4 @@
+import prisma from "@database/prisma.ts";
 import {
   countBlock,
   findBlock,
@@ -32,6 +33,7 @@ import { TransactionKafkaConsumer } from "./services/queues/kafka/consumers/tran
 import { TransferKafkaConsumer } from "./services/queues/kafka/consumers/transfer.kafka.consumer.ts";
 import kafkaConnection from "./services/queues/kafka/kafka.connection.ts";
 import { sendToBlockTopic } from "./services/queues/kafka/producers/block.kafka.producer.ts";
+import { sendToSwapTopic } from "./services/queues/kafka/producers/swap.kafka.producer.ts";
 import { TransactionKafkaStream } from "./services/queues/kafka/streams/transaction.kafka.stream.ts";
 import { BlockConsumer } from "./services/queues/rabbitmq/consumers/block.consumer.ts";
 import { DlxConsumer } from "./services/queues/rabbitmq/consumers/dlx.consumer.ts";
@@ -563,6 +565,39 @@ switch (command) {
       cursor = transactions[SIZE - 1].hash;
     }
     serviceLogger.info("Finished queueing missing receipts.");
+    break;
+  }
+  case "reindex-swaps": {
+    const transaction = await kafkaConnection.transaction();
+    try {
+      const total = await prisma.swap.count();
+      const SIZE = 100;
+      const totalPages = Math.ceil(total / SIZE);
+      for (let i = 0; i < totalPages; ++i) {
+        const swaps = await prisma.swap.findMany({
+          take: SIZE,
+          skip: i * SIZE,
+          select: {
+            id: true,
+          },
+        });
+
+        await sendToSwapTopic(
+          swaps.map(({ id }) => ({ swapId: id.toString() })),
+          {
+            transaction,
+          },
+        );
+
+        console.log(`Pushed page: ${i + 1}/${totalPages}`);
+      }
+
+      await transaction.commit();
+      console.log("Finished reindexing swaps.");
+    } catch (e: any) {
+      await transaction.abort();
+      console.error("Error reindexing swaps.", e);
+    }
     break;
   }
   default:

@@ -174,7 +174,7 @@ export type PriceDto = {
 };
 
 export type SwapDto = {
-  id?: bigint | number;
+  id: bigint | number;
   blockNumber: bigint | number;
   transactionHash: string;
   dex: string;
@@ -184,6 +184,8 @@ export type SwapDto = {
   toAmount: bigint;
   createdAt: Date;
 };
+
+export type SwapDtoNoId = Omit<SwapDto, "id">;
 
 export function isERC20TransferLog(
   topics: Pick<LogTopicDto, "topic">[],

@@ -464,6 +464,7 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
   }
 
   // 0xc3dbae551ebcf7bf3d54817e228b451a585e583262a263e1e1cc4c81b5d4fd1d
+  // 0x6814caa14d45596a32c04de1b10064839c0155f7b1c960d5ade5312111f81c3d - multiple steps
   // TODO: 0x19005e828eac316b76ba9e6f1c0749ddec8e0a91850b6d14cd28462d143419b3
   decodeTokenToToken(args: DecodeArg<DecodedInputType>): SwapDto[] {
     const { transaction, logs, receipt, decoded, expectedRoutes, dex } = args;
@@ -479,36 +480,6 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
       fromToken,
     });
     const isFromValid = fromTransferLog != null;
-
-    // check if there are enough routes' swaps (3 routes = 3 swaps = 6 transfers)
-    const isRouteSwapValid = expectedRoutes.every((route, index) => {
-      // check "index" and "index + 1" so we will skip the last element which is "index + 1"
-      if (index === expectedRoutes.length - 1) {
-        return true;
-      }
-      const fromToken = route;
-      const toToken = expectedRoutes[index + 1];
-
-      // find from transfer
-      const hasFromTransfer = logs.some((log) => {
-        const topics = log.topics;
-        const signature = topics[0]?.topic;
-        const isErc20TransferLog = signature === ERC20_TRANSFER_SIGNATURE;
-        if (!isErc20TransferLog) return false;
-
-        return log.address === fromToken;
-      });
-      const hasToTransfer = logs.some((log) => {
-        const topics = log.topics;
-        const signature = topics[0]?.topic;
-        const isErc20TransferLog = signature === ERC20_TRANSFER_SIGNATURE;
-        if (!isErc20TransferLog) return false;
-
-        return log.address === toToken;
-      });
-
-      return hasFromTransfer && hasToTransfer;
-    });
 
     // last route, check correct amount out
     const toTransferLog = logs.find((log) => {
@@ -531,15 +502,14 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
     });
     const isToValid = toTransferLog != null;
 
-    const isEverythingValid = isFromValid && isRouteSwapValid && isToValid;
+    const isEverythingValid = isFromValid && isToValid;
     if (!isEverythingValid) {
       throw new InvalidSwapException(
         CrocSwapDexDecoder.name,
-        `[${transaction.hash}] Invalid swap transaction. ${isFromValid ? 1 : 0}|${isRouteSwapValid ? 1 : 0}|${isToValid ? 1 : 0}`,
+        `[${transaction.hash}] Invalid swap transaction. ${isFromValid ? 1 : 0}|${isToValid ? 1 : 0}`,
       );
     }
 
-    // TODO: Work with multiple swaps, we only return 1 swap for now
     const decodedFromTransfer = decodeTransferLog(
       fromTransferLog,
       fromTransferLog.topics,
@@ -561,17 +531,66 @@ export class CrocSwapDexDecoder implements ISwapDecoder<DecodedInputType> {
       );
     }
 
-    return [
-      {
-        blockNumber: transaction.blockNumber,
-        transactionHash: transaction.hash,
-        dex,
-        from: decodedFromTransfer.tokenAddress,
-        to: decodedToTransfer.tokenAddress,
-        fromAmount: decodedFromTransfer.value,
-        toAmount: decodedToTransfer.value,
-        createdAt: receipt.createdAt,
-      },
-    ];
+    // check if there are enough routes' swaps (3 routes = 3 swaps)
+    const swaps: SwapDto[] = expectedRoutes
+      .slice(0, -1)
+      .map<SwapDto>((_route, index) => {
+        const routeFromToken = expectedRoutes[index];
+        const routeToToken = expectedRoutes[index + 1];
+
+        const fromTransfer = logs.find((log) => {
+          const topics = log.topics;
+          const signature = topics[0]?.topic;
+          const isErc20TransferLog = signature === ERC20_TRANSFER_SIGNATURE;
+          if (!isErc20TransferLog) return false;
+
+          return log.address === routeFromToken;
+        });
+        const toTransfer = logs.find((log) => {
+          const topics = log.topics;
+          const signature = topics[0]?.topic;
+          const isErc20TransferLog = signature === ERC20_TRANSFER_SIGNATURE;
+          if (!isErc20TransferLog) return false;
+
+          return log.address === routeToToken;
+        });
+
+        if (fromTransfer == null || toTransfer == null) {
+          throw new InvalidStepSwapException(
+            CrocSwapDexDecoder.name,
+            `[${transaction.hash}] No step swap transaction found. Index: ${index} | routeFromToken: ${routeFromToken} | routeToToken: ${routeToToken}.`,
+          );
+        }
+
+        const decodedFromTransfer = decodeTransferLog(
+          fromTransfer,
+          fromTransfer.topics,
+        );
+        const decodedToTransfer = decodeTransferLog(
+          toTransfer,
+          toTransfer.topics,
+        );
+        if (decodedFromTransfer == null || decodedToTransfer == null) {
+          throw new InvalidStepSwapException(
+            CrocSwapDexDecoder.name,
+            `[${transaction.hash}] Decode step swap transaction failed. Index: ${index} | routeFromToken: ${decodedFromTransfer} | routeToToken: ${decodedToTransfer}.`,
+          );
+        }
+
+        return {
+          blockNumber: transaction.blockNumber,
+          transactionHash: transaction.hash,
+          dex,
+          from: decodedFromTransfer.tokenAddress,
+          to: decodedToTransfer.tokenAddress,
+          fromAmount: decodedFromTransfer.value,
+          toAmount: decodedToTransfer.value,
+          createdAt: receipt.createdAt,
+        };
+      });
+
+    console.log("swaps", swaps);
+
+    return swaps;
   }
 }

@@ -86,6 +86,8 @@ export class RpcRequest extends AbstractConnectable {
   }
 
   async getDebugClient(): Promise<RpcDebugClient> {
+    await this.checkConnection();
+
     return this.debugClients[0];
   }
 

@@ -14,7 +14,10 @@ import {
   ETH_ADDRESS,
   WRAPPED_ETH_ADDRESS,
 } from "../config/constants.ts";
-import { InvalidSwapException } from "../exceptions/decoder.exception.ts";
+import {
+  InvalidStepSwapException,
+  InvalidSwapException,
+} from "../exceptions/decoder.exception.ts";
 import type { DecodeArg, ISwapDecoder } from "./swap.interface.decoder.ts";
 
 type Step = {

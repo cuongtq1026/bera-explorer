@@ -167,7 +167,8 @@ export type ContractDto = {
   deploymentBlockNumber: bigint | number;
 };
 export type PriceDto = {
-  id: bigint;
+  id: bigint | number;
+  blockNumber: bigint | number;
   tokenAddress: string;
   transactionHash: string;
   swapId: bigint | number;
@@ -542,6 +543,7 @@ export function toSwapDto(swap: Swap): SwapDto {
 export function toPriceDto(price: Erc20Price): PriceDto {
   return {
     id: price.id,
+    blockNumber: price.blockNumber,
     swapId: price.swapId,
     tokenAddress: price.tokenAddress,
     usd_price: parseToBigInt(price.usd_price.toFixed()),

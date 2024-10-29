@@ -1,8 +1,9 @@
-import { toPriceDto } from "@database/dto.ts";
+import { type PriceDto, toPriceDto } from "@database/dto.ts";
 
 import prisma from "../prisma.ts";
 
 export type PriceCreateInput = {
+  blockNumber: bigint | number;
   tokenAddress: string;
   transactionHash: string;
   usd_price: string;
@@ -16,7 +17,9 @@ export function createPrice(priceCreateInput: PriceCreateInput) {
   });
 }
 
-export async function createPrices(priceCreateInputs: PriceCreateInput[]) {
+export async function createPrices(
+  priceCreateInputs: PriceCreateInput[],
+): Promise<PriceDto[]> {
   const prices = await prisma.erc20Price.createManyAndReturn({
     data: priceCreateInputs,
   });

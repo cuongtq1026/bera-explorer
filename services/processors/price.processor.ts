@@ -44,6 +44,7 @@ export class PriceProcessor extends AbstractProcessor<
       return [
         {
           swapId: swapDto.id,
+          blockNumber: swapDto.blockNumber,
           tokenAddress: swapDto.from,
           transactionHash: swapDto.transactionHash,
           usd_price: "0",
@@ -51,6 +52,7 @@ export class PriceProcessor extends AbstractProcessor<
         },
         {
           swapId: swapDto.id,
+          blockNumber: swapDto.blockNumber,
           tokenAddress: swapDto.to,
           transactionHash: swapDto.transactionHash,
           usd_price: "0",
@@ -64,6 +66,7 @@ export class PriceProcessor extends AbstractProcessor<
     const toDecimal = new Decimal(swapDto.toAmount.toString());
     const fromTokenPrice: PriceCreateInput = {
       swapId: swapDto.id,
+      blockNumber: swapDto.blockNumber,
       tokenAddress: swapDto.from,
       transactionHash: swapDto.transactionHash,
       usd_price: isFromStableCoin
@@ -79,6 +82,7 @@ export class PriceProcessor extends AbstractProcessor<
     };
     const toTokenPrice: PriceCreateInput = {
       swapId: swapDto.id,
+      blockNumber: swapDto.blockNumber,
       tokenAddress: swapDto.to,
       transactionHash: swapDto.transactionHash,
       usd_price: isToStableCoin

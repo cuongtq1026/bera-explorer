@@ -32,6 +32,7 @@ model Block {
   receipts         TransactionReceipt[]
   contract         Contract[]
   swap             Swap[]
+  erc20Price       Erc20Price[]
 
   @@map("block")
 }
@@ -53,8 +54,9 @@ model Transaction {
   receipt              TransactionReceipt?
   internalTransactions InternalTransaction[]
   transfers            Transfer[]
-  Contract             Contract[]
-  Swap                 Swap[]
+  contract             Contract[]
+  swap                 Swap[]
+  erc20Price           Erc20Price[]
 
   @@index([blockNumber])
   @@map("transaction")
@@ -249,14 +251,18 @@ model Swap {
 model Erc20Price {
   id              BigInt   @id @default(autoincrement())
   tokenAddress    String
+  blockNumber     BigInt
   transactionHash String
   swapId          BigInt
   usd_price       Decimal  @db.Decimal(78, 0)
   createdAt       DateTime
 
-  swap Swap @relation(fields: [swapId], references: [id], onDelete: Cascade)
+  swap        Swap        @relation(fields: [swapId], references: [id], onDelete: Cascade)
+  block       Block       @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
+  transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
 
   @@index([swapId])
+  @@index([blockNumber])
   @@index([transactionHash])
   @@index([tokenAddress, createdAt])
   @@map("erc20_price")

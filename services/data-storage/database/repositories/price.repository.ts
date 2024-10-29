@@ -7,9 +7,11 @@ export type PriceCreateInput = {
   blockNumber: bigint | number;
   tokenAddress: string;
   transactionHash: string;
+  transactionIndex: number;
   usd_price: string;
   createdAt: Date | string;
   swapId: bigint | number;
+  price_ref_id?: bigint | number | null;
 };
 
 export async function createPricesAndReturn(

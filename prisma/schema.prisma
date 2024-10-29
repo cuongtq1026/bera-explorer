@@ -228,15 +228,16 @@ model Contract {
 }
 
 model Swap {
-  id              BigInt   @id @default(autoincrement())
-  blockNumber     BigInt
-  transactionHash String
-  from            String
-  to              String
-  dex             String
-  fromAmount      Decimal  @db.Decimal(78, 0)
-  toAmount        Decimal  @db.Decimal(78, 0)
-  createdAt       DateTime
+  id               BigInt   @id @default(autoincrement())
+  blockNumber      BigInt
+  transactionHash  String
+  transactionIndex Int
+  from             String
+  to               String
+  dex              String
+  fromAmount       Decimal  @db.Decimal(78, 0)
+  toAmount         Decimal  @db.Decimal(78, 0)
+  createdAt        DateTime
 
   block       Block        @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
   transaction Transaction  @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
@@ -249,20 +250,25 @@ model Swap {
 }
 
 model Erc20Price {
-  id              BigInt   @id @default(autoincrement())
-  tokenAddress    String
-  blockNumber     BigInt
-  transactionHash String
-  swapId          BigInt
-  usd_price       Decimal  @db.Decimal(78, 0)
-  createdAt       DateTime
+  id               BigInt   @id @default(autoincrement())
+  tokenAddress     String
+  blockNumber      BigInt
+  transactionHash  String
+  transactionIndex Int
+  swapId           BigInt
+  usd_price        Decimal  @db.Decimal(78, 0)
+  createdAt        DateTime
+  price_ref_id     BigInt?
 
   swap        Swap        @relation(fields: [swapId], references: [id], onDelete: Cascade)
   block       Block       @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
   transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
 
+  priceRef Erc20Price?  @relation("Erc20PriceRef", fields: [price_ref_id], references: [id])
+  refList  Erc20Price[] @relation("Erc20PriceRef")
+
   @@index([swapId])
-  @@index([blockNumber])
+  @@index([blockNumber, transactionIndex])
   @@index([transactionHash])
   @@index([tokenAddress, createdAt])
   @@map("erc20_price")

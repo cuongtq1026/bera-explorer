@@ -6,6 +6,7 @@ import prisma from "../prisma.ts";
 export type SwapCreateInput = {
   blockNumber: bigint | number;
   transactionHash: string;
+  transactionIndex: number;
   dex: string;
   from: string;
   to: string;

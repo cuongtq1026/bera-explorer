@@ -172,9 +172,11 @@ export type PriceDto = {
   blockNumber: bigint | number;
   tokenAddress: string;
   transactionHash: string;
+  transactionIndex: number;
   swapId: bigint | number;
   usd_price: bigint;
   createdAt: Date;
+  price_ref_id?: bigint | number | null;
 
   swap?: SwapDto;
 };
@@ -183,6 +185,7 @@ export type SwapDto = {
   id: bigint | number;
   blockNumber: bigint | number;
   transactionHash: string;
+  transactionIndex: number;
   dex: string;
   from: string;
   to: string;
@@ -518,10 +521,11 @@ export function toBalanceHistoryDto(
   };
 }
 
-export function dtoToSwapCreateInput(swapDto: SwapDto): SwapCreateInput {
+export function dtoToSwapCreateInput(swapDto: SwapDtoNoId): SwapCreateInput {
   return {
     blockNumber: swapDto.blockNumber,
     transactionHash: swapDto.transactionHash,
+    transactionIndex: swapDto.transactionIndex,
     dex: swapDto.dex,
     from: swapDto.from,
     to: swapDto.to,
@@ -536,6 +540,7 @@ export function toSwapDto(swap: Swap): SwapDto {
     id: swap.id,
     blockNumber: swap.blockNumber,
     transactionHash: swap.transactionHash as Hash,
+    transactionIndex: swap.transactionIndex,
     dex: swap.dex as Hash,
     from: swap.from,
     to: swap.to,
@@ -554,10 +559,12 @@ export function toPriceDto(
     id: price.id,
     blockNumber: price.blockNumber,
     swapId: price.swapId,
+    transactionIndex: price.transactionIndex,
     tokenAddress: price.tokenAddress,
     usd_price: parseToBigInt(price.usd_price.toFixed()),
     createdAt: price.createdAt,
     transactionHash: price.transactionHash as Hash,
+    price_ref_id: price.price_ref_id,
   };
 
   if (price.swap) {
@@ -571,10 +578,12 @@ export function dtoToPriceCreateInput(priceDto: PriceDto): PriceCreateInput {
   return {
     id: priceDto.id,
     blockNumber: priceDto.blockNumber,
+    transactionIndex: priceDto.transactionIndex,
     swapId: priceDto.swapId,
     tokenAddress: priceDto.tokenAddress,
     usd_price: priceDto.usd_price.toString(),
     createdAt: priceDto.createdAt,
     transactionHash: priceDto.transactionHash as Hash,
+    price_ref_id: priceDto.price_ref_id,
   };
 }

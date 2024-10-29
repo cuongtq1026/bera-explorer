@@ -189,6 +189,7 @@ function decodeMultiStepSwaps(args: {
       return {
         blockNumber: transaction.blockNumber,
         transactionHash: transaction.hash,
+        transactionIndex: receipt.transactionIndex,
         dex,
         from: decodedFromTransfer.tokenAddress,
         to: decodedToTransfer.tokenAddress,
@@ -417,6 +418,7 @@ export class CrocSwapDexDecoder
     const firstSwap: SwapDtoNoId = {
       blockNumber: transaction.blockNumber,
       transactionHash: transaction.hash,
+      transactionIndex: receipt.transactionIndex,
       dex,
       from: fromToken,
       to: decodedToTransfer.tokenAddress,
@@ -482,6 +484,7 @@ export class CrocSwapDexDecoder
         {
           blockNumber: transaction.blockNumber,
           transactionHash: transaction.hash,
+          transactionIndex: receipt.transactionIndex,
           dex,
           from: decodedFromTransfer.tokenAddress,
           to: toToken,
@@ -549,6 +552,7 @@ export class CrocSwapDexDecoder
     const lastSwap: SwapDtoNoId = {
       blockNumber: transaction.blockNumber,
       transactionHash: transaction.hash,
+      transactionIndex: receipt.transactionIndex,
       dex,
       from: decodedFromTransfer.tokenAddress,
       to: toToken,

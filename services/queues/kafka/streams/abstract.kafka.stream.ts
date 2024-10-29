@@ -1,5 +1,5 @@
 import type { KafkaJS } from "@confluentinc/kafka-javascript";
-import { Subject } from "rxjs";
+import { filter, first, Subject } from "rxjs";
 
 import { type AppLogger } from "../../../monitor/app.logger.ts";
 import { topics } from "../index.ts";
@@ -7,12 +7,15 @@ import kafkaConnection from "../kafka.connection.ts";
 import { KafkaDecodeConsumer } from "../kafka.interface.ts";
 
 export abstract class AbstractKafkaStream extends KafkaDecodeConsumer {
+  private MAX_UNCOMMITED_MESSAGES = 1;
   protected fromTopicName: string;
   protected toTopicName: string;
   protected abstract fromTopic: keyof typeof topics;
   protected abstract toTopic: keyof typeof topics;
   private readonly subject: Subject<KafkaJS.EachMessagePayload>;
   private consumer: KafkaJS.Consumer;
+  private unCommitted = 0;
+  private unCommittedSubject = new Subject<number>();
 
   constructor(options: { logger: AppLogger }) {
     super(options);
@@ -43,6 +46,39 @@ export abstract class AbstractKafkaStream extends KafkaDecodeConsumer {
 
   protected abstract defineProcessingPipeline(): void;
 
+  protected throttleMaxUncommitedMessages(): Promise<void> {
+    return new Promise((resolve) => {
+      this.unCommittedSubject
+        .pipe(
+          filter((value) => {
+            return value < this.MAX_UNCOMMITED_MESSAGES;
+          }), // Emit only when unCommitted < 10
+          first(), // Complete after the first valid emission
+        )
+        .subscribe(() => {
+          resolve();
+        });
+    });
+  }
+
+  private increaseUncommitted() {
+    const nextUncommitted = this.unCommitted + 1;
+
+    this.unCommitted = nextUncommitted;
+    this.unCommittedSubject.next(nextUncommitted);
+  }
+
+  protected decreaseUncommitted() {
+    if (this.unCommitted === 0) {
+      throw Error("Uncommitted is already zero.");
+    }
+
+    const nextUncommitted = this.unCommitted - 1;
+
+    this.unCommitted = nextUncommitted;
+    this.unCommittedSubject.next(nextUncommitted);
+  }
+
   protected async consume(): Promise<void> {
     this.init();
 
@@ -54,7 +90,14 @@ export abstract class AbstractKafkaStream extends KafkaDecodeConsumer {
       topic: this.fromTopicName,
       groupId: this.consumerName,
       eachMessageHandler: async (message: KafkaJS.EachMessagePayload) => {
+        if (this.unCommitted < this.MAX_UNCOMMITED_MESSAGES) {
+          this.increaseUncommitted();
+          this.subject.next(message);
+          return;
+        }
+        await this.throttleMaxUncommitedMessages();
         this.subject.next(message);
+        this.increaseUncommitted();
       },
       options: {
         autoCommit: false,

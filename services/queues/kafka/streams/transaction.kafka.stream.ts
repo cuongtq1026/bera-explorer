@@ -1,16 +1,18 @@
 import prisma from "@database/prisma.ts";
 import { concatMap, interval, of, retry, tap } from "rxjs";
+import type { Hash } from "viem";
 
 import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
 import { appLogger } from "../../../monitor/app.logger.ts";
 import { parseToBigInt } from "../../../utils.ts";
 import kafkaConnection from "../kafka.connection.ts";
+import { sendKafkaMessageByTopic } from "../producers";
 import { getKafkaMessageId } from "../utils.ts";
 import { AbstractKafkaStream } from "./abstract.kafka.stream.ts";
 
 export class TransactionKafkaStream extends AbstractKafkaStream {
   protected fromTopic = "BLOCK" as const;
-  protected toTopic = "TRANSACTION" as const;
+  protected toTopic = "INDEXED_TRANSACTION" as const;
   protected consumerName: string = "transaction-stream";
 
   constructor() {
@@ -95,15 +97,15 @@ export class TransactionKafkaStream extends AbstractKafkaStream {
               }
               const kafkaTransaction = await kafkaConnection.transaction();
               try {
-                // await sendToTransactionTopic(
-                //   transactions.map((transaction) => ({
-                //     hash: transaction.hash as Hash,
-                //   })),
-                //   {
-                //     transaction: kafkaTransaction,
-                //   },
-                // );
-                // TODO: send to correct topic (toTopicName)
+                await sendKafkaMessageByTopic(
+                  this.toTopic,
+                  transactions.map((transaction) => ({
+                    hash: transaction.hash as Hash,
+                  })),
+                  {
+                    transaction: kafkaTransaction,
+                  },
+                );
                 await kafkaTransaction.sendOffsets({
                   consumer: this.getConsumer(),
                   topics: [
@@ -120,12 +122,18 @@ export class TransactionKafkaStream extends AbstractKafkaStream {
                 });
 
                 await kafkaTransaction.commit();
-              } catch (_: any) {
+              } catch (error: unknown) {
+                if (error instanceof Error) {
+                  this.serviceLogger.error(
+                    `Error on sending to ${this.toTopicName} topic. ${error.stack}`,
+                  );
+                }
                 await kafkaTransaction.abort();
               }
             }),
           ),
         ),
+        tap(() => this.decreaseUncommitted()),
       );
 
     stream$.subscribe({

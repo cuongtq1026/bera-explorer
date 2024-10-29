@@ -1,4 +1,5 @@
 import type { TokenDto } from "@database/dto.ts";
+import Decimal from "decimal.js";
 import {
   type AbiFunction,
   getAbiItem,
@@ -37,7 +38,7 @@ type Chain = {
   stableCoins: TokenDto[];
 };
 export const USD_DECIMAL = 18;
-export const ONE_USD = 10 ** USD_DECIMAL;
+export const ONE_USD = new Decimal(10).pow(USD_DECIMAL);
 export const CHAIN_ID = process.env.CHAIN_ID ? +process.env.CHAIN_ID : 80084;
 export const chains: { [chainId: number]: Chain } = {
   "80084": {

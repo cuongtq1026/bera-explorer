@@ -1,3 +1,4 @@
+import { toPriceDto } from "@database/dto.ts";
 import prisma from "@database/prisma.ts";
 import {
   countBlock,
@@ -34,6 +35,10 @@ import { TransferKafkaConsumer } from "./services/queues/kafka/consumers/transfe
 import kafkaConnection from "./services/queues/kafka/kafka.connection.ts";
 import { sendToBlockTopic } from "./services/queues/kafka/producers/block.kafka.producer.ts";
 import { sendToSwapTopic } from "./services/queues/kafka/producers/swap.kafka.producer.ts";
+import {
+  bridgeSwapPrices,
+  FillPriceKafkaStream,
+} from "./services/queues/kafka/streams/fill-price.kafka.stream.ts";
 import { PriceKafkaStream } from "./services/queues/kafka/streams/price.kafka.stream.ts";
 import { TransactionKafkaStream } from "./services/queues/kafka/streams/transaction.kafka.stream.ts";
 import { BlockConsumer } from "./services/queues/rabbitmq/consumers/block.consumer.ts";
@@ -387,6 +392,12 @@ switch (command) {
         await stream.start();
         break;
       }
+      case "fill-price": {
+        const stream = new FillPriceKafkaStream();
+
+        await stream.start();
+        break;
+      }
       case "all": {
         const stream = new PriceKafkaStream();
 
@@ -609,6 +620,28 @@ switch (command) {
       await transaction.abort();
       console.error("Error reindexing swaps.", e);
     }
+    break;
+  }
+  case "fill-prices": {
+    const priceDb = await prisma.erc20Price.findUnique({
+      where: {
+        id: 1861,
+      },
+    });
+    if (!priceDb) {
+      throw Error("priceDb is null");
+    }
+    const prices = await prisma.erc20Price
+      .findMany({
+        where: {
+          blockNumber: priceDb.blockNumber,
+        },
+        include: {
+          swap: true,
+        },
+      })
+      .then((prices) => prices.map((price) => toPriceDto(price)));
+    console.log("bridgeSwapPrices(prices)", bridgeSwapPrices(prices));
     break;
   }
   default:

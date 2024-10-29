@@ -1,7 +1,13 @@
+import type Decimal from "decimal.js";
+import Decimal from "decimal.js";
 import type { Hash } from "viem";
 
 export function parseToBigInt(str: string): bigint {
   return BigInt(str);
+}
+
+export function parseDecimalToBigInt(decimal: Decimal): bigint {
+  return BigInt(decimal.toFixed(0));
 }
 
 export function is0xHash(hash: string): hash is Hash {

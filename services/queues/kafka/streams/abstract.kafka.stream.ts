@@ -9,9 +9,9 @@ import { KafkaDecodeConsumer } from "../kafka.interface.ts";
 export abstract class AbstractKafkaStream extends KafkaDecodeConsumer {
   private MAX_UNCOMMITED_MESSAGES = 1;
   protected fromTopicName: string;
-  protected toTopicName: string;
+  protected toTopicName: string | null;
   protected abstract fromTopic: keyof typeof topics;
-  protected abstract toTopic: keyof typeof topics;
+  protected abstract toTopic: keyof typeof topics | null;
   private readonly subject: Subject<KafkaJS.EachMessagePayload>;
   private consumer: KafkaJS.Consumer;
   private unCommitted = 0;
@@ -33,7 +33,7 @@ export abstract class AbstractKafkaStream extends KafkaDecodeConsumer {
 
   protected init() {
     this.fromTopicName = topics[this.fromTopic].name;
-    this.toTopicName = topics[this.toTopic].name;
+    this.toTopicName = this.toTopic ? topics[this.toTopic].name : null;
   }
 
   public async start() {

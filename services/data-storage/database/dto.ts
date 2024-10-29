@@ -1,3 +1,4 @@
+import type { PriceCreateInput } from "@database/repositories/price.repository.ts";
 import type { SwapCreateInput } from "@database/repositories/swap.repository.ts";
 import type { TransferCreateInput } from "@database/repositories/transfer.repository.ts";
 import type {
@@ -174,6 +175,8 @@ export type PriceDto = {
   swapId: bigint | number;
   usd_price: bigint;
   createdAt: Date;
+
+  swap?: SwapDto;
 };
 
 export type SwapDto = {
@@ -186,6 +189,8 @@ export type SwapDto = {
   fromAmount: bigint;
   toAmount: bigint;
   createdAt: Date;
+
+  prices?: PriceDto[];
 };
 
 export type SwapDtoNoId = Omit<SwapDto, "id">;
@@ -540,8 +545,12 @@ export function toSwapDto(swap: Swap): SwapDto {
   };
 }
 
-export function toPriceDto(price: Erc20Price): PriceDto {
-  return {
+export function toPriceDto(
+  price: Erc20Price & {
+    swap?: Swap;
+  },
+): PriceDto {
+  const dto: PriceDto = {
     id: price.id,
     blockNumber: price.blockNumber,
     swapId: price.swapId,
@@ -549,5 +558,23 @@ export function toPriceDto(price: Erc20Price): PriceDto {
     usd_price: parseToBigInt(price.usd_price.toFixed()),
     createdAt: price.createdAt,
     transactionHash: price.transactionHash as Hash,
+  };
+
+  if (price.swap) {
+    dto.swap = toSwapDto(price.swap);
+  }
+
+  return dto;
+}
+
+export function dtoToPriceCreateInput(priceDto: PriceDto): PriceCreateInput {
+  return {
+    id: priceDto.id,
+    blockNumber: priceDto.blockNumber,
+    swapId: priceDto.swapId,
+    tokenAddress: priceDto.tokenAddress,
+    usd_price: priceDto.usd_price.toString(),
+    createdAt: priceDto.createdAt,
+    transactionHash: priceDto.transactionHash as Hash,
   };
 }

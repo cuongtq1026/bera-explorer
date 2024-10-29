@@ -129,9 +129,19 @@ cd ./scripts && ./create-kafka-connectors.sh
 
 ## Start Services
 
-### Start Consumers
+### Start all
+```bash
+yarn run start
+```
+
+#### Just start Consumers
 ```bash
 yarn run consume:all
+```
+
+#### Just start Streams
+```bash
+yarn run stream:all
 ```
 
 ### Queue New Messages

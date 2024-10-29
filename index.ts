@@ -351,7 +351,6 @@ switch (command) {
         const blockConsumer = new BlockConsumer();
         const transactionConsumer = new TransactionConsumer();
         const transactionReceiptConsumer = new TransactionReceiptConsumer();
-        const internalTransactionConsumer = new InternalTransactionConsumer();
         const transferConsumer = new TransferConsumer();
         const transactionKafkaConsumer = new TransactionKafkaConsumer();
         const logKafkaConsumer = new LogKafkaConsumer();
@@ -362,7 +361,11 @@ switch (command) {
         await blockConsumer.consume();
         await transactionConsumer.consume();
         await transactionReceiptConsumer.consume();
-        await internalTransactionConsumer.consume();
+        if (process.env.CONSUMER_INTERNAL_TRANSACTION === "true") {
+          const internalTransactionConsumer = new InternalTransactionConsumer();
+
+          await internalTransactionConsumer.consume();
+        }
         await transferConsumer.consume();
         await transactionKafkaConsumer.consume();
         await logKafkaConsumer.consume();
@@ -399,9 +402,11 @@ switch (command) {
         break;
       }
       case "all": {
-        const stream = new PriceKafkaStream();
+        const priceKafkaStream = new PriceKafkaStream();
+        const fillPriceKafkaStream = new FillPriceKafkaStream();
 
-        await stream.start();
+        await priceKafkaStream.start();
+        await fillPriceKafkaStream.start();
         break;
       }
       default: {

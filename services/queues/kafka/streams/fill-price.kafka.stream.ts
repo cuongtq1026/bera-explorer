@@ -20,6 +20,7 @@ import { AbstractKafkaStream } from "./abstract.kafka.stream.ts";
  * This stream will consume from prices topic
  * 1. scan prices group by blockNumber
  * 2. fill in all empty price by bridging swaps
+ * 3. if the price is still empty, fill in by the most recent price of the nearest block
  */
 export class FillPriceKafkaStream extends AbstractKafkaStream {
   protected fromTopic = "PRICE" as const;
@@ -101,6 +102,32 @@ export class FillPriceKafkaStream extends AbstractKafkaStream {
             }),
             // TODO: fill out missing prices by most recent price of the nearest block
             concatMap(async ({ blockNumber, prices }) => {
+              for (const price of prices) {
+                if (price.usd_price === 0n) {
+                  const previousPrice = await prisma.erc20Price.findFirst({
+                    where: {
+                      tokenAddress: price.tokenAddress,
+                    },
+                    orderBy: {
+                      blockNumber: "desc",
+                      transactionIndex: "desc",
+                    },
+                  });
+                  if (previousPrice == null) {
+                    // there is no previous price for this token
+                    continue;
+                  }
+                  if (previousPrice.usd_price.eq(0)) {
+                    throw Error(
+                      "[PriceID: ${price.id}] Found previous price with 0 usd_price",
+                    );
+                  }
+                  price.usd_price = parseDecimalToBigInt(
+                    previousPrice.usd_price,
+                  );
+                  price.price_ref_id = previousPrice.id;
+                }
+              }
               return {
                 blockNumber: blockNumber,
                 prices: prices,

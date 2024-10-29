@@ -1,6 +1,6 @@
 import type { PriceDto, SwapDto } from "@database/dto.ts";
 import {
-  createPrices,
+  createPricesAndReturn,
   deletePrices,
   type PriceCreateInput,
 } from "@database/repositories/price.repository.ts";
@@ -74,8 +74,8 @@ export class PriceProcessor extends AbstractProcessor<
           ONE_USD.toString()
         : swapDto.toAmount === 0n
           ? "0"
-          : fromDecimal
-              .div(toDecimal)
+          : toDecimal
+              .div(fromDecimal)
               .mul(new Decimal(10).pow(getStableCoin(swapDto.to)!.decimals))
               .toString(),
       createdAt: swapDto.createdAt,
@@ -90,8 +90,8 @@ export class PriceProcessor extends AbstractProcessor<
           ONE_USD.toString()
         : swapDto.fromAmount === 0n
           ? "0"
-          : toDecimal
-              .div(fromDecimal)
+          : fromDecimal
+              .div(toDecimal)
               .mul(new Decimal(10).pow(getStableCoin(swapDto.from)!.decimals))
               .toString(),
       createdAt: swapDto.createdAt,
@@ -104,7 +104,7 @@ export class PriceProcessor extends AbstractProcessor<
   }
 
   async createInDb(inputs: PriceCreateInput[]): Promise<PriceDto[]> {
-    return await createPrices(inputs);
+    return await createPricesAndReturn(inputs);
   }
 
   async process(swapId: number | bigint): Promise<PriceDto[]> {

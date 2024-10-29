@@ -6,7 +6,8 @@ import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.excep
 import { appLogger } from "../../../monitor/app.logger.ts";
 import { parseToBigInt } from "../../../utils.ts";
 import kafkaConnection from "../kafka.connection.ts";
-import { PriceMessagePayload, sendKafkaMessageByTopic } from "../producers";
+import { PriceMessagePayload } from "../producers";
+import { sendKafkaMessageByTopic } from "../producers/default.kafka.producer.ts";
 import { getKafkaMessageId } from "../utils.ts";
 import { AbstractKafkaStream } from "./abstract.kafka.stream.ts";
 

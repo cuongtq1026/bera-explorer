@@ -8,14 +8,15 @@ import { topics } from "./index.ts";
 import {
   type BlockMessagePayload,
   type LogMessagePayload,
-  PriceMessagePayload,
+  type PriceMessagePayload,
   type SwapMessagePayload,
   type TransactionMessagePayload,
   type TransferMessagePayload,
 } from "./producers";
 import {
   blockSchema,
-  logSchema, priceSchema,
+  logSchema,
+  priceSchema,
   swapSchema,
   transactionSchema,
   transferSchema,

@@ -47,6 +47,7 @@ export class PriceProcessor extends AbstractProcessor<
           blockNumber: swapDto.blockNumber,
           tokenAddress: swapDto.from,
           transactionHash: swapDto.transactionHash,
+          transactionIndex: swapDto.transactionIndex,
           usd_price: "0",
           createdAt: swapDto.createdAt,
         },
@@ -55,6 +56,7 @@ export class PriceProcessor extends AbstractProcessor<
           blockNumber: swapDto.blockNumber,
           tokenAddress: swapDto.to,
           transactionHash: swapDto.transactionHash,
+          transactionIndex: swapDto.transactionIndex,
           usd_price: "0",
           createdAt: swapDto.createdAt,
         },
@@ -69,6 +71,7 @@ export class PriceProcessor extends AbstractProcessor<
       blockNumber: swapDto.blockNumber,
       tokenAddress: swapDto.from,
       transactionHash: swapDto.transactionHash,
+      transactionIndex: swapDto.transactionIndex,
       usd_price: isFromStableCoin
         ? // return 1 if the token is stable coin
           ONE_USD.toString()
@@ -85,6 +88,7 @@ export class PriceProcessor extends AbstractProcessor<
       blockNumber: swapDto.blockNumber,
       tokenAddress: swapDto.to,
       transactionHash: swapDto.transactionHash,
+      transactionIndex: swapDto.transactionIndex,
       usd_price: isToStableCoin
         ? // return 1 if the token is stable coin
           ONE_USD.toString()

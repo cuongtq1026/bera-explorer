@@ -51,7 +51,6 @@ export class BalanceProcessor extends AbstractProcessor<
     const senderTransfers = await findTransfers({
       address: sender,
     });
-    // TODO: Handle pagination
     const senderBalanceMap = new Map<string, bigint>();
     senderTransfers.forEach((transfer) => {
       const { tokenAddress, from, amount } = transfer;

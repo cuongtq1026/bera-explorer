@@ -1,4 +1,4 @@
-import type { SwapDto } from "@database/dto.ts";
+import type { PriceDto, SwapDto } from "@database/dto.ts";
 import {
   createPrices,
   deletePrices,
@@ -15,9 +15,10 @@ import { AbstractProcessor } from "./abstract.processor.ts";
 const serviceLogger = appLogger.namespace("PriceProcessor");
 
 export class PriceProcessor extends AbstractProcessor<
-  bigint,
+  number | bigint,
   SwapDto,
-  PriceCreateInput[]
+  PriceCreateInput[],
+  PriceDto[]
 > {
   constructor() {
     super({
@@ -25,7 +26,7 @@ export class PriceProcessor extends AbstractProcessor<
     });
   }
 
-  async get(swapId: bigint): Promise<SwapDto> {
+  async get(swapId: number | bigint): Promise<SwapDto> {
     const swapDto = await getSwap(swapId);
     if (swapDto == null) {
       throw new NoGetResult(swapId.toString());
@@ -94,15 +95,15 @@ export class PriceProcessor extends AbstractProcessor<
     return [fromTokenPrice, toTokenPrice];
   }
 
-  async deleteFromDb(swapId: bigint): Promise<void> {
+  async deleteFromDb(swapId: number | bigint): Promise<void> {
     await deletePrices(swapId);
   }
 
-  async createInDb(inputs: PriceCreateInput[]): Promise<void> {
-    await createPrices(inputs);
+  async createInDb(inputs: PriceCreateInput[]): Promise<PriceDto[]> {
+    return await createPrices(inputs);
   }
 
-  async process(swapId: bigint): Promise<void> {
+  async process(swapId: number | bigint): Promise<PriceDto[]> {
     serviceLogger.info("[PriceProcessor] processing: " + swapId);
 
     const obj = await this.get(swapId);
@@ -110,8 +111,10 @@ export class PriceProcessor extends AbstractProcessor<
     const inputs = this.toInput(obj);
 
     await this.deleteFromDb(swapId);
-    serviceLogger.info(`[PriceProcessor] deleted ${swapId}`);
-    await this.createInDb(inputs);
-    serviceLogger.info(`[PriceProcessor] created ${swapId}`);
+    serviceLogger.info(`[PriceProcessor] deleted prices swapId ${swapId}`);
+    const prices = await this.createInDb(inputs);
+    serviceLogger.info(`[PriceProcessor] created prices swapId ${swapId}`);
+
+    return prices;
   }
 }

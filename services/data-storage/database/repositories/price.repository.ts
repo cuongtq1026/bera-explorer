@@ -1,3 +1,5 @@
+import { toPriceDto } from "@database/dto.ts";
+
 import prisma from "../prisma.ts";
 
 export type PriceCreateInput = {
@@ -14,13 +16,14 @@ export function createPrice(priceCreateInput: PriceCreateInput) {
   });
 }
 
-export function createPrices(priceCreateInputs: PriceCreateInput[]) {
-  return prisma.erc20Price.createMany({
+export async function createPrices(priceCreateInputs: PriceCreateInput[]) {
+  const prices = await prisma.erc20Price.createManyAndReturn({
     data: priceCreateInputs,
   });
+  return prices.map((price) => toPriceDto(price));
 }
 
-export async function deletePrices(swapId: bigint): Promise<void> {
+export async function deletePrices(swapId: number | bigint): Promise<void> {
   await prisma.erc20Price.deleteMany({
     where: {
       swapId,

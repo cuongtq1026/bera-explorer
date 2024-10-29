@@ -5,16 +5,17 @@ import { SchemaRegistry, SchemaType } from "@kafkajs/confluent-schema-registry";
 import { appLogger } from "../../monitor/app.logger.ts";
 import { KafkaLogger } from "../../monitor/kafka.logger.ts";
 import { topics } from "./index.ts";
-import type {
-  BlockMessagePayload,
-  LogMessagePayload,
-  SwapMessagePayload,
-  TransactionMessagePayload,
-  TransferMessagePayload,
+import {
+  type BlockMessagePayload,
+  type LogMessagePayload,
+  PriceMessagePayload,
+  type SwapMessagePayload,
+  type TransactionMessagePayload,
+  type TransferMessagePayload,
 } from "./producers";
 import {
   blockSchema,
-  logSchema,
+  logSchema, priceSchema,
   swapSchema,
   transactionSchema,
   transferSchema,
@@ -121,6 +122,11 @@ export class KafkaConnection extends AbstractConnectable {
           schema: JSON.stringify(transferSchema),
         });
         this.schemaMap.set("TRANSFER", transferSchemaId);
+        const { id: priceSchemaId } = await this.registry.register({
+          type: SchemaType.AVRO,
+          schema: JSON.stringify(priceSchema),
+        });
+        this.schemaMap.set("PRICE", priceSchemaId);
 
         serviceLogger.info(
           `✅  Schema Registry registered: ${this.schemaMap.size}`,
@@ -158,7 +164,9 @@ export class KafkaConnection extends AbstractConnectable {
             ? TransferMessagePayload
             : T extends "SWAP"
               ? SwapMessagePayload
-              : never
+              : T extends "PRICE"
+                ? PriceMessagePayload
+                : never
   > {
     await this.checkConnection();
 

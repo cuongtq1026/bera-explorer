@@ -1,30 +1,33 @@
-import prisma from "@database/prisma.ts";
+import { getSwap } from "@database/repositories/swap.repository.ts";
+import { PriceProcessor } from "@processors/price.processor.ts";
 import { concatMap, interval, of, retry, tap } from "rxjs";
-import type { Hash } from "viem";
 
 import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
 import { appLogger } from "../../../monitor/app.logger.ts";
 import { parseToBigInt } from "../../../utils.ts";
 import kafkaConnection from "../kafka.connection.ts";
-import {
-  sendKafkaMessageByTopic,
-  TransactionMessagePayload,
-} from "../producers";
+import { PriceMessagePayload, sendKafkaMessageByTopic } from "../producers";
 import { getKafkaMessageId } from "../utils.ts";
 import { AbstractKafkaStream } from "./abstract.kafka.stream.ts";
 
-export class TransactionKafkaStream extends AbstractKafkaStream {
-  protected fromTopic = "BLOCK" as const;
-  protected toTopic = "INDEXED_TRANSACTION" as const;
-  protected consumerName: string = "transaction-stream";
+/**
+ * This stream will consume from swaps topic
+ * 1. process prices from it (store into db)
+ * 2. index to prices topic
+ */
+export class PriceKafkaStream extends AbstractKafkaStream {
+  protected fromTopic = "SWAP" as const;
+  protected toTopic = "PRICE" as const;
+
+  protected consumerName: string = "price-stream";
 
   constructor() {
     super({
-      logger: appLogger.namespace(TransactionKafkaStream.name),
+      logger: appLogger.namespace(PriceKafkaStream.name),
     });
   }
 
-  protected defineProcessingPipeline() {
+  protected defineProcessingPipeline(): void {
     const stream$ = this.getSubject()
       .asObservable()
       .pipe(
@@ -38,38 +41,21 @@ export class TransactionKafkaStream extends AbstractKafkaStream {
               const rawDecodedContent =
                 await this.getRawDecodedData<typeof this.fromTopic>(message);
 
-              const { blockNumber: rawBlockNumber } = rawDecodedContent;
-              return parseToBigInt(rawBlockNumber);
+              const { swapId: rawSwapId } = rawDecodedContent;
+              return parseToBigInt(rawSwapId);
             }),
             // start querying
-            concatMap(async (blockNumber) => {
-              const dbBlock = await prisma.block.findUnique({
-                where: {
-                  number: blockNumber,
-                },
-                include: {
-                  transactions: {
-                    select: {
-                      hash: true,
-                    },
-                    orderBy: [
-                      {
-                        transactionIndex: "asc",
-                      },
-                    ],
-                  },
-                },
-              });
+            concatMap(async (swapId) => {
+              const swapDb = await getSwap(swapId);
 
-              if (!dbBlock) {
+              if (!swapDb) {
                 throw new KafkaReachedEndIndexedOffset(
                   this.fromTopicName,
                   this.consumerName,
                   getKafkaMessageId(eachMessagePayload, this.consumerName),
                 );
               }
-
-              return dbBlock;
+              return swapDb;
             }),
             // infinite retry if data is not indexed
             retry({
@@ -86,27 +72,33 @@ export class TransactionKafkaStream extends AbstractKafkaStream {
                 throw error;
               },
             }),
-            // log the database data
-            tap((block) =>
+            // process prices from swapId
+            concatMap(async (swapDto) => {
+              const { id: swapId } = swapDto;
+
+              const processor = new PriceProcessor();
+              const prices = await processor.process(swapId);
+
+              return prices;
+            }),
+            // log the data
+            tap((prices) =>
               this.serviceLogger.info(
-                `Sending to topic ${this.toTopicName}: blockNumber ${block.number}`,
+                `Sending to topic ${this.toTopicName}: Price length: ${prices.length}.`,
               ),
             ),
             // send to the topic
-            concatMap(async (block) => {
-              const { transactions } = block;
-              if (!transactions.length) {
+            concatMap(async (prices) => {
+              if (!prices.length) {
                 return;
               }
               const kafkaTransaction = await kafkaConnection.transaction();
               try {
                 await sendKafkaMessageByTopic(
                   this.toTopic,
-                  transactions.map<TransactionMessagePayload>(
-                    (transaction) => ({
-                      hash: transaction.hash as Hash,
-                    }),
-                  ),
+                  prices.map<PriceMessagePayload>((price) => ({
+                    priceId: price.id.toString(),
+                  })),
                   {
                     transaction: kafkaTransaction,
                   },

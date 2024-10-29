@@ -5,6 +5,7 @@ import type {
   BalanceHistory,
   Block,
   Contract,
+  Erc20Price,
   InternalTransaction,
   Log,
   LogTopic,
@@ -166,6 +167,7 @@ export type ContractDto = {
   deploymentBlockNumber: bigint | number;
 };
 export type PriceDto = {
+  id: bigint;
   tokenAddress: string;
   transactionHash: string;
   swapId: bigint | number;
@@ -534,5 +536,16 @@ export function toSwapDto(swap: Swap): SwapDto {
     fromAmount: parseToBigInt(swap.fromAmount.toFixed()),
     toAmount: parseToBigInt(swap.toAmount.toFixed()),
     createdAt: swap.createdAt,
+  };
+}
+
+export function toPriceDto(price: Erc20Price): PriceDto {
+  return {
+    id: price.id,
+    swapId: price.swapId,
+    tokenAddress: price.tokenAddress,
+    usd_price: parseToBigInt(price.usd_price.toFixed()),
+    createdAt: price.createdAt,
+    transactionHash: price.transactionHash as Hash,
   };
 }

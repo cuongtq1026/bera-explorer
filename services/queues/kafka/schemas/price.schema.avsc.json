@@ -1,0 +1,12 @@
+{
+    "name": "PriceSchema",
+    "namespace": "com.group",
+    "doc": "Schema of price id reference",
+    "type": "record",
+    "fields": [
+        {
+            "name": "priceId",
+            "type": "string"
+        }
+    ]
+}

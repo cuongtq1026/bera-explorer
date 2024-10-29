@@ -14,7 +14,9 @@ export type SwapCreateInput = {
   createdAt: Date | string;
 };
 
-export async function getSwap(swapId: bigint): Promise<SwapDto | null> {
+export async function getSwap(
+  swapId: number | bigint,
+): Promise<SwapDto | null> {
   return prisma.swap
     .findUnique({
       where: {

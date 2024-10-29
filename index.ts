@@ -34,6 +34,7 @@ import { TransferKafkaConsumer } from "./services/queues/kafka/consumers/transfe
 import kafkaConnection from "./services/queues/kafka/kafka.connection.ts";
 import { sendToBlockTopic } from "./services/queues/kafka/producers/block.kafka.producer.ts";
 import { sendToSwapTopic } from "./services/queues/kafka/producers/swap.kafka.producer.ts";
+import { PriceKafkaStream } from "./services/queues/kafka/streams/price.kafka.stream.ts";
 import { TransactionKafkaStream } from "./services/queues/kafka/streams/transaction.kafka.stream.ts";
 import { BlockConsumer } from "./services/queues/rabbitmq/consumers/block.consumer.ts";
 import { DlxConsumer } from "./services/queues/rabbitmq/consumers/dlx.consumer.ts";
@@ -352,7 +353,6 @@ switch (command) {
         const transferKafkaConsumer = new TransferKafkaConsumer();
         const balanceKafkaConsumer = new BalanceKafkaConsumer();
         const swapKafkaConsumer = new SwapKafkaConsumer();
-        const priceKafkaConsumer = new PriceKafkaConsumer();
 
         await blockConsumer.consume();
         await transactionConsumer.consume();
@@ -364,7 +364,6 @@ switch (command) {
         await transferKafkaConsumer.consume();
         await balanceKafkaConsumer.consume();
         await swapKafkaConsumer.consume();
-        await priceKafkaConsumer.consume();
         break;
       }
       default: {
@@ -378,6 +377,18 @@ switch (command) {
     switch (modelToStream) {
       case "transaction": {
         const stream = new TransactionKafkaStream();
+
+        await stream.start();
+        break;
+      }
+      case "price": {
+        const stream = new PriceKafkaStream();
+
+        await stream.start();
+        break;
+      }
+      case "all": {
+        const stream = new PriceKafkaStream();
 
         await stream.start();
         break;

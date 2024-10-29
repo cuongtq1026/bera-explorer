@@ -8,7 +8,7 @@ export abstract class AbstractProcessor<
   DeleteArg = IdType,
   CreateArg = InputType,
   DeletedResult = void,
-  CreatedResult = void,
+  CreatedResult = ResultReturn,
 > {
   protected readonly serviceLogger: AppLogger;
 

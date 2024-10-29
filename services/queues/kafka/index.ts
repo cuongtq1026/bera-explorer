@@ -17,4 +17,7 @@ export const topics = {
   INDEXED_TRANSACTION: {
     name: "indexed_transactions",
   },
+  PRICE: {
+    name: "prices",
+  },
 };

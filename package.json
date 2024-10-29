@@ -6,6 +6,7 @@
   "type": "module",
   "exports": "./dist/index.mjs",
   "scripts": {
+    "start": "yarn run consume:all && yarn run stream:all",
     "build": "pkgroll --src . --export-condition=node",
     "backend:dev": "tsx watch backend.ts",
     "prisma:generate": "prisma generate",
@@ -26,6 +27,8 @@
     "consume:price-kafka": "tsx index.ts consume price-kafka",
     "queue:blocks": "tsx index.ts queue blocks",
     "queue:transaction-aggregator": "tsx index.ts queue transaction-aggregator",
+    "stream:all": "tsx index.ts streams all",
+    "stream:price": "tsx index.ts streams price",
     "retry-queue-all": "tsx index.ts retry-queue-all"
   },
   "devDependencies": {

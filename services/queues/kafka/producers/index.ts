@@ -15,11 +15,6 @@ export class LogMessagePayload {
   logHash: string;
 }
 
-export class SwapMessagePayload {
-  @IsNotEmpty()
-  swapId: string;
-}
-
 export class TransactionMessagePayload {
   @IsNotEmpty()
   hash: string;
@@ -28,6 +23,16 @@ export class TransactionMessagePayload {
 export class TransferMessagePayload {
   @IsNotEmpty()
   transferHash: string;
+}
+
+export class SwapMessagePayload {
+  @IsNotEmpty()
+  swapId: string;
+}
+
+export class PriceMessagePayload {
+  @IsNotEmpty()
+  priceId: string;
 }
 
 export async function sendKafkaMessageByTopic<T extends keyof typeof topics>(

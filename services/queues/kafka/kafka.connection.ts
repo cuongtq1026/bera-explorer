@@ -114,6 +114,7 @@ export class KafkaConnection extends AbstractConnectable {
           schema: JSON.stringify(transactionSchema),
         });
         this.schemaMap.set("TRANSACTION", transactionSchemaId);
+        this.schemaMap.set("INDEXED_TRANSACTION", transactionSchemaId);
 
         const { id: transferSchemaId } = await this.registry.register({
           type: SchemaType.AVRO,
@@ -149,7 +150,7 @@ export class KafkaConnection extends AbstractConnectable {
   ): Promise<
     T extends "BLOCK"
       ? BlockMessagePayload
-      : T extends "TRANSACTION"
+      : T extends "TRANSACTION" | "INDEXED_TRANSACTION"
         ? TransactionMessagePayload
         : T extends "LOG"
           ? LogMessagePayload

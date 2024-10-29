@@ -14,4 +14,7 @@ export const topics = {
   SWAP: {
     name: "swaps",
   },
+  INDEXED_TRANSACTION: {
+    name: "indexed_transactions",
+  },
 };

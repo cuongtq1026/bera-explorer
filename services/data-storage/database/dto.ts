@@ -168,7 +168,7 @@ export type ContractDto = {
   deploymentBlockNumber: bigint | number;
 };
 export type PriceDto = {
-  id: bigint | number;
+  hash: string;
   blockNumber: bigint | number;
   tokenAddress: string;
   transactionHash: string;
@@ -176,7 +176,7 @@ export type PriceDto = {
   swapId: bigint | number;
   usd_price: bigint;
   createdAt: Date;
-  price_ref_id?: bigint | number | null;
+  price_ref_hash?: string | null;
 
   swap?: SwapDto;
 };
@@ -556,7 +556,7 @@ export function toPriceDto(
   },
 ): PriceDto {
   const dto: PriceDto = {
-    id: price.id,
+    hash: price.hash,
     blockNumber: price.blockNumber,
     swapId: price.swapId,
     transactionIndex: price.transactionIndex,
@@ -564,7 +564,7 @@ export function toPriceDto(
     usd_price: parseToBigInt(price.usd_price.toFixed()),
     createdAt: price.createdAt,
     transactionHash: price.transactionHash as Hash,
-    price_ref_id: price.price_ref_id,
+    price_ref_hash: price.price_ref_hash,
   };
 
   if (price.swap) {
@@ -576,7 +576,7 @@ export function toPriceDto(
 
 export function dtoToPriceCreateInput(priceDto: PriceDto): PriceCreateInput {
   return {
-    id: priceDto.id,
+    hash: priceDto.hash,
     blockNumber: priceDto.blockNumber,
     transactionIndex: priceDto.transactionIndex,
     swapId: priceDto.swapId,
@@ -584,6 +584,6 @@ export function dtoToPriceCreateInput(priceDto: PriceDto): PriceCreateInput {
     usd_price: priceDto.usd_price.toString(),
     createdAt: priceDto.createdAt,
     transactionHash: priceDto.transactionHash as Hash,
-    price_ref_id: priceDto.price_ref_id,
+    price_ref_hash: priceDto.price_ref_hash,
   };
 }

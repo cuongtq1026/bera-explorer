@@ -3,7 +3,7 @@ import { type PriceDto, toPriceDto } from "@database/dto.ts";
 import prisma from "../prisma.ts";
 
 export type PriceCreateInput = {
-  id?: bigint | number;
+  hash: string;
   blockNumber: bigint | number;
   tokenAddress: string;
   transactionHash: string;
@@ -11,7 +11,7 @@ export type PriceCreateInput = {
   usd_price: string;
   createdAt: Date | string;
   swapId: bigint | number;
-  price_ref_id?: bigint | number | null;
+  price_ref_hash?: string | null;
 };
 
 export async function createPricesAndReturn(

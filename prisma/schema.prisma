@@ -250,7 +250,7 @@ model Swap {
 }
 
 model Erc20Price {
-  id               BigInt   @id @default(autoincrement())
+  hash             String   @id
   tokenAddress     String
   blockNumber      BigInt
   transactionHash  String
@@ -258,13 +258,13 @@ model Erc20Price {
   swapId           BigInt
   usd_price        Decimal  @db.Decimal(78, 0)
   createdAt        DateTime
-  price_ref_id     BigInt?
+  price_ref_hash   String?
 
   swap        Swap        @relation(fields: [swapId], references: [id], onDelete: Cascade)
   block       Block       @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
   transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
 
-  priceRef Erc20Price?  @relation("Erc20PriceRef", fields: [price_ref_id], references: [id])
+  priceRef Erc20Price?  @relation("Erc20PriceRef", fields: [price_ref_hash], references: [hash])
   refList  Erc20Price[] @relation("Erc20PriceRef")
 
   @@index([swapId])

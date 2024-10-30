@@ -178,10 +178,13 @@ export function toBalanceCreateInput(balance: Balance): BalanceCreateInput {
 
 export function toPriceCreateInput(priceDto: PriceDto): PriceCreateInput {
   return {
+    hash: priceDto.hash,
     tokenAddress: priceDto.tokenAddress,
     transactionHash: priceDto.transactionHash,
     usd_price: priceDto.usd_price.toString(),
     createdAt: priceDto.createdAt,
     swapId: priceDto.swapId,
+    blockNumber: priceDto.blockNumber,
+    transactionIndex: priceDto.transactionIndex,
   };
 }

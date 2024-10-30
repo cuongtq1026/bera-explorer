@@ -29,7 +29,6 @@
     "queue:transaction-aggregator": "tsx index.ts queue transaction-aggregator",
     "stream:all": "tsx index.ts streams all",
     "stream:price": "tsx index.ts streams price",
-    "stream:fill-price": "tsx index.ts streams fill-price",
     "retry-queue-all": "tsx index.ts retry-queue-all"
   },
   "devDependencies": {

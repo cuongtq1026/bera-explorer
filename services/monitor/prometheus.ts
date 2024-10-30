@@ -28,6 +28,9 @@ prometheusRegistry.registerMetric(queueMessageProcessedCounter);
 client.collectDefaultMetrics({ register: prometheusRegistry });
 
 export function setupPrometheus() {
+  if (process.env.PROMETHEUS_ENABLED !== "true") {
+    return;
+  }
   const server = http.createServer(async (req, res) => {
     if (!req.url) {
       res.end();

@@ -23,7 +23,7 @@ import {
   ERC20_TRANSFER_SIGNATURE,
   WITHDRAWAL_SIGNATURE,
 } from "../../config/constants.ts";
-import { parseToBigInt } from "../../utils.ts";
+import { parseDecimalToBigInt, parseToBigInt } from "../../utils.ts";
 
 export type BlockDto = {
   number: bigint;
@@ -354,9 +354,7 @@ export function toTransactionDto(
     from: transaction.from,
     to: transaction.to,
     input: transaction.input,
-    value: transaction.value
-      ? parseToBigInt(transaction.value.toFixed())
-      : null,
+    value: transaction.value ? parseDecimalToBigInt(transaction.value) : null,
     chainId: transaction.chainId,
     gas: transaction.gas,
     gasPrice: transaction.gasPrice,
@@ -457,9 +455,9 @@ export function toInternalTransactionDto(
     to: internalTransaction.to,
     input: internalTransaction.input,
     type: internalTransaction.type,
-    value: parseToBigInt(internalTransaction.value.toFixed()),
-    gas: parseToBigInt(internalTransaction.gas.toFixed()),
-    gasUsed: parseToBigInt(internalTransaction.gasUsed.toFixed()),
+    value: parseDecimalToBigInt(internalTransaction.value),
+    gas: parseDecimalToBigInt(internalTransaction.gas),
+    gasUsed: parseDecimalToBigInt(internalTransaction.gasUsed),
   };
 }
 
@@ -472,7 +470,7 @@ export function toTransferDto(transfer: Transfer): TransferDto {
     from: transfer.from,
     to: transfer.to,
     tokenAddress: transfer.tokenAddress,
-    amount: parseToBigInt(transfer.amount.toFixed()),
+    amount: parseDecimalToBigInt(transfer.amount),
     logIndex: transfer.logIndex,
     timestamp: transfer.timestamp,
   };
@@ -520,7 +518,7 @@ export function toBalanceHistoryDto(
     transferHash: balanceHistory.transferHash,
     address: balanceHistory.address,
     tokenAddress: balanceHistory.tokenAddress,
-    amount: parseToBigInt(balanceHistory.amount.toFixed()),
+    amount: parseDecimalToBigInt(balanceHistory.amount),
     createdAt: balanceHistory.createdAt,
   };
 }
@@ -548,8 +546,8 @@ export function toSwapDto(swap: Swap): SwapDto {
     dex: swap.dex as Hash,
     from: swap.from,
     to: swap.to,
-    fromAmount: parseToBigInt(swap.fromAmount.toFixed()),
-    toAmount: parseToBigInt(swap.toAmount.toFixed()),
+    fromAmount: parseDecimalToBigInt(swap.fromAmount),
+    toAmount: parseDecimalToBigInt(swap.toAmount),
     createdAt: swap.createdAt,
   };
 }
@@ -566,9 +564,9 @@ export function toPriceDto(
     transactionIndex: price.transactionIndex,
     tokenAddress: price.tokenAddress,
     // TODO: use parseDecimalToBigInt
-    usdPrice: parseToBigInt(price.usdPrice.toFixed()),
-    ethPrice: parseToBigInt(price.ethPrice.toFixed()),
-    btcPrice: parseToBigInt(price.btcPrice.toFixed()),
+    usdPrice: parseDecimalToBigInt(price.usdPrice),
+    ethPrice: parseDecimalToBigInt(price.ethPrice),
+    btcPrice: parseDecimalToBigInt(price.btcPrice),
     createdAt: price.createdAt,
     transactionHash: price.transactionHash as Hash,
     usdPriceRefHash: price.usdPriceRefHash,

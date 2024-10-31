@@ -100,7 +100,7 @@ function checkAndGetUndeterminedPrice(
         tokenAddress: swap.from,
         transactionHash: swap.transactionHash,
         transactionIndex: swap.transactionIndex,
-        usd_price: "0",
+        usdPrice: "0",
         ethPrice: "0",
         createdAt: swap.createdAt,
       },
@@ -111,7 +111,7 @@ function checkAndGetUndeterminedPrice(
         tokenAddress: swap.to,
         transactionHash: swap.transactionHash,
         transactionIndex: swap.transactionIndex,
-        usd_price: "0",
+        usdPrice: "0",
         ethPrice: "0",
         createdAt: swap.createdAt,
       },
@@ -170,7 +170,7 @@ function calculatePrices(swap: SwapDto) {
     tokenAddress: swap.from,
     transactionHash: swap.transactionHash,
     transactionIndex: swap.transactionIndex,
-    usd_price: getUsdPrice({
+    usdPrice: getUsdPrice({
       from: swap.from,
       to: swap.to,
       fromAmount: swap.fromAmount,
@@ -191,7 +191,7 @@ function calculatePrices(swap: SwapDto) {
     tokenAddress: swap.to,
     transactionHash: swap.transactionHash,
     transactionIndex: swap.transactionIndex,
-    usd_price: getUsdPrice({
+    usdPrice: getUsdPrice({
       from: swap.to,
       to: swap.from,
       fromAmount: swap.toAmount,

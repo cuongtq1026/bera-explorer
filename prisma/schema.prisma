@@ -256,18 +256,18 @@ model Erc20Price {
   transactionHash  String
   transactionIndex Int
   swapId           BigInt
-  usd_price        Decimal  @db.Decimal(78, 0)
+  usdPrice         Decimal  @db.Decimal(78, 0)
   ethPrice         Decimal  @db.Decimal(78, 0)
   createdAt        DateTime
-  price_ref_hash   String?
+  usdPriceRefHash  String?
   ethPriceRefHash  String?
 
   swap        Swap        @relation(fields: [swapId], references: [id], onDelete: Cascade)
   block       Block       @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
   transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
 
-  priceRef Erc20Price?  @relation("Erc20PriceRef", fields: [price_ref_hash], references: [hash], onDelete: Cascade)
-  refList  Erc20Price[] @relation("Erc20PriceRef")
+  usdPriceRef Erc20Price?  @relation("Erc20PriceRef", fields: [usdPriceRefHash], references: [hash], onDelete: Cascade)
+  usdRefList  Erc20Price[] @relation("Erc20PriceRef")
 
   ethPriceRef Erc20Price?  @relation("Erc20EthPriceRef", fields: [ethPriceRefHash], references: [hash], onDelete: Cascade)
   ethRefList  Erc20Price[] @relation("Erc20EthPriceRef")

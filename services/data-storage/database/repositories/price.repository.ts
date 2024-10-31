@@ -10,10 +10,12 @@ export type PriceCreateInput = {
   transactionIndex: number;
   usdPrice: string;
   ethPrice: string;
+  btcPrice: string;
   createdAt: Date | string;
   swapId: bigint | number;
   usdPriceRefHash?: string | null;
   ethPriceRefHash?: string | null;
+  btcPriceRefHash?: string | null;
 };
 
 export async function createPricesAndReturn(

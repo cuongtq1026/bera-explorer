@@ -3,7 +3,7 @@ import { createLogger, format, transports } from "winston";
 import DailyRotateFile from "winston-daily-rotate-file";
 
 const logger = createLogger({
-  level: "info",
+  level: process.env.LOGGER_LEVEL ?? "info",
   defaultMeta: {
     environment: process.env.NODE_ENV || "development",
   },

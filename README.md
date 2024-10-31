@@ -18,8 +18,8 @@
 - [x] **Swap**
 - [x] **Token**
 - [x] **Token USD Price**
+- [x] **Token ETH Price**
 - [ ] **Token BTC Price**
-- [ ] **Token ETH Price**
 
 
 ## Technologies

@@ -19,7 +19,7 @@
 - [x] **Token**
 - [x] **Token USD Price**
 - [x] **Token ETH Price**
-- [ ] **Token BTC Price**
+- [x] **Token BTC Price**
 
 
 ## Technologies

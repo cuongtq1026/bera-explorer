@@ -8,6 +8,7 @@ import prisma from "@database/prisma.ts";
 import { replacePricesByBlockNumber } from "@database/repositories/price.repository.ts";
 import { getSwap } from "@database/repositories/swap.repository.ts";
 import { PriceProcessor } from "@processors/price/price.processor.ts";
+import { produce } from "immer";
 import { concatMap, interval, of, retry, tap } from "rxjs";
 
 import { KafkaReachedEndIndexedOffset } from "../../../../exceptions/consumer.exception.ts";
@@ -123,53 +124,55 @@ export class PriceKafkaStream extends AbstractKafkaStream {
                       );
                     });
 
-                  const updatedUsdPrices = bridgeUsdSwapPrices(prices);
-                  const updatedEthPrices =
-                    bridgeETHSwapPrices(updatedUsdPrices);
-                  const updatedBtcPrices =
-                    bridgeBtcSwapPrices(updatedEthPrices);
+                  const updatedPrices = produce(prices, (prices) => {
+                    const updatedUsdPrices = bridgeUsdSwapPrices(prices);
+                    const updatedEthPrices =
+                      bridgeETHSwapPrices(updatedUsdPrices);
+
+                    return bridgeBtcSwapPrices(updatedEthPrices);
+                  });
                   return {
                     blockNumber,
-                    prices: updatedBtcPrices,
+                    prices: updatedPrices,
                     insertedPrices,
                   };
                 }),
                 // start filling usd in
                 concatMap(async ({ blockNumber, prices, insertedPrices }) => {
-                  await fillInUsdPrice({
+                  const filledPrices = await fillInUsdPrice({
                     blockNumber,
                     prices,
                     serviceLogger: this.serviceLogger,
                   });
                   return {
                     blockNumber: blockNumber,
-                    prices: prices,
+                    prices: filledPrices,
                     insertedPrices,
                   };
                 }),
                 // start filling eth in
                 concatMap(async ({ blockNumber, prices, insertedPrices }) => {
-                  await fillInEthPrice({
+                  const filledPrices = await fillInEthPrice({
                     blockNumber,
                     prices,
                     serviceLogger: this.serviceLogger,
                   });
                   return {
                     blockNumber: blockNumber,
-                    prices: prices,
+                    prices: filledPrices,
                     insertedPrices,
                   };
                 }),
                 // start filling eth in
                 concatMap(async ({ blockNumber, prices, insertedPrices }) => {
-                  await fillInBtcPrice({
+                  const filledPrices = await fillInBtcPrice({
                     blockNumber,
                     prices,
                     serviceLogger: this.serviceLogger,
                   });
                   return {
                     blockNumber: blockNumber,
-                    prices: prices,
+                    prices: filledPrices,
                     insertedPrices,
                   };
                 }),

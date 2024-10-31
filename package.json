@@ -66,6 +66,7 @@
     "express": "^4.21.0",
     "express-async-errors": "^3.1.1",
     "http-status-codes": "^2.3.0",
+    "immer": "^10.1.1",
     "json-bigint": "^1.0.0",
     "pkgroll": "^2.5.0",
     "prom-client": "^15.1.3",

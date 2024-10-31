@@ -1,6 +1,7 @@
 import type { PriceDto, SwapDto } from "@database/dto.ts";
 import prisma from "@database/prisma.ts";
 import Decimal from "decimal.js";
+import { createDraft, finishDraft } from "immer";
 
 import {
   isBTC,
@@ -18,7 +19,6 @@ import { parseDecimalToBigInt } from "../../../../utils.ts";
  * @param prices Array of PriceDto belonging to the same swap
  * @returns Array of PriceDto with bridged USD prices
  */
-// TODO: Handle immutable
 export function bridgeUsdSwapPrices(
   prices: (PriceDto & {
     swap: SwapDto;
@@ -233,9 +233,15 @@ export async function fillInUsdPrice(args: {
   prices: (PriceDto & {
     swap: SwapDto;
   })[];
-}) {
+}): Promise<
+  (PriceDto & {
+    swap: SwapDto;
+  })[]
+> {
   const { prices, serviceLogger, blockNumber } = args;
-  for (const price of prices) {
+  const draftPrices = createDraft(prices);
+
+  for (const price of draftPrices) {
     if (price.usdPrice !== 0n) {
       continue;
     }
@@ -333,6 +339,8 @@ export async function fillInUsdPrice(args: {
     price.usdPrice = parseDecimalToBigInt(calculatedPrice);
     price.usdPriceRefHash = previousPriceSwapToken.hash;
   }
+
+  return finishDraft(draftPrices);
 }
 
 export async function fillInEthPrice(args: {
@@ -341,9 +349,15 @@ export async function fillInEthPrice(args: {
   prices: (PriceDto & {
     swap: SwapDto;
   })[];
-}) {
+}): Promise<
+  (PriceDto & {
+    swap: SwapDto;
+  })[]
+> {
   const { prices, serviceLogger, blockNumber } = args;
-  for (const price of prices) {
+  const draftPrices = createDraft(prices);
+
+  for (const price of draftPrices) {
     if (price.ethPrice !== 0n) {
       continue;
     }
@@ -441,6 +455,8 @@ export async function fillInEthPrice(args: {
     price.ethPrice = parseDecimalToBigInt(calculatedPrice);
     price.ethPriceRefHash = previousPriceSwapToken.hash;
   }
+
+  return finishDraft(draftPrices);
 }
 
 export async function fillInBtcPrice(args: {
@@ -449,8 +465,14 @@ export async function fillInBtcPrice(args: {
   prices: (PriceDto & {
     swap: SwapDto;
   })[];
-}) {
+}): Promise<
+  (PriceDto & {
+    swap: SwapDto;
+  })[]
+> {
   const { prices, serviceLogger, blockNumber } = args;
+  const draftPrices = createDraft(prices);
+
   for (const price of prices) {
     if (price.btcPrice !== 0n) {
       continue;
@@ -549,4 +571,6 @@ export async function fillInBtcPrice(args: {
     price.btcPrice = parseDecimalToBigInt(calculatedPrice);
     price.btcPriceRefHash = previousPriceSwapToken.hash;
   }
+
+  return finishDraft(draftPrices);
 }

@@ -563,7 +563,6 @@ export function toPriceDto(
     swapId: price.swapId,
     transactionIndex: price.transactionIndex,
     tokenAddress: price.tokenAddress,
-    // TODO: use parseDecimalToBigInt
     usdPrice: parseDecimalToBigInt(price.usdPrice),
     ethPrice: parseDecimalToBigInt(price.ethPrice),
     btcPrice: parseDecimalToBigInt(price.btcPrice),

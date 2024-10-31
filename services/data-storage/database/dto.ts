@@ -175,8 +175,10 @@ export type PriceDto = {
   transactionIndex: number;
   swapId: bigint | number;
   usd_price: bigint;
+  ethPrice: bigint;
   createdAt: Date;
   price_ref_hash?: string | null;
+  ethPriceRefHash?: string | null;
 
   swap?: SwapDto;
 };
@@ -562,9 +564,11 @@ export function toPriceDto(
     transactionIndex: price.transactionIndex,
     tokenAddress: price.tokenAddress,
     usd_price: parseToBigInt(price.usd_price.toFixed()),
+    ethPrice: parseToBigInt(price.ethPrice.toFixed()),
     createdAt: price.createdAt,
     transactionHash: price.transactionHash as Hash,
     price_ref_hash: price.price_ref_hash,
+    ethPriceRefHash: price.ethPriceRefHash,
   };
 
   if (price.swap) {
@@ -582,8 +586,10 @@ export function dtoToPriceCreateInput(priceDto: PriceDto): PriceCreateInput {
     swapId: priceDto.swapId,
     tokenAddress: priceDto.tokenAddress,
     usd_price: priceDto.usd_price.toString(),
+    ethPrice: priceDto.ethPrice.toString(),
     createdAt: priceDto.createdAt,
     transactionHash: priceDto.transactionHash as Hash,
     price_ref_hash: priceDto.price_ref_hash,
+    ethPriceRefHash: priceDto.ethPriceRefHash,
   };
 }

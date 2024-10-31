@@ -17,7 +17,11 @@ export class LogProcessor extends AbstractProcessor<
   Hash,
   LogDto,
   TransferCreateInput | null,
-  { transferHash: Hash | null }
+  { transferHash: Hash | null },
+  Hash,
+  TransferCreateInput | null,
+  void,
+  void
 > {
   constructor() {
     super({

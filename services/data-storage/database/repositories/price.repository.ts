@@ -9,9 +9,11 @@ export type PriceCreateInput = {
   transactionHash: string;
   transactionIndex: number;
   usd_price: string;
+  ethPrice: string;
   createdAt: Date | string;
   swapId: bigint | number;
   price_ref_hash?: string | null;
+  ethPriceRefHash?: string | null;
 };
 
 export async function createPricesAndReturn(

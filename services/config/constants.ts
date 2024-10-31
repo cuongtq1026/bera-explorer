@@ -32,13 +32,21 @@ export const ETH_ADDRESS = "0x0000000000000000000000000000000000000000";
 export const WRAPPED_ETH_ADDRESS = "0x7507c1dc16935b82698e4c63f2746a2fcf994df8";
 
 // Berachain as default
+type TokenDtoWithDecimal = TokenDto & {
+  oneDecimalValue: Decimal;
+};
 type Chain = {
   id: number;
   name: string;
-  stableCoins: TokenDto[];
+  stableCoins: TokenDtoWithDecimal[];
 };
+export const ETH_DECIMAL = process.env.ETH_DECIMAL
+  ? +process.env.ETH_DECIMAL
+  : 18;
 export const USD_DECIMAL = 18;
-export const ONE_USD = new Decimal(10).pow(USD_DECIMAL);
+export const ZERO_DECIMAL_VALUE = new Decimal(0);
+export const ONE_USD_VALUE = new Decimal(10).pow(USD_DECIMAL);
+export const ONE_ETH_VALUE = new Decimal(10).pow(ETH_DECIMAL);
 export const CHAIN_ID = process.env.CHAIN_ID ? +process.env.CHAIN_ID : 80084;
 export const chains: { [chainId: number]: Chain } = {
   "80084": {
@@ -50,17 +58,23 @@ export const chains: { [chainId: number]: Chain } = {
         name: "Honey Token",
         symbol: "HONEY",
         decimals: 18,
+        oneDecimalValue: new Decimal(10).pow(18), // decimals right above
         totalSupply: 11737742132405135320233771727n,
       },
     ],
   },
 };
+export function isETH(tokenAddress: string): boolean {
+  return tokenAddress === ETH_ADDRESS;
+}
 export function isStableCoin(tokenAddress: string): boolean {
   const stableCoins = chains[CHAIN_ID].stableCoins;
 
   return stableCoins.some((stableCoin) => stableCoin.address === tokenAddress);
 }
-export function getStableCoin(tokenAddress: string): TokenDto | null {
+export function getStableCoin(
+  tokenAddress: string,
+): TokenDtoWithDecimal | null {
   const stableCoins = chains[CHAIN_ID].stableCoins;
 
   const result = stableCoins.find(
@@ -70,4 +84,13 @@ export function getStableCoin(tokenAddress: string): TokenDto | null {
     return null;
   }
   return result;
+}
+export function getStableCoinOneDecimalValue(
+  tokenAddress: string,
+): Decimal | null {
+  const stableCoin = getStableCoin(tokenAddress);
+  if (!stableCoin) {
+    return null;
+  }
+  return stableCoin.oneDecimalValue;
 }

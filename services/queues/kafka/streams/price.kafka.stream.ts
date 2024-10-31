@@ -12,6 +12,8 @@ import Decimal from "decimal.js";
 import { concatMap, interval, of, retry, tap } from "rxjs";
 
 import {
+  isBTC,
+  isETH,
   isStableCoin,
   ONE_BTC_VALUE,
   ONE_ETH_VALUE,
@@ -173,7 +175,7 @@ export class PriceKafkaStream extends AbstractKafkaStream {
                   };
                 }),
                 // replace prices
-                concatMap(async ({ blockNumber, prices }) => {
+                concatMap(async ({ blockNumber, prices, insertedPrices }) => {
                   this.serviceLogger.info(
                     `Replacing prices by blockNumber: ${blockNumber}`,
                   );
@@ -182,47 +184,50 @@ export class PriceKafkaStream extends AbstractKafkaStream {
                     prices.map((price) => dtoToPriceCreateInput(price)),
                   );
 
-                  return prices;
+                  return { prices, insertedPrices };
                 }),
               );
             }),
             // log the data
-            tap((prices) => {
+            tap(({ insertedPrices }) => {
               return this.serviceLogger.info(
-                `Sending to topic ${this.toTopicName}: Price length: ${prices.length}.`,
+                `Sending to topic ${this.toTopicName}: Price length: ${insertedPrices.length}.`,
               );
             }),
             // send to the topic
-            concatMap(async (prices) => {
-              if (!prices.length) {
+            concatMap(async ({ prices, insertedPrices }) => {
+              if (!prices.length && !insertedPrices.length) {
                 return;
               }
               const kafkaTransaction = await kafkaConnection.transaction();
               try {
-                // TODO: Fix duplicate messages
-                await sendKafkaMessageByTopic(
-                  this.toTopic,
-                  prices.map<PriceMessagePayload>((price) => ({
-                    priceId: price.hash,
-                  })),
-                  {
-                    transaction: kafkaTransaction,
-                  },
-                );
-                await kafkaTransaction.sendOffsets({
-                  consumer: this.getConsumer(),
-                  topics: [
+                if (insertedPrices.length) {
+                  await sendKafkaMessageByTopic(
+                    this.toTopic,
+                    insertedPrices.map<PriceMessagePayload>((price) => ({
+                      priceId: price.hash,
+                    })),
                     {
-                      topic: eachMessagePayload.topic,
-                      partitions: [
-                        {
-                          partition: eachMessagePayload.partition,
-                          offset: eachMessagePayload.message.offset,
-                        },
-                      ],
+                      transaction: kafkaTransaction,
                     },
-                  ],
-                });
+                  );
+                }
+                if (prices.length) {
+                  await kafkaTransaction.sendOffsets({
+                    consumer: this.getConsumer(),
+                    topics: [
+                      {
+                        topic: eachMessagePayload.topic,
+                        partitions: [
+                          {
+                            partition: eachMessagePayload.partition,
+                            offset: eachMessagePayload.message.offset,
+                          },
+                        ],
+                      },
+                    ],
+                  });
+                }
 
                 await kafkaTransaction.commit();
               } catch (error: unknown) {
@@ -250,6 +255,7 @@ export class PriceKafkaStream extends AbstractKafkaStream {
  * @param prices Array of PriceDto belonging to the same swap
  * @returns Array of PriceDto with bridged USD prices
  */
+// TODO: Handle immutable
 export function bridgeUsdSwapPrices(
   prices: (PriceDto & {
     swap: SwapDto;
@@ -317,6 +323,79 @@ export function bridgeUsdSwapPrices(
 }
 
 /**
+ * Bridges eth prices within a single swap
+ * @param prices Array of PriceDto belonging to the same swap
+ * @returns Array of PriceDto with bridged ETH prices
+ */
+export function bridgeETHSwapPrices(
+  prices: (PriceDto & {
+    swap: SwapDto;
+  })[],
+): (PriceDto & {
+  swap: SwapDto;
+})[] {
+  if (!prices.length) return [];
+
+  const bridgedPrices: (PriceDto & {
+    swap: SwapDto;
+  })[] = [];
+  const knownEthPrices = new Map<string, Decimal>();
+
+  // First pass: collect known USD prices
+  prices.forEach((price) => {
+    if (isETH(price.tokenAddress)) {
+      knownEthPrices.set(price.tokenAddress, ONE_ETH_VALUE);
+    } else if (price.ethPrice) {
+      knownEthPrices.set(
+        price.tokenAddress,
+        new Decimal(price.ethPrice.toString()),
+      );
+    }
+  });
+
+  console.log("knownEthPrices", knownEthPrices);
+
+  // Second pass: bridge prices using known values
+  prices.forEach((price) => {
+    const updatedPrice = { ...price };
+
+    if (!price.ethPrice && knownEthPrices.has(price.tokenAddress)) {
+      const knownPrice = knownEthPrices.get(price.tokenAddress);
+      if (knownPrice) {
+        updatedPrice.ethPrice = parseDecimalToBigInt(knownPrice);
+      }
+    }
+
+    // If this is part of a swap, try to calculate price using swap ratios
+    if (updatedPrice.swap && !updatedPrice.ethPrice) {
+      const swap = updatedPrice.swap;
+      const fromPrice = knownEthPrices.get(swap.from);
+      const toPrice = knownEthPrices.get(swap.to);
+
+      if (fromPrice) {
+        const ratio = new Decimal(swap.toAmount.toString()).div(
+          new Decimal(swap.fromAmount.toString()),
+        );
+        const calculatedPrice = fromPrice.div(ratio);
+        updatedPrice.ethPrice = parseDecimalToBigInt(calculatedPrice);
+        knownEthPrices.set(swap.to, calculatedPrice);
+      } else if (toPrice) {
+        const ratio = new Decimal(swap.fromAmount.toString()).div(
+          new Decimal(swap.toAmount.toString()),
+        );
+        const calculatedPrice = toPrice.div(ratio);
+        updatedPrice.ethPrice = parseDecimalToBigInt(calculatedPrice);
+        knownEthPrices.set(swap.from, calculatedPrice);
+      }
+    }
+
+    bridgedPrices.push(updatedPrice);
+  });
+
+  return bridgedPrices;
+}
+
+/**
  * Bridges btc prices within a single swap
  * @param prices Array of PriceDto belonging to the same swap
  * @returns Array of PriceDto with bridged btc prices
@@ -337,7 +416,7 @@ export function bridgeBtcSwapPrices(
 
   // First pass: collect known USD prices
   prices.forEach((price) => {
-    if (isStableCoin(price.tokenAddress)) {
+    if (isBTC(price.tokenAddress)) {
       knownBtcPrices.set(price.tokenAddress, ONE_BTC_VALUE);
     } else if (price.btcPrice) {
       knownBtcPrices.set(
@@ -387,77 +466,6 @@ export function bridgeBtcSwapPrices(
   return bridgedPrices;
 }
 
-/**
- * Bridges eth prices within a single swap
- * @param prices Array of PriceDto belonging to the same swap
- * @returns Array of PriceDto with bridged ETH prices
- */
-export function bridgeETHSwapPrices(
-  prices: (PriceDto & {
-    swap: SwapDto;
-  })[],
-): (PriceDto & {
-  swap: SwapDto;
-})[] {
-  if (!prices.length) return [];
-
-  const bridgedPrices: (PriceDto & {
-    swap: SwapDto;
-  })[] = [];
-  const knownEthPrices = new Map<string, Decimal>();
-
-  // First pass: collect known USD prices
-  prices.forEach((price) => {
-    if (isStableCoin(price.tokenAddress)) {
-      knownEthPrices.set(price.tokenAddress, ONE_ETH_VALUE);
-    } else if (price.ethPrice) {
-      knownEthPrices.set(
-        price.tokenAddress,
-        new Decimal(price.ethPrice.toString()),
-      );
-    }
-  });
-
-  // Second pass: bridge prices using known values
-  prices.forEach((price) => {
-    const updatedPrice = { ...price };
-
-    if (!price.ethPrice && knownEthPrices.has(price.tokenAddress)) {
-      const knownPrice = knownEthPrices.get(price.tokenAddress);
-      if (knownPrice) {
-        updatedPrice.ethPrice = parseDecimalToBigInt(knownPrice);
-      }
-    }
-
-    // If this is part of a swap, try to calculate price using swap ratios
-    if (updatedPrice.swap && !updatedPrice.ethPrice) {
-      const swap = updatedPrice.swap;
-      const fromPrice = knownEthPrices.get(swap.from);
-      const toPrice = knownEthPrices.get(swap.to);
-
-      if (fromPrice) {
-        const ratio = new Decimal(swap.toAmount.toString()).div(
-          new Decimal(swap.fromAmount.toString()),
-        );
-        const calculatedPrice = fromPrice.div(ratio);
-        updatedPrice.ethPrice = parseDecimalToBigInt(calculatedPrice);
-        knownEthPrices.set(swap.to, calculatedPrice);
-      } else if (toPrice) {
-        const ratio = new Decimal(swap.fromAmount.toString()).div(
-          new Decimal(swap.toAmount.toString()),
-        );
-        const calculatedPrice = toPrice.div(ratio);
-        updatedPrice.ethPrice = parseDecimalToBigInt(calculatedPrice);
-        knownEthPrices.set(swap.from, calculatedPrice);
-      }
-    }
-
-    bridgedPrices.push(updatedPrice);
-  });
-
-  return bridgedPrices;
-}
-
 async function fillInUsdPrice(args: {
   blockNumber: number | bigint;
   serviceLogger: AppLogger;
@@ -470,7 +478,7 @@ async function fillInUsdPrice(args: {
     if (price.usdPrice !== 0n) {
       continue;
     }
-    serviceLogger.info(
+    serviceLogger.debug(
       `[Price: ${price.hash}] usdPrice is 0. Filling in by the other side of the swap.`,
     );
     // try to get price from other side of the swap
@@ -504,7 +512,7 @@ async function fillInUsdPrice(args: {
       continue;
     }
 
-    serviceLogger.info(
+    serviceLogger.debug(
       `[Price: ${price.hash}] The other side of the swap doesn't have price. Use the previous price.`,
     );
     // if not, use the previous price
@@ -531,7 +539,7 @@ async function fillInUsdPrice(args: {
     }
 
     // if not, use the previous swap price
-    serviceLogger.info(
+    serviceLogger.debug(
       `[Price: ${price.hash}] There's not previous price. Use the previous price of the other side of the swap.`,
     );
     const previousPriceSwapToken = await prisma.erc20Price.findFirst({
@@ -548,14 +556,12 @@ async function fillInUsdPrice(args: {
         { transactionIndex: "desc" },
       ],
     });
-    if (previousPriceSwapToken == null) {
+    if (
+      previousPriceSwapToken == null ||
+      previousPriceSwapToken.usdPrice.eq(0)
+    ) {
       // there's no price for both of them, might both of them be new tokens
       continue;
-    }
-    if (previousPriceSwapToken.usdPrice.eq(0)) {
-      throw Error(
-        `[PriceID: ${price.hash}] Found both previous price with 0 usdPrice.`,
-      );
     }
     // calculate price
     const fromAmount = new Decimal(price.swap.fromAmount.toString());
@@ -580,7 +586,7 @@ async function fillInEthPrice(args: {
     if (price.ethPrice !== 0n) {
       continue;
     }
-    serviceLogger.info(
+    serviceLogger.debug(
       `[Price: ${price.hash}] ethPrice is 0. Filling in by the other side of the swap.`,
     );
     // try to get price from other side of the swap
@@ -614,7 +620,7 @@ async function fillInEthPrice(args: {
       continue;
     }
 
-    serviceLogger.info(
+    serviceLogger.debug(
       `[Price: ${price.hash}] The other side of the swap doesn't have ethPrice. Use the previous ethPrice.`,
     );
     // if not, use the previous price
@@ -641,7 +647,7 @@ async function fillInEthPrice(args: {
     }
 
     // if not, use the previous swap eth price
-    serviceLogger.info(
+    serviceLogger.debug(
       `[Price: ${price.hash}] There's not previous eth price. Use the previous eth price of the other side of the swap.`,
     );
     const previousPriceSwapToken = await prisma.erc20Price.findFirst({
@@ -658,14 +664,12 @@ async function fillInEthPrice(args: {
         { transactionIndex: "desc" },
       ],
     });
-    if (previousPriceSwapToken == null) {
+    if (
+      previousPriceSwapToken == null ||
+      previousPriceSwapToken.ethPrice.eq(0)
+    ) {
       // there's no price for both of them, might both of them be new tokens
       continue;
-    }
-    if (previousPriceSwapToken.ethPrice.eq(0)) {
-      throw Error(
-        `[PriceID: ${price.hash}] Found both previous price with 0 ethPrice.`,
-      );
     }
     // calculate price
     const fromAmount = new Decimal(price.swap.fromAmount.toString());
@@ -690,7 +694,7 @@ async function fillInBtcPrice(args: {
     if (price.btcPrice !== 0n) {
       continue;
     }
-    serviceLogger.info(
+    serviceLogger.debug(
       `[Price: ${price.hash}] btcPrice is 0. Filling in by the other side of the swap.`,
     );
     // try to get price from other side of the swap
@@ -724,7 +728,7 @@ async function fillInBtcPrice(args: {
       continue;
     }
 
-    serviceLogger.info(
+    serviceLogger.debug(
       `[Price: ${price.hash}] The other side of the swap doesn't have btc price. Use the previous btc price.`,
     );
     // if not, use the previous price
@@ -751,7 +755,7 @@ async function fillInBtcPrice(args: {
     }
 
     // if not, use the previous swap price
-    serviceLogger.info(
+    serviceLogger.debug(
       `[Price: ${price.hash}] There's not previous btc price. Use the previous btc price of the other side of the swap.`,
     );
     const previousPriceSwapToken = await prisma.erc20Price.findFirst({
@@ -768,14 +772,12 @@ async function fillInBtcPrice(args: {
         { transactionIndex: "desc" },
       ],
     });
-    if (previousPriceSwapToken == null) {
+    if (
+      previousPriceSwapToken == null ||
+      previousPriceSwapToken.btcPrice.eq(0)
+    ) {
       // there's no price for both of them, might both of them be new tokens
       continue;
-    }
-    if (previousPriceSwapToken.btcPrice.eq(0)) {
-      throw Error(
-        `[PriceID: ${price.hash}] Found both previous price with 0 btcPrice.`,
-      );
     }
     // calculate price
     const fromAmount = new Decimal(price.swap.fromAmount.toString());

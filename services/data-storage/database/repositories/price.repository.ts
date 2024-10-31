@@ -8,11 +8,11 @@ export type PriceCreateInput = {
   tokenAddress: string;
   transactionHash: string;
   transactionIndex: number;
-  usd_price: string;
+  usdPrice: string;
   ethPrice: string;
   createdAt: Date | string;
   swapId: bigint | number;
-  price_ref_hash?: string | null;
+  usdPriceRefHash?: string | null;
   ethPriceRefHash?: string | null;
 };
 

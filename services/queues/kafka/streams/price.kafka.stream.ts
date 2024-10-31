@@ -252,10 +252,10 @@ export function bridgeUsdSwapPrices(
   prices.forEach((price) => {
     if (isStableCoin(price.tokenAddress)) {
       knownUsdPrices.set(price.tokenAddress, ONE_USD_VALUE);
-    } else if (price.usd_price) {
+    } else if (price.usdPrice) {
       knownUsdPrices.set(
         price.tokenAddress,
-        new Decimal(price.usd_price.toString()),
+        new Decimal(price.usdPrice.toString()),
       );
     }
   });
@@ -264,15 +264,15 @@ export function bridgeUsdSwapPrices(
   prices.forEach((price) => {
     const updatedPrice = { ...price };
 
-    if (!price.usd_price && knownUsdPrices.has(price.tokenAddress)) {
+    if (!price.usdPrice && knownUsdPrices.has(price.tokenAddress)) {
       const knownPrice = knownUsdPrices.get(price.tokenAddress);
       if (knownPrice) {
-        updatedPrice.usd_price = parseDecimalToBigInt(knownPrice);
+        updatedPrice.usdPrice = parseDecimalToBigInt(knownPrice);
       }
     }
 
     // If this is part of a swap, try to calculate price using swap ratios
-    if (updatedPrice.swap && !updatedPrice.usd_price) {
+    if (updatedPrice.swap && !updatedPrice.usdPrice) {
       const swap = updatedPrice.swap;
       const fromPrice = knownUsdPrices.get(swap.from);
       const toPrice = knownUsdPrices.get(swap.to);
@@ -282,14 +282,14 @@ export function bridgeUsdSwapPrices(
           new Decimal(swap.fromAmount.toString()),
         );
         const calculatedPrice = fromPrice.div(ratio);
-        updatedPrice.usd_price = parseDecimalToBigInt(calculatedPrice);
+        updatedPrice.usdPrice = parseDecimalToBigInt(calculatedPrice);
         knownUsdPrices.set(swap.to, calculatedPrice);
       } else if (toPrice) {
         const ratio = new Decimal(swap.fromAmount.toString()).div(
           new Decimal(swap.toAmount.toString()),
         );
         const calculatedPrice = toPrice.div(ratio);
-        updatedPrice.usd_price = parseDecimalToBigInt(calculatedPrice);
+        updatedPrice.usdPrice = parseDecimalToBigInt(calculatedPrice);
         knownUsdPrices.set(swap.from, calculatedPrice);
       }
     }
@@ -380,11 +380,11 @@ async function fillInUsdPrice(args: {
 }) {
   const { prices, serviceLogger, blockNumber } = args;
   for (const price of prices) {
-    if (price.usd_price !== 0n) {
+    if (price.usdPrice !== 0n) {
       continue;
     }
     serviceLogger.info(
-      `[Price: ${price.hash}] usd_price is 0. Filling in by the other side of the swap.`,
+      `[Price: ${price.hash}] usdPrice is 0. Filling in by the other side of the swap.`,
     );
     // try to get price from other side of the swap
     const isFrom = price.swap.from === price.tokenAddress;
@@ -402,17 +402,17 @@ async function fillInUsdPrice(args: {
       ],
     });
     // if the other side of the swap token has price, use it
-    if (swapTokenPrice != null && !swapTokenPrice.usd_price.eq(0)) {
+    if (swapTokenPrice != null && !swapTokenPrice.usdPrice.eq(0)) {
       // calculate price
       const fromAmount = new Decimal(price.swap.fromAmount.toString());
       const toAmount = new Decimal(price.swap.toAmount.toString());
       const ratio = isFrom
         ? toAmount.div(fromAmount)
         : fromAmount.div(toAmount);
-      const calculatedPrice = swapTokenPrice.usd_price.mul(ratio);
+      const calculatedPrice = swapTokenPrice.usdPrice.mul(ratio);
 
-      price.usd_price = parseDecimalToBigInt(calculatedPrice);
-      price.price_ref_hash = swapTokenPrice.hash;
+      price.usdPrice = parseDecimalToBigInt(calculatedPrice);
+      price.usdPriceRefHash = swapTokenPrice.hash;
 
       continue;
     }
@@ -436,9 +436,9 @@ async function fillInUsdPrice(args: {
       ],
     });
     // if the previous price has price, use it
-    if (previousPrice != null && !previousPrice.usd_price.eq(0)) {
-      price.usd_price = parseDecimalToBigInt(previousPrice.usd_price);
-      price.price_ref_hash = previousPrice.hash;
+    if (previousPrice != null && !previousPrice.usdPrice.eq(0)) {
+      price.usdPrice = parseDecimalToBigInt(previousPrice.usdPrice);
+      price.usdPriceRefHash = previousPrice.hash;
 
       continue;
     }
@@ -465,19 +465,19 @@ async function fillInUsdPrice(args: {
       // there's no price for both of them, might both of them be new tokens
       continue;
     }
-    if (previousPriceSwapToken.usd_price.eq(0)) {
+    if (previousPriceSwapToken.usdPrice.eq(0)) {
       throw Error(
-        `[PriceID: ${price.hash}] Found both previous price with 0 usd_price.`,
+        `[PriceID: ${price.hash}] Found both previous price with 0 usdPrice.`,
       );
     }
     // calculate price
     const fromAmount = new Decimal(price.swap.fromAmount.toString());
     const toAmount = new Decimal(price.swap.toAmount.toString());
     const ratio = isFrom ? toAmount.div(fromAmount) : fromAmount.div(toAmount);
-    const calculatedPrice = previousPriceSwapToken.usd_price.mul(ratio);
+    const calculatedPrice = previousPriceSwapToken.usdPrice.mul(ratio);
 
-    price.usd_price = parseDecimalToBigInt(calculatedPrice);
-    price.price_ref_hash = previousPriceSwapToken.hash;
+    price.usdPrice = parseDecimalToBigInt(calculatedPrice);
+    price.usdPriceRefHash = previousPriceSwapToken.hash;
   }
 }
 

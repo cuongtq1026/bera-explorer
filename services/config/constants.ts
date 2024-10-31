@@ -67,7 +67,7 @@ export const chains: { [chainId: number]: Chain } = {
     ],
     btcList: [
       {
-        address: "0x2577D24a26f8FA19c1058a8b0106E2c7303454a4",
+        address: "0x2577d24a26f8fa19c1058a8b0106e2c7303454a4",
         name: "Wrapped Bitcoin",
         symbol: "WBTC",
         // it's different from BTC_DECIMAL so be careful

@@ -8,9 +8,12 @@ import { getSwap } from "@database/repositories/swap.repository.ts";
 import Decimal from "decimal.js";
 
 import {
+  getBtcOneDecimalValue,
   getStableCoinOneDecimalValue,
+  isBTC,
   isETH,
   isStableCoin,
+  ONE_BTC_VALUE,
   ONE_ETH_VALUE,
   ONE_USD_VALUE,
   ZERO_DECIMAL_VALUE,
@@ -102,6 +105,7 @@ function checkAndGetUndeterminedPrice(
         transactionIndex: swap.transactionIndex,
         usdPrice: "0",
         ethPrice: "0",
+        btcPrice: "0",
         createdAt: swap.createdAt,
       },
       {
@@ -113,6 +117,7 @@ function checkAndGetUndeterminedPrice(
         transactionIndex: swap.transactionIndex,
         usdPrice: "0",
         ethPrice: "0",
+        btcPrice: "0",
         createdAt: swap.createdAt,
       },
     ];
@@ -162,6 +167,28 @@ function getEthPrice(
   return toDecimal.div(fromDecimal).mul(ONE_ETH_VALUE);
 }
 
+function getBtcPrice(
+  args: Pick<SwapDto, "from" | "to" | "fromAmount" | "toAmount">,
+): Decimal {
+  const { from: fromToken, to: toToken, fromAmount, toAmount } = args;
+  if (isBTC(fromToken)) {
+    return ONE_BTC_VALUE;
+  }
+  if (toAmount === 0n || fromAmount === 0n) {
+    return ZERO_DECIMAL_VALUE;
+  }
+  const toTokenBtcDecimal = getBtcOneDecimalValue(toToken);
+  const isToBtc = toTokenBtcDecimal != null;
+  if (!isToBtc) {
+    // both from and to are not stable coins, return 0
+    return ZERO_DECIMAL_VALUE;
+  }
+
+  const fromDecimal = new Decimal(fromAmount.toString());
+  const toDecimal = new Decimal(toAmount.toString());
+  return toDecimal.div(fromDecimal).mul(toTokenBtcDecimal);
+}
+
 function calculatePrices(swap: SwapDto) {
   const fromTokenPrice: PriceCreateInput = {
     hash: `${swap.id}-1`,
@@ -177,6 +204,12 @@ function calculatePrices(swap: SwapDto) {
       toAmount: swap.toAmount,
     }).toString(),
     ethPrice: getEthPrice({
+      from: swap.from,
+      to: swap.to,
+      fromAmount: swap.fromAmount,
+      toAmount: swap.toAmount,
+    }).toString(),
+    btcPrice: getBtcPrice({
       from: swap.from,
       to: swap.to,
       fromAmount: swap.fromAmount,
@@ -198,6 +231,12 @@ function calculatePrices(swap: SwapDto) {
       toAmount: swap.fromAmount,
     }).toString(),
     ethPrice: getEthPrice({
+      from: swap.to,
+      to: swap.from,
+      fromAmount: swap.toAmount,
+      toAmount: swap.fromAmount,
+    }).toString(),
+    btcPrice: getBtcPrice({
       from: swap.to,
       to: swap.from,
       fromAmount: swap.toAmount,

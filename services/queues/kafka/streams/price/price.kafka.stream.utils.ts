@@ -116,8 +116,6 @@ export function bridgeETHSwapPrices(
     }
   });
 
-  console.log("knownEthPrices", knownEthPrices);
-
   // Second pass: bridge prices using known values
   prices.forEach((price) => {
     const updatedPrice = { ...price };

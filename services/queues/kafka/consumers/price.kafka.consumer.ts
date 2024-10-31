@@ -1,6 +1,6 @@
 import type { KafkaJS } from "@confluentinc/kafka-javascript";
 import { getSwap } from "@database/repositories/swap.repository.ts";
-import { PriceProcessor } from "@processors/price.processor.ts";
+import { PriceProcessor } from "@processors/price/price.processor.ts";
 import { plainToInstance } from "class-transformer";
 
 import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";

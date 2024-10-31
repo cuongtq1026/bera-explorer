@@ -13,7 +13,7 @@ import {
 import { BalanceProcessor } from "@processors/balance.processor.ts";
 import { BlockProcessor } from "@processors/block.processor.ts";
 import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
-import { PriceProcessor } from "@processors/price.processor.ts";
+import { PriceProcessor } from "@processors/price/price.processor.ts";
 import { SwapProcessor } from "@processors/swap.processor.ts";
 import { TokenProcessor } from "@processors/token.processor.ts";
 import { TransactionProcessor } from "@processors/transaction.processor.ts";
@@ -32,7 +32,7 @@ import { TransactionKafkaConsumer } from "./services/queues/kafka/consumers/tran
 import { TransferKafkaConsumer } from "./services/queues/kafka/consumers/transfer.kafka.consumer.ts";
 import kafkaConnection from "./services/queues/kafka/kafka.connection.ts";
 import { sendToBlockTopic } from "./services/queues/kafka/producers/block.kafka.producer.ts";
-import { PriceKafkaStream } from "./services/queues/kafka/streams/price.kafka.stream.ts";
+import { PriceKafkaStream } from "./services/queues/kafka/streams/price";
 import { TransactionKafkaStream } from "./services/queues/kafka/streams/transaction.kafka.stream.ts";
 import { BlockConsumer } from "./services/queues/rabbitmq/consumers/block.consumer.ts";
 import { DlxConsumer } from "./services/queues/rabbitmq/consumers/dlx.consumer.ts";

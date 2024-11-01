@@ -17,9 +17,7 @@
 - [x] **Balance history**
 - [x] **Swap**
 - [x] **Token**
-- [x] **Token USD Price**
-- [x] **Token ETH Price**
-- [x] **Token BTC Price**
+- [x] **Token Price (USD/ETH/BTC)**
 
 
 ## Technologies

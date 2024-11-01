@@ -183,6 +183,7 @@ export function toPriceCreateInput(priceDto: PriceDto): PriceCreateInput {
     transactionHash: priceDto.transactionHash,
     usdPrice: priceDto.usdPrice.toString(),
     ethPrice: priceDto.ethPrice.toString(),
+    btcPrice: priceDto.btcPrice.toString(),
     createdAt: priceDto.createdAt,
     swapId: priceDto.swapId,
     blockNumber: priceDto.blockNumber,

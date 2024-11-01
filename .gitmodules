@@ -1,0 +1,6 @@
+[submodule "bera-contracts/lib/forge-std"]
+	path = bera-contracts/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "contracts"]
+	path = contracts
+	url = git@github.com:cuongtq1026/bera-contracts.git

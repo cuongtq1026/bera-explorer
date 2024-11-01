@@ -1,9 +1,10 @@
 # Bera Explorer
 
-**Bera Explorer** is a blockchain explorer composed of three main services:
+**Bera Explorer** is a blockchain explorer projects composed of four main services:
 - **Crawler**: Retrieves data from RPC nodes and stores it in a relational database (Postgres).
 - **API Server**: Serves the stored data through a REST API (Express).
 - **Web Client**: Provides a user interface to interact with the API (Next).
+- **Contracts**: Provides a set of smart contracts that are used by the Crawler.
 
 ## Data Model
 - [x] **Block**

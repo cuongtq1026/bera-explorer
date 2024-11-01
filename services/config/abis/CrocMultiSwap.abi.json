@@ -1,149 +1,149 @@
 [
   {
+    "type": "constructor",
     "inputs": [
       {
-        "internalType": "address",
         "name": "_crocSwapDex",
-        "type": "address"
+        "type": "address",
+        "internalType": "address"
       },
       {
-        "internalType": "address",
         "name": "_crocImpact",
-        "type": "address"
+        "type": "address",
+        "internalType": "address"
       },
       {
-        "internalType": "address",
         "name": "_crocQuery",
-        "type": "address"
+        "type": "address",
+        "internalType": "address"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [],
+    "type": "receive",
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
     "name": "crocSwapDex",
-    "outputs": [
-      {
-        "internalType": "contract CrocSwapDex",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "poolIdx",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "base",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "quote",
-            "type": "address"
-          },
-          {
-            "internalType": "bool",
-            "name": "isBuy",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct SwapHelpers.SwapStep[]",
-        "name": "_steps",
-        "type": "tuple[]"
-      },
-      {
-        "internalType": "uint128",
-        "name": "_amount",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint128",
-        "name": "_minOut",
-        "type": "uint128"
-      }
-    ],
-    "name": "multiSwap",
-    "outputs": [
-      {
-        "internalType": "uint128",
-        "name": "out",
-        "type": "uint128"
-      }
-    ],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "poolIdx",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "base",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "quote",
-            "type": "address"
-          },
-          {
-            "internalType": "bool",
-            "name": "isBuy",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct SwapHelpers.SwapStep[]",
-        "name": "_steps",
-        "type": "tuple[]"
-      },
-      {
-        "internalType": "uint128",
-        "name": "_amount",
-        "type": "uint128"
-      }
-    ],
-    "name": "previewMultiSwap",
-    "outputs": [
-      {
-        "internalType": "uint128",
-        "name": "out",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint256",
-        "name": "predictedQty",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [],
-    "name": "retire",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract CrocSwapDex"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
-    "stateMutability": "payable",
-    "type": "receive"
+    "type": "function",
+    "name": "multiSwap",
+    "inputs": [
+      {
+        "name": "_steps",
+        "type": "tuple[]",
+        "internalType": "struct SwapHelpers.SwapStep[]",
+        "components": [
+          {
+            "name": "poolIdx",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "base",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "quote",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "isBuy",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      },
+      {
+        "name": "_amount",
+        "type": "uint128",
+        "internalType": "uint128"
+      },
+      {
+        "name": "_minOut",
+        "type": "uint128",
+        "internalType": "uint128"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "type": "uint128",
+        "internalType": "uint128"
+      }
+    ],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "previewMultiSwap",
+    "inputs": [
+      {
+        "name": "_steps",
+        "type": "tuple[]",
+        "internalType": "struct SwapHelpers.SwapStep[]",
+        "components": [
+          {
+            "name": "poolIdx",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "base",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "quote",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "isBuy",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      },
+      {
+        "name": "_amount",
+        "type": "uint128",
+        "internalType": "uint128"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "type": "uint128",
+        "internalType": "uint128"
+      },
+      {
+        "name": "predictedQty",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "retire",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   }
 ]

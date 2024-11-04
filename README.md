@@ -39,6 +39,9 @@ The project uses the following technologies:
 - Viem (Ethereum tools)
 - Next (React)
 - Avro (Data serialization)
+- Foundry (Smart contract development)
+- Solidity (Smart contract language)
+- OpenZeppelin (Smart contract libraries)
 
 ## Structures
 ```
@@ -58,6 +61,8 @@ The project uses the following technologies:
 │    ├── migrations
 │    └── schema.prisma
 ├── prometheus.yml
+├── contracts # Smart contract source code -> https://github.com/cuongtq1026/bera-contracts/tree/main
+├── config # Configuration files
 ├── services
 │    ├── api # API Server using Express
 │    ├── config

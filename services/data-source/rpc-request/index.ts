@@ -18,6 +18,12 @@ export class RpcRequest extends AbstractConnectable {
   private debugClients: RpcDebugClient[];
   private nextClientIndex = 0;
 
+  constructor() {
+    super({
+      logger: appLogger.namespace(RpcRequest.name),
+    });
+  }
+
   async connect() {
     if (this.connected && this.clients) return;
 

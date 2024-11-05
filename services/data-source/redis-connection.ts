@@ -8,6 +8,12 @@ const serviceLogger = appLogger.namespace("Redis");
 export class RedisConnection extends AbstractConnectable {
   private client: RedisClientType;
 
+  constructor() {
+    super({
+      logger: appLogger.namespace(RedisConnection.name),
+    });
+  }
+
   async connect() {
     if (this.connected && this.client) return;
 

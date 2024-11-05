@@ -215,8 +215,9 @@ export class PriceKafkaStream extends AbstractKafkaStream {
                   );
                 }
                 if (prices.length) {
+                  const group = await this.getConsumer().describeGroup();
                   await kafkaTransaction.sendOffsets({
-                    consumer: this.getConsumer(),
+                    consumerGroupId: group.groupId,
                     topics: [
                       {
                         topic: eachMessagePayload.topic,

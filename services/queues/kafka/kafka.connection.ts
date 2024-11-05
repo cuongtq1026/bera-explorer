@@ -10,7 +10,7 @@ import {
   type Producer,
   type Transaction,
 } from "kafkajs";
-import { concatMap, Subject } from "rxjs";
+import { Subject } from "rxjs";
 
 import { appLogger } from "../../monitor/app.logger.ts";
 import { topics } from "./index.ts";
@@ -260,13 +260,12 @@ export class KafkaConnection extends AbstractConnectable {
   }
 
   public async consumeLatestMessage<T extends keyof typeof topics>(
-    topic: T,
+    topicKey: T,
   ): ReturnType<typeof this.decode<T>> {
-    const topicName = topics[topic].name;
-    const subject = new Subject<EachMessagePayload>();
-
     await this.checkConnection();
 
+    const subject = new Subject<EachMessagePayload>();
+    const topicName = topics[topicKey].name;
     const envGroupId = process.env.KAFKA_GROUP_ID;
     if (!envGroupId) {
       throw new Error(`Missing KAFKA_GROUP_ID`);
@@ -278,41 +277,50 @@ export class KafkaConnection extends AbstractConnectable {
       groupId: groupIdTopic,
     });
 
+    const topicOffsets = await this.admin.fetchTopicOffsets(topicName);
+
+    // Get the latest offset
+    const latestPartitionOffsets = topicOffsets
+      .map((partitionOffset) => ({
+        partition: partitionOffset.partition,
+        offset: (parseInt(partitionOffset.offset) - 2).toString(), // Offset -1 for the last message
+      }))
+      .sort((a, b) => parseInt(a.offset) - parseInt(b.offset));
+    const latestPartitionOffset = latestPartitionOffsets[0];
+
     serviceLogger.info(`⌛  Connecting to Consumer ${groupIdTopic}`);
     await consumer.connect();
     serviceLogger.info(`✅  Connected to Consumer ${groupIdTopic}`);
-    // const topicPartitions = consumer.paused();
 
     await consumer.subscribe({
       topics: [topicName],
-      fromBeginning: false,
+      fromBeginning: true,
     });
 
-    consumer.run({
+    await consumer.run({
       eachMessage: async (eachMessagePayload): Promise<void> => {
-        console.log("called", eachMessagePayload);
         eachMessagePayload.pause();
         subject.next(eachMessagePayload);
       },
-      autoCommit: false,
+    });
+
+    consumer.seek({
+      topic: topicName,
+      partition: latestPartitionOffset.partition,
+      offset: latestPartitionOffset.offset,
     });
 
     const lastMessage = await new Promise<Buffer>((resolve) => {
-      subject.asObservable().pipe(
-        concatMap(async (eachMessagePayload: EachMessagePayload) => {
+      subject.asObservable().subscribe({
+        next: (eachMessagePayload) => {
           consumer.disconnect().then(() => {
             if (!eachMessagePayload.message.value) {
               throw new Error(`Missing message value`);
             }
             resolve(eachMessagePayload.message.value);
           });
-        }),
-      );
-
-      subject.subscribe();
-
-      // console.log("resumed", topicPartitions);
-      // consumer.resume(topicPartitions);
+        },
+      });
     });
 
     return this.decode<T>(lastMessage);

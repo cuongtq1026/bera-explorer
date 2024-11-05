@@ -585,7 +585,7 @@ switch (command) {
     switch (modelToSchedule) {
       case "block": {
         const schedule = new BlockSchedule();
-        await schedule.execute();
+        schedule.run().then();
         break;
       }
       default: {

@@ -32,3 +32,7 @@ export function shortenEthAddress(address: string | null): string {
 export function getSignature(input: string) {
   return input.slice(0, 10);
 }
+
+export async function wait(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(() => resolve(undefined), ms));
+}

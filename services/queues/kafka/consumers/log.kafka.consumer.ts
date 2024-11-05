@@ -1,6 +1,6 @@
-import type { KafkaJS } from "@confluentinc/kafka-javascript/";
 import prisma from "@database/prisma.ts";
 import { plainToInstance } from "class-transformer";
+import type { EachMessagePayload } from "kafkajs";
 import type { Hash } from "viem";
 
 import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
@@ -19,9 +19,7 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
     });
   }
 
-  public async handler(
-    eachMessagePayload: KafkaJS.EachMessagePayload,
-  ): Promise<void> {
+  public async handler(eachMessagePayload: EachMessagePayload): Promise<void> {
     const rawDecodedContent =
       await this.getRawDecodedData<typeof this.topic>(eachMessagePayload);
 
@@ -81,7 +79,7 @@ export class LogKafkaConsumer extends AbstractKafkaConsumer {
   }
 
   public async onFinish(
-    eachMessagePayload: KafkaJS.EachMessagePayload,
+    eachMessagePayload: EachMessagePayload,
     data: { transactionHash: string; logs: string[] },
   ): Promise<void> {
     const { logs } = data;

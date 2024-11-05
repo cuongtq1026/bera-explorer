@@ -1,4 +1,4 @@
-import type { KafkaJS } from "@confluentinc/kafka-javascript";
+import type { EachMessagePayload } from "kafkajs";
 
 import { AppLogger } from "../../../monitor/app.logger.ts";
 import type { IConsumer } from "../../consumer.interface.ts";
@@ -8,7 +8,7 @@ import { KafkaDecodeConsumer } from "../kafka.interface.ts";
 
 export abstract class AbstractKafkaConsumer
   extends KafkaDecodeConsumer
-  implements IConsumer<void, KafkaJS.EachMessagePayload>
+  implements IConsumer<void, EachMessagePayload>
 {
   private topicName: string;
   protected abstract topic: keyof typeof topics;
@@ -42,25 +42,23 @@ export abstract class AbstractKafkaConsumer
     await kafkaConnection.consume({
       topic: this.topicName,
       groupId: this.consumerName,
-      eachMessageHandler: (message: KafkaJS.EachMessagePayload) =>
+      eachMessageHandler: (message: EachMessagePayload) =>
         this.execute(message),
     });
   }
 
-  public async execute(
-    eachMessagePayload: KafkaJS.EachMessagePayload,
-  ): Promise<void> {
+  public async execute(eachMessagePayload: EachMessagePayload): Promise<void> {
     this.serviceLogger.info(`Handling message.`);
     await this.handler(eachMessagePayload);
     this.serviceLogger.info(`Handle message successfully.`);
   }
 
   public abstract handler(
-    eachMessagePayload: KafkaJS.EachMessagePayload,
+    eachMessagePayload: EachMessagePayload,
   ): Promise<void>;
 
   public async onFinish(
-    eachMessagePayload: KafkaJS.EachMessagePayload,
+    eachMessagePayload: EachMessagePayload,
     _data: any,
   ): Promise<void> {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;

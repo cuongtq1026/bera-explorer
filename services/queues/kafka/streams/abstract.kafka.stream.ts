@@ -1,4 +1,4 @@
-import type { KafkaJS } from "@confluentinc/kafka-javascript";
+import type { Consumer, EachMessagePayload } from "kafkajs";
 import { filter, first, Subject } from "rxjs";
 
 import { type AppLogger } from "../../../monitor/app.logger.ts";
@@ -12,8 +12,8 @@ export abstract class AbstractKafkaStream extends KafkaDecodeConsumer {
   protected toTopicName: string | null;
   protected abstract fromTopic: keyof typeof topics;
   protected abstract toTopic: keyof typeof topics | null;
-  private readonly subject: Subject<KafkaJS.EachMessagePayload>;
-  private consumer: KafkaJS.Consumer;
+  private readonly subject: Subject<EachMessagePayload>;
+  private consumer: Consumer;
   private unCommitted = 0;
   private unCommittedSubject = new Subject<number>();
 
@@ -89,7 +89,7 @@ export abstract class AbstractKafkaStream extends KafkaDecodeConsumer {
     this.consumer = await kafkaConnection.consume({
       topic: this.fromTopicName,
       groupId: this.consumerName,
-      eachMessageHandler: async (message: KafkaJS.EachMessagePayload) => {
+      eachMessageHandler: async (message: EachMessagePayload) => {
         if (this.unCommitted < this.MAX_UNCOMMITED_MESSAGES) {
           this.increaseUncommitted();
           this.subject.next(message);

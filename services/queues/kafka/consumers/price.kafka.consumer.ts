@@ -1,7 +1,7 @@
-import type { KafkaJS } from "@confluentinc/kafka-javascript";
 import { getSwap } from "@database/repositories/swap.repository.ts";
 import { PriceProcessor } from "@processors/price/price.processor.ts";
 import { plainToInstance } from "class-transformer";
+import type { EachMessagePayload } from "kafkajs";
 
 import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
 import { appLogger } from "../../../monitor/app.logger.ts";
@@ -19,9 +19,7 @@ export class PriceKafkaConsumer extends AbstractKafkaConsumer {
     });
   }
 
-  public async handler(
-    eachMessagePayload: KafkaJS.EachMessagePayload,
-  ): Promise<void> {
+  public async handler(eachMessagePayload: EachMessagePayload): Promise<void> {
     const rawDecodedContent =
       await this.getRawDecodedData<typeof this.topic>(eachMessagePayload);
 

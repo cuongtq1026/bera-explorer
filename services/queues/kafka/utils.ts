@@ -1,7 +1,7 @@
-import { KafkaJS } from "@confluentinc/kafka-javascript";
+import type { EachMessagePayload } from "kafkajs";
 
 export function getKafkaMessageId(
-  eachMessagePayload: KafkaJS.EachMessagePayload,
+  eachMessagePayload: EachMessagePayload,
   consumerName: string,
 ) {
   return `${consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;

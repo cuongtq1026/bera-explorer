@@ -1,11 +1,18 @@
-import { KafkaJS } from "@confluentinc/kafka-javascript";
-import type { EachMessagePayload } from "@confluentinc/kafka-javascript/types/kafkajs";
 import { AbstractConnectable } from "@interfaces/connectable.abstract.ts";
 import { SchemaRegistry, SchemaType } from "@kafkajs/confluent-schema-registry";
+import {
+  type Admin,
+  type Consumer,
+  type EachMessageHandler,
+  type EachMessagePayload,
+  Kafka,
+  type Message,
+  type Producer,
+  type Transaction,
+} from "kafkajs";
 import { concatMap, Subject } from "rxjs";
 
 import { appLogger } from "../../monitor/app.logger.ts";
-import { KafkaLogger } from "../../monitor/kafka.logger.ts";
 import { topics } from "./index.ts";
 import {
   type BlockMessagePayload,
@@ -27,14 +34,14 @@ import {
 const serviceLogger = appLogger.namespace("KafkaConnection");
 
 export type TransactionOptions = {
-  transaction?: KafkaJS.Transaction;
+  transaction?: Transaction;
 };
 
 export class KafkaConnection extends AbstractConnectable {
-  private connection: KafkaJS.Kafka;
-  private producer!: KafkaJS.Producer;
-  private producerEOS!: KafkaJS.Producer;
-  private admin!: KafkaJS.Admin;
+  private connection: Kafka;
+  private producer!: Producer;
+  private producerEOS!: Producer;
+  private admin!: Admin;
   private registry!: SchemaRegistry;
   private schemaMap = new Map<keyof typeof topics, number>();
 
@@ -51,21 +58,17 @@ export class KafkaConnection extends AbstractConnectable {
     }
 
     try {
-      this.connection = new KafkaJS.Kafka({
-        kafkaJS: {
-          clientId: "bera-explorer",
-          brokers: [kafkaBrokerUrl],
-          logger: new KafkaLogger(),
-        },
+      this.connection = new Kafka({
+        clientId: "bera-explorer",
+        brokers: [kafkaBrokerUrl],
+        // TODO: Re-add logger
       });
 
       this.producer = this.connection.producer();
       this.producerEOS = this.connection.producer({
-        kafkaJS: {
-          idempotent: true,
-          transactionalId: "transactional-producer",
-          maxInFlightRequests: 1,
-        },
+        idempotent: true,
+        transactionalId: "transactional-producer",
+        maxInFlightRequests: 1,
       });
 
       serviceLogger.info(`⌛  Connecting to Kafka Producer`);
@@ -184,13 +187,13 @@ export class KafkaConnection extends AbstractConnectable {
     return schema;
   }
 
-  public async transaction(): Promise<KafkaJS.Transaction> {
+  public async transaction(): Promise<Transaction> {
     await this.checkConnection();
 
     return this.producerEOS.transaction();
   }
 
-  public async send<T extends KafkaJS.Message = KafkaJS.Message>(
+  public async send<T extends Message = Message>(
     topic: string,
     messages: T[],
     options?: TransactionOptions,
@@ -220,11 +223,11 @@ export class KafkaConnection extends AbstractConnectable {
   }: {
     topic: string;
     groupId: string;
-    eachMessageHandler: KafkaJS.EachMessageHandler;
+    eachMessageHandler: EachMessageHandler;
     options?: {
       autoCommit: boolean;
     };
-  }): Promise<KafkaJS.Consumer> {
+  }): Promise<Consumer> {
     await this.checkConnection();
 
     const envGroupId = process.env.KAFKA_GROUP_ID;
@@ -235,12 +238,7 @@ export class KafkaConnection extends AbstractConnectable {
 
     const { autoCommit = true } = options ?? {};
     const consumer = this.connection.consumer({
-      kafkaJS: {
-        groupId: groupIdTopic,
-        fromBeginning: true,
-        autoCommit,
-        autoCommitInterval: 1000,
-      },
+      groupId: groupIdTopic,
     });
 
     serviceLogger.info(`⌛  Connecting to Consumer ${groupIdTopic}`);
@@ -249,10 +247,13 @@ export class KafkaConnection extends AbstractConnectable {
 
     await consumer.subscribe({
       topics: [topic],
+      fromBeginning: true,
     });
 
     await consumer.run({
       eachMessage: eachMessageHandler,
+      autoCommit,
+      autoCommitInterval: 1000,
     });
 
     return consumer;
@@ -274,11 +275,7 @@ export class KafkaConnection extends AbstractConnectable {
     const groupIdTopic = [envGroupId, groupId, topicName].join("-");
 
     const consumer = this.connection.consumer({
-      kafkaJS: {
-        groupId: groupIdTopic,
-        fromBeginning: false,
-        autoCommit: false,
-      },
+      groupId: groupIdTopic,
     });
 
     serviceLogger.info(`⌛  Connecting to Consumer ${groupIdTopic}`);
@@ -288,6 +285,7 @@ export class KafkaConnection extends AbstractConnectable {
 
     await consumer.subscribe({
       topics: [topicName],
+      fromBeginning: false,
     });
 
     consumer.run({
@@ -296,6 +294,7 @@ export class KafkaConnection extends AbstractConnectable {
         eachMessagePayload.pause();
         subject.next(eachMessagePayload);
       },
+      autoCommit: false,
     });
 
     const lastMessage = await new Promise<Buffer>((resolve) => {

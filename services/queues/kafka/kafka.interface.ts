@@ -1,4 +1,4 @@
-import type { KafkaJS } from "@confluentinc/kafka-javascript";
+import type { EachMessagePayload } from "kafkajs";
 
 import { PayloadNotFoundException } from "../../exceptions/consumer.exception.ts";
 import type { AppLogger } from "../../monitor/app.logger.ts";
@@ -14,7 +14,7 @@ export abstract class KafkaDecodeConsumer extends AbstractInjectLogger {
   }
 
   protected async getRawDecodedData<T extends keyof typeof topics>(
-    eachMessagePayload: KafkaJS.EachMessagePayload,
+    eachMessagePayload: EachMessagePayload,
   ): Promise<ReturnType<typeof kafkaConnection.decode<T>>> {
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 

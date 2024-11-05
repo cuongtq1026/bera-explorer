@@ -49,6 +49,7 @@ import {
   QueueTransactionReceiptPayload,
 } from "./services/queues/rabbitmq/producers";
 import mqConnection from "./services/queues/rabbitmq/rabbitmq.connection.ts";
+import { BlockSchedule } from "./services/schedule/block.schedule.ts";
 import { is0xHash, parseToBigInt } from "./services/utils.ts";
 
 /**
@@ -577,6 +578,20 @@ switch (command) {
       cursor = transactions[SIZE - 1].hash;
     }
     serviceLogger.info("Finished queueing missing receipts.");
+    break;
+  }
+  case "schedule": {
+    const modelToSchedule = restArgs[0];
+    switch (modelToSchedule) {
+      case "block": {
+        const schedule = new BlockSchedule();
+        await schedule.execute();
+        break;
+      }
+      default: {
+        throw new Error(`Unknown model to schedule: ${modelToSchedule}`);
+      }
+    }
     break;
   }
   default:

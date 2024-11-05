@@ -279,6 +279,16 @@ class RabbitMQConnection {
     );
   }
 
+  public async checkQueue(queueName: string): Promise<{
+    queue: string;
+    messageCount: number;
+    consumerCount: number;
+  }> {
+    await this.checkConnection();
+
+    return await this.channel.checkQueue(queueName);
+  }
+
   private async checkConnection(): Promise<void> {
     if (this.channel) {
       return;

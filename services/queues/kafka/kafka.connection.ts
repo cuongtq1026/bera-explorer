@@ -1,6 +1,8 @@
 import { KafkaJS } from "@confluentinc/kafka-javascript";
+import type { EachMessagePayload } from "@confluentinc/kafka-javascript/types/kafkajs";
 import { AbstractConnectable } from "@interfaces/connectable.abstract.ts";
 import { SchemaRegistry, SchemaType } from "@kafkajs/confluent-schema-registry";
+import { concatMap, Subject } from "rxjs";
 
 import { appLogger } from "../../monitor/app.logger.ts";
 import { KafkaLogger } from "../../monitor/kafka.logger.ts";
@@ -254,6 +256,67 @@ export class KafkaConnection extends AbstractConnectable {
     });
 
     return consumer;
+  }
+
+  public async consumeLatestMessage<T extends keyof typeof topics>(
+    topic: T,
+  ): ReturnType<typeof this.decode<T>> {
+    const topicName = topics[topic].name;
+    const subject = new Subject<EachMessagePayload>();
+
+    await this.checkConnection();
+
+    const envGroupId = process.env.KAFKA_GROUP_ID;
+    if (!envGroupId) {
+      throw new Error(`Missing KAFKA_GROUP_ID`);
+    }
+    const groupId = "latest";
+    const groupIdTopic = [envGroupId, groupId, topicName].join("-");
+
+    const consumer = this.connection.consumer({
+      kafkaJS: {
+        groupId: groupIdTopic,
+        fromBeginning: false,
+        autoCommit: false,
+      },
+    });
+
+    serviceLogger.info(`⌛  Connecting to Consumer ${groupIdTopic}`);
+    await consumer.connect();
+    serviceLogger.info(`✅  Connected to Consumer ${groupIdTopic}`);
+    // const topicPartitions = consumer.paused();
+
+    await consumer.subscribe({
+      topics: [topicName],
+    });
+
+    consumer.run({
+      eachMessage: async (eachMessagePayload): Promise<void> => {
+        console.log("called", eachMessagePayload);
+        eachMessagePayload.pause();
+        subject.next(eachMessagePayload);
+      },
+    });
+
+    const lastMessage = await new Promise<Buffer>((resolve) => {
+      subject.asObservable().pipe(
+        concatMap(async (eachMessagePayload: EachMessagePayload) => {
+          consumer.disconnect().then(() => {
+            if (!eachMessagePayload.message.value) {
+              throw new Error(`Missing message value`);
+            }
+            resolve(eachMessagePayload.message.value);
+          });
+        }),
+      );
+
+      subject.subscribe();
+
+      // console.log("resumed", topicPartitions);
+      // consumer.resume(topicPartitions);
+    });
+
+    return this.decode<T>(lastMessage);
   }
 }
 

@@ -49,7 +49,7 @@ export class AppLogger {
   }
 
   namespace(namespace: string, level?: number) {
-    return new AppLogger({ namespace, level: level ?? LogLevel.INFO });
+    return new AppLogger({ namespace, level: level ?? LogLevel.DEBUG });
   }
 }
 

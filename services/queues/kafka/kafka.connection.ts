@@ -6,13 +6,15 @@ import {
   type EachMessageHandler,
   type EachMessagePayload,
   Kafka,
+  type LogEntry,
+  logLevel,
   type Message,
   type Producer,
   type Transaction,
 } from "kafkajs";
 import { Subject } from "rxjs";
 
-import { appLogger } from "../../monitor/app.logger.ts";
+import { appLogger, getLevelByNumber } from "../../monitor/app.logger.ts";
 import { topics } from "./index.ts";
 import {
   type BlockMessagePayload,
@@ -31,8 +33,6 @@ import {
   transferSchema,
 } from "./schemas";
 
-const serviceLogger = appLogger.namespace("KafkaConnection");
-
 export type TransactionOptions = {
   transaction?: Transaction;
 };
@@ -44,6 +44,12 @@ export class KafkaConnection extends AbstractConnectable {
   private admin!: Admin;
   private registry!: SchemaRegistry;
   private schemaMap = new Map<keyof typeof topics, number>();
+
+  constructor() {
+    super({
+      logger: appLogger.namespace(KafkaConnection.name),
+    });
+  }
 
   async connect() {
     if (this.connected && this.producer) return;
@@ -61,7 +67,19 @@ export class KafkaConnection extends AbstractConnectable {
       this.connection = new Kafka({
         clientId: "bera-explorer",
         brokers: [kafkaBrokerUrl],
-        // TODO: Re-add logger
+        logLevel: logLevel.INFO,
+        logCreator: () => {
+          return (entry: LogEntry) => {
+            const kafkaLogger = appLogger.namespace(entry.namespace, {
+              level: entry.level,
+            });
+
+            kafkaLogger.log({
+              level: getLevelByNumber(entry.level),
+              ...entry.log,
+            });
+          };
+        },
       });
 
       this.producer = this.connection.producer();
@@ -71,18 +89,18 @@ export class KafkaConnection extends AbstractConnectable {
         maxInFlightRequests: 1,
       });
 
-      serviceLogger.info(`⌛  Connecting to Kafka Producer`);
+      this.serviceLogger.info(`⌛  Connecting to Kafka Producer`);
       await this.producer.connect();
       await this.producerEOS.connect();
-      serviceLogger.info(`✅  Kafka Producer is ready`);
+      this.serviceLogger.info(`✅  Kafka Producer is ready`);
 
       this.admin = this.connection.admin();
-      serviceLogger.info(`⌛  Connecting to Kafka Admin`);
+      this.serviceLogger.info(`⌛  Connecting to Kafka Admin`);
       await this.admin.connect();
-      serviceLogger.info(`✅  Kafka Admin is ready`);
-      serviceLogger.info(`⌛  Connecting to Schema Registry`);
+      this.serviceLogger.info(`✅  Kafka Admin is ready`);
+      this.serviceLogger.info(`⌛  Connecting to Schema Registry`);
       this.registry = new SchemaRegistry({ host: schemaRegistry });
-      serviceLogger.info(`✅  Schema Registry is ready`);
+      this.serviceLogger.info(`✅  Schema Registry is ready`);
       const existingTopics = await this.admin.listTopics();
       await this.admin.createTopics({
         topics: Object.values(topics)
@@ -93,10 +111,10 @@ export class KafkaConnection extends AbstractConnectable {
             replicationFactor: 1,
           })),
       });
-      serviceLogger.info(`Kafka topics created`);
+      this.serviceLogger.info(`Kafka topics created`);
 
       {
-        serviceLogger.info(`⌛  Creating Registry schemas`);
+        this.serviceLogger.info(`⌛  Creating Registry schemas`);
 
         const { id: blockSchemaId } = await this.registry.register({
           type: SchemaType.AVRO,
@@ -134,7 +152,7 @@ export class KafkaConnection extends AbstractConnectable {
         });
         this.schemaMap.set("PRICE", priceSchemaId);
 
-        serviceLogger.info(
+        this.serviceLogger.info(
           `✅  Schema Registry registered: ${this.schemaMap.size}`,
         );
       }
@@ -142,7 +160,7 @@ export class KafkaConnection extends AbstractConnectable {
       // When everything is fully connected, set connected = true
       this.connected = true;
     } catch (error: any) {
-      serviceLogger.error(`Failed to connect to Kafka`);
+      this.serviceLogger.error(`Failed to connect to Kafka`);
 
       throw error;
     }
@@ -241,9 +259,9 @@ export class KafkaConnection extends AbstractConnectable {
       groupId: groupIdTopic,
     });
 
-    serviceLogger.info(`⌛  Connecting to Consumer ${groupIdTopic}`);
+    this.serviceLogger.info(`⌛  Connecting to Consumer ${groupIdTopic}`);
     await consumer.connect();
-    serviceLogger.info(`✅  Connected to Consumer ${groupIdTopic}`);
+    this.serviceLogger.info(`✅  Connected to Consumer ${groupIdTopic}`);
 
     await consumer.subscribe({
       topics: [topic],
@@ -288,9 +306,9 @@ export class KafkaConnection extends AbstractConnectable {
       .sort((a, b) => parseInt(a.offset) - parseInt(b.offset));
     const latestPartitionOffset = latestPartitionOffsets[0];
 
-    serviceLogger.info(`⌛  Connecting to Consumer ${groupIdTopic}`);
+    this.serviceLogger.info(`⌛  Connecting to Consumer ${groupIdTopic}`);
     await consumer.connect();
-    serviceLogger.info(`✅  Connected to Consumer ${groupIdTopic}`);
+    this.serviceLogger.info(`✅  Connected to Consumer ${groupIdTopic}`);
 
     await consumer.subscribe({
       topics: [topicName],

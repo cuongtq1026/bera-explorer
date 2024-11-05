@@ -1,4 +1,4 @@
-import type { Logger } from "winston";
+import type { LogEntry, Logger } from "winston";
 
 import logger from "./logger.ts";
 
@@ -6,22 +6,47 @@ export enum LogLevel {
   NOTHING = 0,
   ERROR = 1,
   WARN = 2,
-  INFO = 3,
-  DEBUG = 4,
+  INFO = 4,
+  DEBUG = 5,
+}
+const logLevels: { [key: string]: string } = {
+  [LogLevel.NOTHING]: "nothing",
+  [LogLevel.ERROR]: "error",
+  [LogLevel.WARN]: "warn",
+  [LogLevel.INFO]: "info",
+  [LogLevel.DEBUG]: "debug",
+};
+
+export function getLevelByNumber(levelNumber: number): string {
+  const levelStr = logLevels[levelNumber.toString()];
+  if (!levelStr) {
+    throw new Error(`Invalid log level number ${levelNumber}`);
+  }
+
+  return levelStr;
 }
 
 export class AppLogger {
   protected myLogger: Logger;
   protected logLevel: LogLevel;
 
-  constructor(options?: { namespace?: string; level?: LogLevel }) {
-    const { namespace, level = LogLevel.INFO } = options ?? {};
+  constructor(options?: {
+    namespace?: string;
+    level?: LogLevel;
+    label?: string;
+  }) {
+    const { namespace, level = LogLevel.INFO, label } = options ?? {};
     this.logLevel = level;
 
     this.myLogger = logger.child({
       namespace,
       level,
+      label,
     });
+  }
+
+  log(log: LogEntry) {
+    this.myLogger.log(log);
   }
 
   info(message: any, extra?: object) {
@@ -48,8 +73,15 @@ export class AppLogger {
     this.logLevel = logLevel;
   }
 
-  namespace(namespace: string, level?: number) {
-    return new AppLogger({ namespace, level: level ?? LogLevel.DEBUG });
+  namespace(
+    namespace: string,
+    options?: {
+      level?: number;
+      label?: string;
+    },
+  ) {
+    const { level, label } = options ?? {};
+    return new AppLogger({ namespace, level: level ?? LogLevel.DEBUG, label });
   }
 }
 

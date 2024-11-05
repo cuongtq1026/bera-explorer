@@ -1,4 +1,6 @@
-export abstract class AbstractConnectable {
+import { AbstractInjectLogger } from "../queues/kafka/inject-logger.abstract.ts";
+
+export abstract class AbstractConnectable extends AbstractInjectLogger {
   protected connected!: boolean;
   private promise: Promise<void> | null = null;
 

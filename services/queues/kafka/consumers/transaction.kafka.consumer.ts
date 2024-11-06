@@ -10,8 +10,6 @@ import { BlockMessagePayload } from "../producers";
 import { sendToTransactionTopic } from "../producers/transaction.kafka.producer.ts";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
-const serviceLogger = appLogger.namespace("TransactionKafkaConsumer");
-
 export class TransactionKafkaConsumer extends AbstractKafkaConsumer {
   protected topic = "BLOCK" as const;
   protected consumerName = "transaction";
@@ -80,7 +78,7 @@ export class TransactionKafkaConsumer extends AbstractKafkaConsumer {
         hash: transaction,
       })),
     );
-    serviceLogger.info(
+    this.serviceLogger.info(
       `[MessageId: ${messageId}] Sent ${transactions.length} messages to transaction topic.`,
     );
 

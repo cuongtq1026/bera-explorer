@@ -33,6 +33,7 @@ model Block {
   contract         Contract[]
   swap             Swap[]
   erc20Price       Erc20Price[]
+  CopyContract     CopyContract[]
 
   @@map("block")
 }
@@ -57,6 +58,7 @@ model Transaction {
   contract             Contract[]
   swap                 Swap[]
   erc20Price           Erc20Price[]
+  CopyContract         CopyContract[]
 
   @@index([blockNumber])
   @@map("transaction")
@@ -215,15 +217,18 @@ model Token {
 }
 
 model Contract {
-  address String  @id
-  name    String?
-
-  // Track deployment details
-  deploymentTransaction     Transaction @relation(fields: [deploymentTransactionHash], references: [hash], onDelete: Cascade)
+  address                   String  @id
+  name                      String?
   deploymentTransactionHash String
-  deploymentBlock           Block       @relation(fields: [deploymentBlockNumber], references: [number], onDelete: Cascade)
   deploymentBlockNumber     BigInt
 
+  // Track deployment details
+  deploymentTransaction Transaction    @relation(fields: [deploymentTransactionHash], references: [hash], onDelete: Cascade)
+  deploymentBlock       Block          @relation(fields: [deploymentBlockNumber], references: [number], onDelete: Cascade)
+  copyContracts         CopyContract[] @relation("CopyContractRef")
+  factoryContracts      CopyContract[] @relation("FactoryContractRef")
+
+  @@unique([address, deploymentTransactionHash, deploymentBlockNumber])
   @@map("contract")
 }
 
@@ -282,4 +287,22 @@ model Erc20Price {
   @@index([transactionHash])
   @@index([tokenAddress, createdAt])
   @@map("erc20_price")
+}
+
+model CopyContract {
+  contractAddress String   @id
+  blockNumber     BigInt
+  transactionHash String
+  nftId           BigInt
+  creator         String
+  factory         String
+  createdAt       DateTime
+
+  transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
+  block       Block       @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
+
+  copyContract    Contract @relation("CopyContractRef", fields: [contractAddress, transactionHash, blockNumber], references: [address, deploymentTransactionHash, deploymentBlockNumber], onDelete: Restrict)
+  factoryContract Contract @relation("FactoryContractRef", fields: [factory, transactionHash, blockNumber], references: [address, deploymentTransactionHash, deploymentBlockNumber], onDelete: Restrict)
+
+  @@map("copy_contract")
 }

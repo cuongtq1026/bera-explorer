@@ -1,4 +1,4 @@
-import { AppLogger } from "../monitor/app.logger.ts";
+import { AbstractInjectLogger } from "../queues/kafka/inject-logger.abstract.ts";
 
 export abstract class AbstractProcessor<
   IdType,
@@ -9,16 +9,13 @@ export abstract class AbstractProcessor<
   CreateArg = InputType,
   DeletedResult = void,
   CreatedResult = ResultReturn,
-> {
-  protected readonly serviceLogger: AppLogger;
-
-  protected constructor(options: { logger: AppLogger }) {
-    this.serviceLogger = options.logger;
-  }
-
+> extends AbstractInjectLogger {
   abstract get(id: IdType): Promise<GetReturn>;
+
   abstract toInput(input: GetReturn): InputType;
+
   abstract deleteFromDb(id: DeleteArg): Promise<DeletedResult>;
+
   abstract createInDb(input: CreateArg): Promise<CreatedResult>;
 
   abstract process(id: IdType): Promise<ResultReturn>;

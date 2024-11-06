@@ -12,6 +12,7 @@ import {
 } from "@database/repositories/transaction-receipt.repository.ts";
 import { BalanceProcessor } from "@processors/balance.processor.ts";
 import { BlockProcessor } from "@processors/block.processor.ts";
+import { CopyContractCreatedProcessor } from "@processors/copy-contract-created.processor.ts";
 import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
 import { PriceProcessor } from "@processors/price/price.processor.ts";
 import { SwapProcessor } from "@processors/swap.processor.ts";
@@ -185,6 +186,18 @@ switch (command) {
     const processor = new PriceProcessor();
 
     await processor.process(swapId);
+    break;
+  }
+  case "copy-trading-created": {
+    const transactionHash = restArgs[0];
+
+    if (transactionHash == null || !is0xHash(transactionHash)) {
+      serviceLogger.info("Invalid transaction hash.");
+      break;
+    }
+    const processor = new CopyContractCreatedProcessor();
+
+    await processor.process(transactionHash);
     break;
   }
   case "queue": {

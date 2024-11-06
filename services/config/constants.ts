@@ -1,18 +1,21 @@
 import type { TokenDto } from "@database/dto.ts";
 import Decimal from "decimal.js";
 import {
-  type AbiFunction,
+  erc20Abi,
   getAbiItem,
   toEventSelector,
   toFunctionSelector,
 } from "viem";
 
-import CrocMultiSwapABI from "./abis/CrocMultiSwap.abi.json";
+import { BeraCopyFactoryAbi, CrocMultiSwapAbi } from "./abis";
 
-// 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
 export const ERC20_TRANSFER_SIGNATURE = toEventSelector(
-  "Transfer(address,address,uint256)",
+  getAbiItem({
+    abi: erc20Abi,
+    name: "Transfer",
+  }),
 );
+
 export const WITHDRAWAL_SIGNATURE = toEventSelector(
   "Withdrawal(address indexed to, uint256 amount);",
 );
@@ -21,11 +24,27 @@ export const CONTRACT_INITIATED_SIGNATURE = toEventSelector(
   "Initialized(uint64 version)",
 );
 
+// 0x2f186987
+export const CREATE_COPY_CONTRACT_SIGNATURE = toFunctionSelector(
+  getAbiItem({
+    abi: BeraCopyFactoryAbi,
+    name: "createCopyContract",
+  }),
+);
+
+// 0xb05a164a4e6bdc22c2031ee45d61e675fe77b47546e9c09e2011bd8fd7ca64eb
+export const COPY_CONTRACT_CREATED_SIGNATURE = toEventSelector(
+  getAbiItem({
+    abi: BeraCopyFactoryAbi,
+    name: "CopyTradeCreated",
+  }),
+);
+
 export const CROC_SWAP_DEX_MULTI_SWAP = toFunctionSelector(
   getAbiItem({
-    abi: CrocMultiSwapABI,
+    abi: CrocMultiSwapAbi,
     name: "multiSwap",
-  }) as AbiFunction,
+  }),
 );
 
 export const ETH_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -78,19 +97,23 @@ export const chains: { [chainId: number]: Chain } = {
     ],
   },
 };
+
 export function isETH(tokenAddress: string): boolean {
   return tokenAddress === ETH_ADDRESS;
 }
+
 export function isStableCoin(tokenAddress: string): boolean {
   const stableCoins = chains[CHAIN_ID].stableCoinList;
 
   return stableCoins.some((stableCoin) => stableCoin.address === tokenAddress);
 }
+
 export function isBTC(tokenAddress: string): boolean {
   const tokens = chains[CHAIN_ID].btcList;
 
   return tokens.some((token) => token.address === tokenAddress);
 }
+
 export function getStableCoin(
   tokenAddress: string,
 ): TokenDtoWithDecimal | null {
@@ -104,6 +127,7 @@ export function getStableCoin(
   }
   return result;
 }
+
 export function getStableCoinOneDecimalValue(
   tokenAddress: string,
 ): Decimal | null {
@@ -113,6 +137,7 @@ export function getStableCoinOneDecimalValue(
   }
   return stableCoin.oneDecimalValue;
 }
+
 export function getBTC(tokenAddress: string): TokenDtoWithDecimal | null {
   const tokens = chains[CHAIN_ID].btcList;
 
@@ -122,6 +147,7 @@ export function getBTC(tokenAddress: string): TokenDtoWithDecimal | null {
   }
   return result;
 }
+
 export function getBtcOneDecimalValue(tokenAddress: string): Decimal | null {
   const token = getBTC(tokenAddress);
   if (!token) {

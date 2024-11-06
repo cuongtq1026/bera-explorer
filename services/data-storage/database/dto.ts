@@ -6,6 +6,7 @@ import type {
   BalanceHistory,
   Block,
   Contract,
+  CopyContract,
   Erc20Price,
   InternalTransaction,
   Log,
@@ -23,7 +24,7 @@ import {
   ERC20_TRANSFER_SIGNATURE,
   WITHDRAWAL_SIGNATURE,
 } from "../../config/constants.ts";
-import { parseDecimalToBigInt, parseToBigInt } from "../../utils.ts";
+import { parseDecimalToBigInt } from "../../utils.ts";
 
 export type BlockDto = {
   number: bigint;
@@ -201,6 +202,14 @@ export type SwapDto = {
 };
 
 export type SwapDtoNoId = Omit<SwapDto, "id">;
+
+export type CopyContractDto = {
+  contractAddress: string;
+  nftId: bigint | number;
+  creator: string;
+  factory: string;
+  createdAt: Date | string;
+};
 
 export function isERC20TransferLog(
   topics: Pick<LogTopicDto, "topic">[],
@@ -594,4 +603,16 @@ export function dtoToPriceCreateInput(priceDto: PriceDto): PriceCreateInput {
     usdPriceRefHash: priceDto.usdPriceRefHash,
     ethPriceRefHash: priceDto.ethPriceRefHash,
   };
+}
+
+export function toCopyContractDto(copyContract: CopyContract): CopyContractDto {
+  const dto: CopyContractDto = {
+    contractAddress: copyContract.contractAddress,
+    nftId: copyContract.nftId,
+    creator: copyContract.creator,
+    factory: copyContract.factory,
+    createdAt: copyContract.createdAt,
+  };
+
+  return dto;
 }

@@ -9,7 +9,7 @@ import {
 } from "@database/dto.ts";
 import { decodeFunctionData, type Hash } from "viem";
 
-import CrocMultiSwapABI from "../config/abis/CrocMultiSwap.abi.json";
+import { CrocMultiSwapAbi } from "../config/abis";
 import {
   ERC20_TRANSFER_SIGNATURE,
   ETH_ADDRESS,
@@ -217,11 +217,17 @@ export class CrocSwapDexDecoder
   } {
     try {
       const { functionName, args } = decodeFunctionData({
-        abi: CrocMultiSwapABI,
+        abi: CrocMultiSwapAbi,
         data: transaction.input as Hash,
       });
 
-      const [steps, amount, minOut] = args as [Step[], bigint, bigint];
+      if (functionName !== "multiSwap") {
+        throw Error(
+          `Not a swap transaction: ${transaction.hash}. Function name is ${functionName}.`,
+        );
+      }
+
+      const [steps, amount, minOut] = args;
       return {
         functionName,
         decoded: {

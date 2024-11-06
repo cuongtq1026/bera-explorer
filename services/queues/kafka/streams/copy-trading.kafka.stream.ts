@@ -6,6 +6,7 @@ import { type Account, getContract, type Hash, isHash } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 import { BeraCopyAbi } from "../../../config/abis";
+import { ETH_ADDRESS } from "../../../config/constants.ts";
 import rpcRequest from "../../../data-source/rpc-request";
 import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
 import { appLogger } from "../../../monitor/app.logger.ts";
@@ -138,7 +139,7 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
                     client,
                   });
 
-                  const value = 900000000000n;
+                  // TODO: Make factory for each DEX
                   try {
                     const txHash = await contract.write.multiSwap(
                       [
@@ -146,18 +147,18 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
                         [
                           {
                             poolIdx: 36000n,
-                            base: "0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03",
-                            quote: "0x0000000000000000000000000000000000000000",
-                            isBuy: false,
+                            base: swap.from,
+                            quote: swap.to,
+                            isBuy: true,
                           },
                         ],
-                        value,
-                        0n,
+                        swap.fromAmount, // Exact copy for now
+                        0n, // 0 for now, will be added to the contract slippage
                       ],
                       {
                         chain: client.chain,
                         account: this.account,
-                        value,
+                        value: swap.from === ETH_ADDRESS ? swap.fromAmount : 0n,
                       },
                     );
                     this.serviceLogger.info(

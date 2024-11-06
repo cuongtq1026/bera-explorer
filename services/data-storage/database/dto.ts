@@ -192,8 +192,8 @@ export type SwapDto = {
   transactionHash: string;
   transactionIndex: number;
   dex: string;
-  from: string;
-  to: string;
+  from: Hash;
+  to: Hash;
   fromAmount: bigint;
   toAmount: bigint;
   createdAt: Date;
@@ -553,8 +553,8 @@ export function toSwapDto(swap: Swap): SwapDto {
     transactionHash: swap.transactionHash as Hash,
     transactionIndex: swap.transactionIndex,
     dex: swap.dex as Hash,
-    from: swap.from,
-    to: swap.to,
+    from: swap.from as Hash,
+    to: swap.to as Hash,
     fromAmount: parseDecimalToBigInt(swap.fromAmount),
     toAmount: parseDecimalToBigInt(swap.toAmount),
     createdAt: swap.createdAt,

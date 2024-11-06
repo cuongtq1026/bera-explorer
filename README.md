@@ -5,6 +5,7 @@
 - **API Server**: Serves the stored data through a REST API (Express).
 - **Web Client**: Provides a user interface to interact with the API (Next).
 - **Contracts**: Provides a set of smart contracts that are used by the Crawler.
+- **Copy Trading**: Track down swaps and execute copy trading strategies on-chain.
 
 ## Data Model
 - [x] **Block**
@@ -17,6 +18,8 @@
 - [x] **Balance**
 - [x] **Balance history**
 - [x] **Swap**
+- [x] **Contract**
+- [x] **Copy Contract**
 - [x] **Token**
 - [x] **Token Price (USD/ETH/BTC)**
 
@@ -66,6 +69,7 @@ The project uses the following technologies:
 ├── services
 │    ├── api # API Server using Express
 │    ├── config
+│    ├── copy-trading # Copy trading service
 │    ├── data-source # Fetching data from RPC nodes
 │    ├── data-storage # Storing data
 │    ├── decoder # Blockchain transactions decoders

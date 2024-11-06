@@ -6,9 +6,9 @@
   "type": "module",
   "exports": "./dist/index.mjs",
   "scripts": {
-    "start": "concurrently --kill-others \"bun run schedule:block\" \"bun run consume:all\" \"bun run stream:all\"",
+    "start": "concurrently --kill-others \"bun run schedule:block\" \"bun run consume:all\" \"bun run stream:all\" \"bun run start:copy-trading\"",
     "build": "bun build ./index.ts --outdir ./build --target bun",
-    "start-copy-trading": "tsx index.ts copy-trading",
+    "start:copy-trading": "tsx index.ts copy-trading",
     "backend:dev": "tsx watch backend.ts",
     "prisma:generate": "prisma generate",
     "prisma:deploy": "prisma migrate deploy",

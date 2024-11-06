@@ -22,6 +22,7 @@ import { TransferProcessor } from "@processors/transfer.processor.ts";
 import type { Hash } from "viem";
 
 import { queues } from "./services/config";
+import { CopyTrading } from "./services/copy-trading";
 import { appLogger } from "./services/monitor/app.logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
 import { BalanceKafkaConsumer } from "./services/queues/kafka/consumers/balance.kafka.consumer.ts";
@@ -592,6 +593,11 @@ switch (command) {
         throw new Error(`Unknown model to schedule: ${modelToSchedule}`);
       }
     }
+    break;
+  }
+  case "copy-trading": {
+    const copyTrading = new CopyTrading();
+    await copyTrading.start();
     break;
   }
   default:

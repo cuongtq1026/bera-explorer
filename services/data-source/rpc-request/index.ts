@@ -1,5 +1,11 @@
 import { AbstractConnectable } from "@interfaces/connectable.abstract.ts";
-import { createClient, createPublicClient, http } from "viem";
+import {
+  createClient,
+  createPublicClient,
+  createWalletClient,
+  http,
+  type WalletClient,
+} from "viem";
 import { berachainTestnetbArtio } from "viem/chains";
 
 import { appLogger } from "../../monitor/app.logger.ts";
@@ -14,8 +20,9 @@ const serviceLogger = appLogger.namespace("RpcRequest");
 const BLACKLIST_KEY = "rpc_url:blacklist";
 
 export class RpcRequest extends AbstractConnectable {
-  private clients: RpcClient[];
+  private publicClients: RpcClient[];
   private debugClients: RpcDebugClient[];
+  private walletClient: WalletClient;
   private nextClientIndex = 0;
 
   constructor() {
@@ -25,7 +32,7 @@ export class RpcRequest extends AbstractConnectable {
   }
 
   async connect() {
-    if (this.connected && this.clients) return;
+    if (this.connected && this.publicClients) return;
 
     const envRpcUrls = process.env.RPC_URLS;
     if (!envRpcUrls) {
@@ -35,7 +42,7 @@ export class RpcRequest extends AbstractConnectable {
     const rpcUrls = envRpcUrls.split(",");
     serviceLogger.info(`Number of RPC URLs provided: ${rpcUrls.length}`);
 
-    this.clients = rpcUrls.map((url, index) => ({
+    this.publicClients = rpcUrls.map((url, index) => ({
       url,
       instance: createPublicClient({
         chain: berachainTestnetbArtio,
@@ -60,6 +67,16 @@ export class RpcRequest extends AbstractConnectable {
         key: `${index}|${getHostFromUrl(url)}`,
       }));
     }
+
+    const walletRpcURL = process.env.WALLET_RPC_URL;
+    if (!walletRpcURL) {
+      throw new Error("No WALLET_RPC_URL provided");
+    }
+    this.walletClient = createWalletClient({
+      chain: berachainTestnetbArtio,
+      transport: http(walletRpcURL),
+    });
+
     if (!envDebugRpcUrls) {
       serviceLogger.warn("No Debug RPC URLs provided");
     }
@@ -97,11 +114,18 @@ export class RpcRequest extends AbstractConnectable {
     return this.debugClients[0];
   }
 
-  async getClient(): Promise<RpcClient> {
+  async getWalletClient() {
     await this.checkConnection();
 
-    const nextClient = this.clients[this.nextClientIndex];
-    this.nextClientIndex = (this.nextClientIndex + 1) % this.clients.length;
+    return this.walletClient;
+  }
+
+  async getPublicClient(): Promise<RpcClient> {
+    await this.checkConnection();
+
+    const nextClient = this.publicClients[this.nextClientIndex];
+    this.nextClientIndex =
+      (this.nextClientIndex + 1) % this.publicClients.length;
 
     // if the next client isn't blacklisted, return it
     const isNextClientBlacklisted = await this.isBlacklisted(nextClient.key);
@@ -109,7 +133,7 @@ export class RpcRequest extends AbstractConnectable {
       return nextClient;
     }
 
-    for (const client of this.clients) {
+    for (const client of this.publicClients) {
       if (client.url === nextClient.url) {
         // no need to check blacklisted since we already did
         continue;
@@ -134,7 +158,7 @@ export class RpcRequest extends AbstractConnectable {
       }, 1000),
     );
 
-    return this.getClient();
+    return this.getPublicClient();
   }
 }
 

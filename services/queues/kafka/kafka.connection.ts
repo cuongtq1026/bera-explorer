@@ -18,6 +18,7 @@ import { appLogger, getLevelByNumber } from "../../monitor/app.logger.ts";
 import { topics } from "./index.ts";
 import {
   type BlockMessagePayload,
+  CopyTradeMessagePayload,
   type LogMessagePayload,
   type PriceMessagePayload,
   type SwapMessagePayload,
@@ -26,6 +27,7 @@ import {
 } from "./producers";
 import {
   blockSchema,
+  copyTradeLogSchema,
   logSchema,
   priceSchema,
   swapSchema,
@@ -82,37 +84,51 @@ export class KafkaConnection extends AbstractConnectable {
         },
       });
 
-      this.producer = this.connection.producer();
-      this.producerEOS = this.connection.producer({
-        idempotent: true,
-        transactionalId: "transactional-producer",
-        maxInFlightRequests: 1,
-      });
+      // initiate producer connection
+      {
+        this.serviceLogger.info(`⌛  Connecting to Kafka Producer`);
+        this.producer = this.connection.producer();
+        this.producerEOS = this.connection.producer({
+          idempotent: true,
+          transactionalId: "transactional-producer",
+          maxInFlightRequests: 1,
+        });
+        await this.producer.connect();
+        await this.producerEOS.connect();
+        this.serviceLogger.info(`✅  Kafka Producer is ready`);
+      }
 
-      this.serviceLogger.info(`⌛  Connecting to Kafka Producer`);
-      await this.producer.connect();
-      await this.producerEOS.connect();
-      this.serviceLogger.info(`✅  Kafka Producer is ready`);
+      // initiate admin connection
+      {
+        this.serviceLogger.info(`⌛  Connecting to Kafka Admin`);
+        this.admin = this.connection.admin();
+        await this.admin.connect();
+        this.serviceLogger.info(`✅  Kafka Admin is ready`);
+      }
 
-      this.admin = this.connection.admin();
-      this.serviceLogger.info(`⌛  Connecting to Kafka Admin`);
-      await this.admin.connect();
-      this.serviceLogger.info(`✅  Kafka Admin is ready`);
-      this.serviceLogger.info(`⌛  Connecting to Schema Registry`);
-      this.registry = new SchemaRegistry({ host: schemaRegistry });
-      this.serviceLogger.info(`✅  Schema Registry is ready`);
-      const existingTopics = await this.admin.listTopics();
-      await this.admin.createTopics({
-        topics: Object.values(topics)
-          .filter((topic) => !existingTopics.includes(topic.name))
-          .map((topic) => ({
-            topic: topic.name,
-            numPartitions: 1,
-            replicationFactor: 1,
-          })),
-      });
-      this.serviceLogger.info(`Kafka topics created`);
+      // initiate topics
+      {
+        const existingTopics = await this.admin.listTopics();
+        await this.admin.createTopics({
+          topics: Object.values(topics)
+            .filter((topic) => !existingTopics.includes(topic.name))
+            .map((topic) => ({
+              topic: topic.name,
+              numPartitions: 1,
+              replicationFactor: 1,
+            })),
+        });
+        this.serviceLogger.info(`Kafka topics created`);
+      }
 
+      // initiate schema registry connection
+      {
+        this.serviceLogger.info(`⌛  Connecting to Schema Registry`);
+        this.registry = new SchemaRegistry({ host: schemaRegistry });
+        this.serviceLogger.info(`✅  Schema Registry is ready`);
+      }
+
+      // initiate schemas
       {
         this.serviceLogger.info(`⌛  Creating Registry schemas`);
 
@@ -151,6 +167,11 @@ export class KafkaConnection extends AbstractConnectable {
           schema: JSON.stringify(priceSchema),
         });
         this.schemaMap.set("PRICE", priceSchemaId);
+        const { id: copyTradeLogSchemaId } = await this.registry.register({
+          type: SchemaType.AVRO,
+          schema: JSON.stringify(copyTradeLogSchema),
+        });
+        this.schemaMap.set("COPY_TRADE_LOG", copyTradeLogSchemaId);
 
         this.serviceLogger.info(
           `✅  Schema Registry registered: ${this.schemaMap.size}`,
@@ -190,7 +211,9 @@ export class KafkaConnection extends AbstractConnectable {
               ? SwapMessagePayload
               : T extends "PRICE"
                 ? PriceMessagePayload
-                : never
+                : T extends "COPY_TRADE_LOG"
+                  ? CopyTradeMessagePayload
+                  : never
   > {
     await this.checkConnection();
 

@@ -29,3 +29,12 @@ export class PriceMessagePayload {
   @IsNotEmpty()
   priceId: string;
 }
+
+export class CopyTradeMessagePayload<success extends boolean = boolean> {
+  transactionHash: success extends true ? string : null;
+  @IsNotEmpty()
+  swapId: string;
+  @IsNotEmpty()
+  isSuccess: success;
+  error: success extends false ? string : null;
+}

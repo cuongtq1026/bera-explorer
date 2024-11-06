@@ -20,4 +20,7 @@ export const topics = {
   PRICE: {
     name: "prices",
   },
+  COPY_TRADE_LOG: {
+    name: "copy_trade_logs",
+  },
 };

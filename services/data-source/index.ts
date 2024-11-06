@@ -23,7 +23,7 @@ const serviceLogger = appLogger.namespace("data-source");
 export async function getBlock(blockNumber?: bigint): Promise<Block> {
   serviceLogger.info(`[getBlock] blockNumber: ${blockNumber}`);
 
-  const client = await rpcRequest.getClient();
+  const client = await rpcRequest.getPublicClient();
   try {
     rpcRequestCounter.inc({
       rpc: client.key,
@@ -60,7 +60,7 @@ export async function getTransaction(
 ): Promise<GetTransactionReturnType> {
   serviceLogger.info(`[getTransaction] hash: ${txHash}`);
 
-  const client = await rpcRequest.getClient();
+  const client = await rpcRequest.getPublicClient();
   try {
     rpcRequestCounter.inc({
       rpc: client.key,
@@ -89,7 +89,7 @@ export async function getTransactionReceipt(
 ): Promise<GetTransactionReceiptReturnType> {
   serviceLogger.info(`[getTransactionReceipt] hash: ${txHash}`);
 
-  const client = await rpcRequest.getClient();
+  const client = await rpcRequest.getPublicClient();
   try {
     rpcRequestCounter.inc({
       rpc: client.key,
@@ -141,7 +141,7 @@ export async function getERC20Tokens(
   const addresses = [...addressSet];
   serviceLogger.info(`[getERC20Tokens] addresses: ${addresses}`);
 
-  const client = await rpcRequest.getClient();
+  const client = await rpcRequest.getPublicClient();
   try {
     const contracts = addresses.map((address) => {
       const contract = getContract({

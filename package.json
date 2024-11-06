@@ -1,6 +1,6 @@
 {
   "name": "bera-explorer",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "license": "MIT",
   "module": "index.ts",
   "type": "module",
@@ -8,6 +8,7 @@
   "scripts": {
     "start": "concurrently --kill-others \"bun run schedule:block\" \"bun run consume:all\" \"bun run stream:all\"",
     "build": "bun build ./index.ts --outdir ./build --target bun",
+    "start-copy-trading": "tsx index.ts copy-trading",
     "backend:dev": "tsx watch backend.ts",
     "prisma:generate": "prisma generate",
     "prisma:deploy": "prisma migrate deploy",

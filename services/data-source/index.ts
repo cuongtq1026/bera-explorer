@@ -1,6 +1,7 @@
 import type { TokenDto } from "@database/dto.ts";
 import {
   type Block,
+  ContractFunctionExecutionError,
   erc20Abi,
   getContract,
   type GetTransactionReceiptReturnType,
@@ -191,5 +192,37 @@ export async function getERC20Tokens(
 
     // await rpcRequest.blacklist(client);
     throw error;
+  }
+}
+
+export async function getContractName(
+  contractAddress: Hash,
+): Promise<string | null> {
+  try {
+    const client = await rpcRequest.getPublicClient();
+    const contract = getContract({
+      address: contractAddress,
+      abi: [
+        {
+          type: "function",
+          name: "name",
+          stateMutability: "view",
+          inputs: [],
+          outputs: [
+            {
+              type: "string",
+            },
+          ],
+        },
+      ],
+      client: client.instance,
+    });
+    return await contract.read.name();
+  } catch (e: unknown) {
+    if (e instanceof ContractFunctionExecutionError) {
+      // the contract doesn't have name()
+      return null;
+    }
+    throw e;
   }
 }

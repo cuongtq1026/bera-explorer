@@ -8,7 +8,12 @@ export default [
         internalType: "uint256",
       },
       {
-        name: "minter",
+        name: "_minter",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "_target",
         type: "address",
         internalType: "address",
       },
@@ -58,6 +63,19 @@ export default [
       },
     ],
     stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "changeTarget",
+    inputs: [
+      {
+        name: "_target",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
   },
   {
     type: "function",
@@ -114,6 +132,19 @@ export default [
     outputs: [
       {
         name: "",
+        type: "bool",
+        internalType: "bool",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "isAllowed",
+    inputs: [],
+    outputs: [
+      {
+        name: "result",
         type: "bool",
         internalType: "bool",
       },
@@ -204,6 +235,39 @@ export default [
   },
   {
     type: "function",
+    name: "name",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "string",
+        internalType: "string",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "pause",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "paused",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "previewMultiSwap",
     inputs: [
       {
@@ -278,6 +342,13 @@ export default [
   },
   {
     type: "function",
+    name: "resume",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "revokeRole",
     inputs: [
       {
@@ -322,6 +393,19 @@ export default [
         name: "",
         type: "bool",
         internalType: "bool",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "target",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "address",
+        internalType: "address",
       },
     ],
     stateMutability: "view",
@@ -464,5 +548,26 @@ export default [
         internalType: "address",
       },
     ],
+  },
+  {
+    type: "error",
+    name: "ContractPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "InvalidTarget",
+    inputs: [
+      {
+        name: "_target",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+  },
+  {
+    type: "error",
+    name: "NotPaused",
+    inputs: [],
   },
 ] as const;

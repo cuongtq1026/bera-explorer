@@ -15,12 +15,10 @@ import { findTransactionReceipt } from "@database/repositories/transaction-recei
 import { type Hash } from "viem";
 
 import { CONTRACT_INITIATED_SIGNATURE } from "../config/constants.ts";
-import { getERC20Tokens } from "../data-source";
+import { getContractName, getERC20Tokens } from "../data-source";
 import { NoGetResult } from "../exceptions/processor.exception.ts";
 import { appLogger } from "../monitor/app.logger.ts";
 import { AbstractProcessor } from "./abstract.processor.ts";
-
-const serviceLogger = appLogger.namespace("TokenProcessor");
 
 type ToInputArgType = Omit<TransactionReceiptDto, "logs"> & {
   logs: LogDto[];
@@ -85,17 +83,6 @@ export class ContractProcessor extends AbstractProcessor<
     const addressSet = new Set<Hash>();
     const contracts: ContractCreateInput[] = [];
 
-    // add receipt address contract
-    if (input.contractAddress != null) {
-      addressSet.add(input.contractAddress as Hash);
-
-      contracts.push({
-        address: input.contractAddress,
-        deploymentTransactionHash: input.transactionHash,
-        deploymentBlockNumber: input.blockNumber,
-      });
-    }
-
     // add contract creation logs (CONTRACT_INITIATED_SIGNATURE)
     input.logs
       .filter(
@@ -110,12 +97,29 @@ export class ContractProcessor extends AbstractProcessor<
         addressSet.add(log.address as Hash);
       });
 
+    // add receipt address contract
+    {
+      const contractAddress = input.contractAddress as Hash;
+      if (contractAddress != null && !addressSet.has(contractAddress)) {
+        addressSet.add(contractAddress);
+
+        const contractName = await getContractName(contractAddress);
+        contracts.push({
+          address: contractAddress,
+          deploymentTransactionHash: input.transactionHash,
+          deploymentBlockNumber: input.blockNumber,
+          name: contractName,
+        });
+      }
+    }
+
     const tokens = await getERC20Tokens(addressSet);
     tokens.forEach((token) => {
       contracts.push({
         address: token.address,
         deploymentTransactionHash: input.transactionHash,
         deploymentBlockNumber: input.blockNumber,
+        name: token.name,
       });
     });
 
@@ -127,13 +131,7 @@ export class ContractProcessor extends AbstractProcessor<
         decimals: token.decimals,
         totalSupply: token.totalSupply.toString(),
       })),
-      contracts: contracts.concat(
-        tokens.map((token) => ({
-          address: token.address,
-          deploymentTransactionHash: input.transactionHash,
-          deploymentBlockNumber: input.blockNumber,
-        })),
-      ),
+      contracts,
     };
   }
 
@@ -153,15 +151,15 @@ export class ContractProcessor extends AbstractProcessor<
   }
 
   async process(transactionHash: Hash): Promise<void> {
-    serviceLogger.info("processing: " + transactionHash);
+    this.serviceLogger.info("processing: " + transactionHash);
 
     const obj = await this.get(transactionHash);
 
     const { tokens, contracts } = await this.toInput(obj);
 
     await this.createInDb(tokens);
-    serviceLogger.info(`created ${transactionHash}`);
+    this.serviceLogger.info(`created ${transactionHash}`);
     await this.createContractsInDb(contracts);
-    serviceLogger.info(`contract created ${transactionHash}`);
+    this.serviceLogger.info(`contract created ${transactionHash}`);
   }
 }

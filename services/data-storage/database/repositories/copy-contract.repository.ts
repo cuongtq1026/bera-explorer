@@ -5,6 +5,7 @@ import prisma from "../prisma.ts";
 
 export type CopyContractCreateInput = {
   contractAddress: string;
+  target: string;
   blockNumber: bigint | number;
   transactionHash: string;
   nftId: bigint | number;

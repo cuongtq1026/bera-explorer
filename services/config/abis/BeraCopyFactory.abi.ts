@@ -31,7 +31,13 @@ export default [
   {
     type: "function",
     name: "createCopyContract",
-    inputs: [],
+    inputs: [
+      {
+        name: "_copyTarget",
+        type: "address",
+        internalType: "address",
+      },
+    ],
     outputs: [
       {
         name: "_createdAddress",
@@ -45,6 +51,11 @@ export default [
       },
       {
         name: "_creator",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "_target",
         type: "address",
         internalType: "address",
       },
@@ -114,7 +125,7 @@ export default [
         internalType: "address",
       },
       {
-        name: "creator",
+        name: "target",
         type: "address",
         indexed: true,
         internalType: "address",

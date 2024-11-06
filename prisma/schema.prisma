@@ -291,6 +291,7 @@ model Erc20Price {
 
 model CopyContract {
   contractAddress String   @id
+  target          String
   blockNumber     BigInt
   transactionHash String
   nftId           BigInt
@@ -304,5 +305,7 @@ model CopyContract {
   copyContract    Contract @relation("CopyContractRef", fields: [contractAddress, transactionHash, blockNumber], references: [address, deploymentTransactionHash, deploymentBlockNumber], onDelete: Restrict)
   factoryContract Contract @relation("FactoryContractRef", fields: [factory], references: [address], onDelete: Restrict)
 
+  @@unique([contractAddress, target])
+  @@index([target])
   @@map("copy_contract")
 }

@@ -10,7 +10,7 @@ import {
   deleteCopyContracts,
 } from "@database/repositories/copy-contract.repository.ts";
 import { findTransaction } from "@database/repositories/transaction.repository.ts";
-import { decodeEventLog, erc20Abi, type Hash, type Hex } from "viem";
+import { decodeEventLog, decodeFunctionData, type Hash, type Hex } from "viem";
 
 import { BeraCopyFactoryAbi } from "../config/abis";
 import {
@@ -63,6 +63,17 @@ export class CopyContractCreatedProcessor extends AbstractProcessor<
       throw Error("No factory found.");
     }
 
+    const { functionName, args: inputArgs } = decodeFunctionData({
+      abi: BeraCopyFactoryAbi,
+      data: transactionDto.input as Hash,
+    });
+
+    if (functionName !== "createCopyContract") {
+      throw Error(`Invalid function name ${functionName}.`);
+    }
+
+    const [targetInput] = inputArgs;
+
     // get contracts from logs
     return (
       transactionDto.receipt.logs
@@ -82,10 +93,17 @@ export class CopyContractCreatedProcessor extends AbstractProcessor<
             topics: [signature, ...logTopics],
           });
 
+          if (targetInput !== decodedTopics.args.target) {
+            throw Error(
+              `Invalid target input ${targetInput}.` +
+                `Expected ${targetInput} but got ${decodedTopics.args.target}.`,
+            );
+          }
           return {
             contractAddress: decodedTopics.args.createdAddress,
+            target: decodedTopics.args.target,
             createdAt: transactionDto.receipt.createdAt,
-            creator: decodedTopics.args.creator,
+            creator: transactionDto.from,
             blockNumber: transactionDto.blockNumber,
             transactionHash: transactionDto.hash,
             factory: factoryAddress,

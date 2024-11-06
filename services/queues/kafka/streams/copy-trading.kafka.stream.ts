@@ -1,6 +1,7 @@
 import { toSwapDto } from "@database/dto.ts";
 import prisma from "@database/prisma.ts";
-import { concatMap, interval, of, retry, tap } from "rxjs";
+import { getCopyContracts } from "@database/repositories/copy-contract.repository.ts";
+import { concatMap, filter, interval, of, retry, tap } from "rxjs";
 import { type Account, getContract, type Hash, isHash } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -18,7 +19,7 @@ import { AbstractKafkaStream } from "./abstract.kafka.stream.ts";
 /**
  * A Kafka stream that copy trade swaps and log it into copy_trade_logs topic
  */
-export class CopyTradeKafkaStream extends AbstractKafkaStream {
+export class CopyTradingKafkaStream extends AbstractKafkaStream {
   protected fromTopic = "SWAP" as const;
   protected toTopic = "COPY_TRADE_LOG" as const;
   protected consumerName: string = "copy-stream";
@@ -27,7 +28,7 @@ export class CopyTradeKafkaStream extends AbstractKafkaStream {
 
   constructor() {
     super({
-      logger: appLogger.namespace(CopyTradeKafkaStream.name),
+      logger: appLogger.namespace(CopyTradingKafkaStream.name),
     });
 
     {
@@ -105,8 +106,24 @@ export class CopyTradeKafkaStream extends AbstractKafkaStream {
                 throw error;
               },
             }),
+            // TODO: Filter out swap doesn't get target and finish if no swaps found
+            concatMap(async (swap) => {
+              const target = swap.from as Hash;
+              const copyContracts = await getCopyContracts(target);
+              return {
+                swap,
+                copyContracts,
+              };
+            }),
+            // log out
+            tap((result) => {
+              this.serviceLogger.info(
+                `SwapID: ${result.swap.id} has ${result.copyContracts} follower(s).`,
+              );
+            }),
             // start copy trading
-            concatMap(async (swap): Promise<CopyTradeMessagePayload> => {
+            // TODO: Fix this, not finished yet
+            concatMap(async ({ swap }): Promise<CopyTradeMessagePayload> => {
               const client = await rpcRequest.getWalletClient();
               if (!client.chain) {
                 throw new Error("No wallet client chain");

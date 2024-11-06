@@ -1,3 +1,4 @@
+import { type CopyContractDto, toCopyContractDto } from "@database/dto.ts";
 import type { ContractCreateInput } from "@database/repositories/contract.repository.ts";
 import type { Hash } from "viem";
 
@@ -15,6 +16,18 @@ export type CopyContractCreateInput = {
 
   contract: ContractCreateInput;
 };
+
+export async function getCopyContracts(
+  target: Hash,
+): Promise<CopyContractDto[]> {
+  return prisma.copyContract
+    .findMany({
+      where: {
+        target,
+      },
+    })
+    .then((copyContracts) => copyContracts.map((c) => toCopyContractDto(c)));
+}
 
 export async function createCopyContracts(
   inputs: CopyContractCreateInput[],

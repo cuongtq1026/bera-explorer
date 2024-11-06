@@ -302,7 +302,7 @@ model CopyContract {
   block       Block       @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
 
   copyContract    Contract @relation("CopyContractRef", fields: [contractAddress, transactionHash, blockNumber], references: [address, deploymentTransactionHash, deploymentBlockNumber], onDelete: Restrict)
-  factoryContract Contract @relation("FactoryContractRef", fields: [factory, transactionHash, blockNumber], references: [address, deploymentTransactionHash, deploymentBlockNumber], onDelete: Restrict)
+  factoryContract Contract @relation("FactoryContractRef", fields: [factory], references: [address], onDelete: Restrict)
 
   @@map("copy_contract")
 }

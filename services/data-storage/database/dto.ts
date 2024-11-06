@@ -204,7 +204,7 @@ export type SwapDto = {
 export type SwapDtoNoId = Omit<SwapDto, "id">;
 
 export type CopyContractDto = {
-  contractAddress: string;
+  contractAddress: Hash;
   nftId: bigint | number;
   creator: string;
   factory: string;
@@ -607,7 +607,7 @@ export function dtoToPriceCreateInput(priceDto: PriceDto): PriceCreateInput {
 
 export function toCopyContractDto(copyContract: CopyContract): CopyContractDto {
   const dto: CopyContractDto = {
-    contractAddress: copyContract.contractAddress,
+    contractAddress: copyContract.contractAddress as Hash,
     nftId: copyContract.nftId,
     creator: copyContract.creator,
     factory: copyContract.factory,

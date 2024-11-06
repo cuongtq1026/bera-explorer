@@ -127,11 +127,13 @@ export class ContractProcessor extends AbstractProcessor<
         decimals: token.decimals,
         totalSupply: token.totalSupply.toString(),
       })),
-      contracts: tokens.map((token) => ({
-        address: token.address,
-        deploymentTransactionHash: input.transactionHash,
-        deploymentBlockNumber: input.blockNumber,
-      })),
+      contracts: contracts.concat(
+        tokens.map((token) => ({
+          address: token.address,
+          deploymentTransactionHash: input.transactionHash,
+          deploymentBlockNumber: input.blockNumber,
+        })),
+      ),
     };
   }
 

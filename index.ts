@@ -16,7 +16,7 @@ import { CopyContractCreatedProcessor } from "@processors/copy-contract-created.
 import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
 import { PriceProcessor } from "@processors/price/price.processor.ts";
 import { SwapProcessor } from "@processors/swap.processor.ts";
-import { TokenProcessor } from "@processors/token.processor.ts";
+import { ContractProcessor } from "@processors/contract.processor.ts";
 import { TransactionProcessor } from "@processors/transaction.processor.ts";
 import { TransactionReceiptProcessor } from "@processors/transaction-receipt.processor.ts";
 import { TransferProcessor } from "@processors/transfer.processor.ts";
@@ -151,7 +151,7 @@ switch (command) {
     await processor.process(transferHash);
     break;
   }
-  case "token": {
+  case "contract": {
     const transactionHash = restArgs[0];
 
     if (transactionHash == null || !is0xHash(transactionHash)) {
@@ -159,7 +159,7 @@ switch (command) {
       break;
     }
 
-    const processor = new TokenProcessor();
+    const processor = new ContractProcessor();
 
     await processor.process(transactionHash);
     break;

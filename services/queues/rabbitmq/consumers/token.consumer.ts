@@ -1,4 +1,4 @@
-import { TokenProcessor } from "@processors/token.processor.ts";
+import { ContractProcessor } from "@processors/contract.processor.ts";
 import type { ConsumeMessage } from "amqplib";
 import { plainToInstance } from "class-transformer";
 import { validateOrReject } from "class-validator";
@@ -44,7 +44,7 @@ export class TokenConsumer extends AbstractRabbitMQConsumer {
     );
 
     // process
-    const processor = new TokenProcessor();
+    const processor = new ContractProcessor();
     await processor.process(transactionHash);
 
     serviceLogger.info(

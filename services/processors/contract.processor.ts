@@ -22,7 +22,7 @@ import { AbstractProcessor } from "./abstract.processor.ts";
 
 const serviceLogger = appLogger.namespace("TokenProcessor");
 
-type ToInputArgType = TransactionReceiptDto & {
+type ToInputArgType = Omit<TransactionReceiptDto, "logs"> & {
   logs: LogDto[];
 };
 
@@ -34,7 +34,7 @@ type ToInputArgType = TransactionReceiptDto & {
  *
  * We only focus on transaction contract and logs
  */
-export class TokenProcessor extends AbstractProcessor<
+export class ContractProcessor extends AbstractProcessor<
   Hash,
   ToInputArgType,
   Promise<{ tokens: TokenCreateInput[]; contracts: ContractCreateInput[] }>,
@@ -44,7 +44,7 @@ export class TokenProcessor extends AbstractProcessor<
 > {
   constructor() {
     super({
-      logger: appLogger.namespace(TokenProcessor.name),
+      logger: appLogger.namespace(ContractProcessor.name),
     });
   }
 

@@ -123,79 +123,96 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
             }),
             // start copy trading
             // TODO: Fix this, not finished yet
-            concatMap(async ({ swap }): Promise<CopyTradeMessagePayload> => {
-              const client = await rpcRequest.getWalletClient();
-              if (!client.chain) {
-                throw new Error("No wallet client chain");
-              }
+            concatMap(async ({ swap, copyContracts }) => {
+              const copyResults: CopyTradeMessagePayload[] = await Promise.all(
+                copyContracts.map(async (copyContract) => {
+                  const client = await rpcRequest.getWalletClient();
+                  if (!client.chain) {
+                    throw new Error("No wallet client chain");
+                  }
 
-              const copyContract = "0x123";
-              const contract = getContract({
-                address: copyContract,
-                abi: BeraCopyAbi,
-                client,
-              });
+                  const copyContractAddress = copyContract.contractAddress;
+                  const contract = getContract({
+                    address: copyContractAddress,
+                    abi: BeraCopyAbi,
+                    client,
+                  });
 
-              const value = 900000000000n;
-              try {
-                const txHash = await contract.write.multiSwap(
-                  [
-                    this.dexAddress,
-                    [
+                  const value = 900000000000n;
+                  try {
+                    const txHash = await contract.write.multiSwap(
+                      [
+                        this.dexAddress,
+                        [
+                          {
+                            poolIdx: 36000n,
+                            base: "0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03",
+                            quote: "0x0000000000000000000000000000000000000000",
+                            isBuy: false,
+                          },
+                        ],
+                        value,
+                        0n,
+                      ],
                       {
-                        poolIdx: 36000n,
-                        base: "0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03",
-                        quote: "0x0000000000000000000000000000000000000000",
-                        isBuy: false,
+                        chain: client.chain,
+                        account: this.account,
+                        value,
                       },
-                    ],
-                    value,
-                    0n,
-                  ],
-                  {
-                    chain: client.chain,
-                    account: this.account,
-                    value,
-                  },
-                );
-                this.serviceLogger.info(
-                  `Copy trade sent. SwapID: ${swap.id} | TxHash: ${txHash}`,
-                );
-                return {
-                  swapId: swap.id.toString(),
-                  isSuccess: true,
-                  transactionHash: txHash,
-                  error: null,
-                } as CopyTradeMessagePayload<true>;
-              } catch (e: unknown) {
-                this.serviceLogger.error(
-                  `Error on processing copy trading on swapId: ${swap.id}`,
-                );
+                    );
+                    this.serviceLogger.info(
+                      `Copy trade sent. SwapID: ${swap.id} | TxHash: ${txHash}`,
+                    );
+                    return {
+                      swapId: swap.id.toString(),
+                      isSuccess: true,
+                      transactionHash: txHash,
+                      error: null,
+                    } as CopyTradeMessagePayload<true>;
+                  } catch (e: unknown) {
+                    this.serviceLogger.error(
+                      `Error on processing copy trading on swapId: ${swap.id}`,
+                    );
 
-                if (e instanceof Error && e.stack) {
-                  return {
-                    swapId: swap.id.toString(),
-                    isSuccess: false,
-                    transactionHash: null,
-                    error: e.stack,
-                  } as CopyTradeMessagePayload<false>;
-                }
-                throw e;
-              }
+                    if (e instanceof Error && e.stack) {
+                      return {
+                        swapId: swap.id.toString(),
+                        isSuccess: false,
+                        transactionHash: null,
+                        error: e.stack,
+                      } as CopyTradeMessagePayload<false>;
+                    }
+                    throw e;
+                  }
+                }),
+              );
+
+              return {
+                swap,
+                copyResults,
+              };
             }),
             // log the copy trading data
             tap((result) => {
+              const total = result.copyResults.length;
+              const totalProcessed = result.copyResults.filter(
+                (result) => result.isSuccess,
+              ).length;
               this.serviceLogger.info(
-                `Sending to topic ${this.toTopicName}. SwapID: ${result.swapId} | Success: ${result.isSuccess}`,
+                `Sending to topic ${this.toTopicName}. SwapID: ${result.swap.id} | Total: ${total} | Success: ${totalProcessed} | Failed: ${total - totalProcessed}`,
               );
             }),
             // send to the topic
             concatMap(async (result) => {
               const kafkaTransaction = await kafkaConnection.transaction();
               try {
-                await sendKafkaMessageByTopic(this.toTopic, [result], {
-                  transaction: kafkaTransaction,
-                });
+                await sendKafkaMessageByTopic(
+                  this.toTopic,
+                  result.copyResults,
+                  {
+                    transaction: kafkaTransaction,
+                  },
+                );
                 const group = await this.getConsumer().describeGroup();
                 await kafkaTransaction.sendOffsets({
                   consumerGroupId: group.groupId,

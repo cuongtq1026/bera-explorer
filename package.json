@@ -25,6 +25,7 @@
     "consume:balance-kafka": "tsx index.ts consume balance-kafka",
     "consume:swap-kafka": "tsx index.ts consume swap-kafka",
     "consume:price-kafka": "tsx index.ts consume price-kafka",
+    "consume:copy-contract-created-kafka": "tsx index.ts consume copy-contract-created-kafka",
     "queue:blocks": "tsx index.ts queue blocks",
     "queue:transaction-aggregator": "tsx index.ts queue transaction-aggregator",
     "stream:all": "tsx index.ts streams all",

@@ -12,11 +12,11 @@ import {
 } from "@database/repositories/transaction-receipt.repository.ts";
 import { BalanceProcessor } from "@processors/balance.processor.ts";
 import { BlockProcessor } from "@processors/block.processor.ts";
+import { ContractProcessor } from "@processors/contract.processor.ts";
 import { CopyContractCreatedProcessor } from "@processors/copy-contract-created.processor.ts";
 import { InternalTransactionProcessor } from "@processors/internal-transaction.processor.ts";
 import { PriceProcessor } from "@processors/price/price.processor.ts";
 import { SwapProcessor } from "@processors/swap.processor.ts";
-import { ContractProcessor } from "@processors/contract.processor.ts";
 import { TransactionProcessor } from "@processors/transaction.processor.ts";
 import { TransactionReceiptProcessor } from "@processors/transaction-receipt.processor.ts";
 import { TransferProcessor } from "@processors/transfer.processor.ts";
@@ -27,6 +27,7 @@ import { CopyTrading } from "./services/copy-trading";
 import { appLogger } from "./services/monitor/app.logger.ts";
 import { setupPrometheus } from "./services/monitor/prometheus.ts";
 import { BalanceKafkaConsumer } from "./services/queues/kafka/consumers/balance.kafka.consumer.ts";
+import { CopyContractCreatedKafkaConsumer } from "./services/queues/kafka/consumers/copy-contract-created.kafka.consumer.ts";
 import { LogKafkaConsumer } from "./services/queues/kafka/consumers/log.kafka.consumer.ts";
 import { PriceKafkaConsumer } from "./services/queues/kafka/consumers/price.kafka.consumer.ts";
 import { SwapKafkaConsumer } from "./services/queues/kafka/consumers/swap.kafka.consumer.ts";
@@ -353,6 +354,14 @@ switch (command) {
         await consumer.consume();
         break;
       }
+      case "copy-contract-created-kafka": {
+        setupPrometheus();
+
+        const consumer = new CopyContractCreatedKafkaConsumer();
+
+        await consumer.consume();
+        break;
+      }
       case "all": {
         setupPrometheus();
 
@@ -365,6 +374,8 @@ switch (command) {
         const transferKafkaConsumer = new TransferKafkaConsumer();
         const balanceKafkaConsumer = new BalanceKafkaConsumer();
         const swapKafkaConsumer = new SwapKafkaConsumer();
+        const copyContractCreatedKafkaConsumer =
+          new CopyContractCreatedKafkaConsumer();
 
         await blockConsumer.consume();
         await transactionConsumer.consume();
@@ -380,6 +391,7 @@ switch (command) {
         await transferKafkaConsumer.consume();
         await balanceKafkaConsumer.consume();
         await swapKafkaConsumer.consume();
+        await copyContractCreatedKafkaConsumer.consume();
         break;
       }
       default: {

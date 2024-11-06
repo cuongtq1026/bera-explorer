@@ -7,7 +7,7 @@ import kafkaConnection from "../kafka.connection.ts";
 import { KafkaDecodeConsumer } from "../kafka.interface.ts";
 
 export abstract class AbstractKafkaStream extends KafkaDecodeConsumer {
-  private MAX_UNCOMMITED_MESSAGES = 1;
+  protected MAX_UNCOMMITED_MESSAGES = 1;
   protected fromTopicName: string;
   protected toTopicName: string | null;
   protected abstract fromTopic: keyof typeof topics;

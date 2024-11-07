@@ -50,6 +50,8 @@ export const CROC_SWAP_DEX_MULTI_SWAP = toFunctionSelector(
 export const ETH_ADDRESS = "0x0000000000000000000000000000000000000000";
 export const WRAPPED_ETH_ADDRESS = "0x7507c1dc16935b82698e4c63f2746a2fcf994df8";
 
+export const BERA_DEX_ADDRESS = "0x21e2C0AFd058A89FCf7caf3aEA3cB84Ae977B73D";
+
 // Berachain as default
 type TokenDtoWithDecimal = TokenDto & {
   oneDecimalValue: Decimal;

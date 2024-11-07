@@ -1,12 +1,12 @@
+import { toSwapDto, toTransactionDto } from "@database/dto.ts";
+import prisma from "@database/prisma.ts";
 import { getCopyContracts } from "@database/repositories/copy-contract.repository.ts";
 import { getSwap } from "@database/repositories/swap.repository.ts";
 import { concatMap, filter, finalize, interval, of, retry, tap } from "rxjs";
-import { type Account, getContract, type Hash, isHash } from "viem";
+import { type Account, type Hash, isHash } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-import { BeraCopyAbi } from "../../../config/abis";
-import { ETH_ADDRESS } from "../../../config/constants.ts";
-import rpcRequest from "../../../data-source/rpc-request";
+import { getCopyTradingDex } from "../../../copy-trading/copy-trading-dex.factory.ts";
 import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
 import { appLogger } from "../../../monitor/app.logger.ts";
 import kafkaConnection from "../kafka.connection.ts";
@@ -22,24 +22,12 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
   protected fromTopic = "SWAP" as const;
   protected toTopic = "COPY_TRADE_LOG" as const;
   protected consumerName: string = "copy-stream";
-  private readonly dexAddress: Hash;
   private readonly account: Account;
 
   constructor() {
     super({
       logger: appLogger.namespace(CopyTradingKafkaStream.name),
     });
-
-    {
-      const dexAddress = process.env.DEX_ADDRESS;
-      if (!dexAddress) {
-        throw new Error("DEX_ADDRESS is not set");
-      }
-      if (!isHash(dexAddress)) {
-        throw new Error("DEX_ADDRESS is not a valid hash");
-      }
-      this.dexAddress = dexAddress;
-    }
 
     {
       const copyTradingWalletPrivateKey =
@@ -74,9 +62,16 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
             }),
             // start querying
             concatMap(async (swapHash) => {
-              const swapDto = await getSwap(swapHash);
+              const swapDb = await prisma.swap.findUnique({
+                where: {
+                  hash: swapHash,
+                },
+                include: {
+                  transaction: true,
+                },
+              });
 
-              if (!swapDto) {
+              if (!swapDb) {
                 throw new KafkaReachedEndIndexedOffset(
                   this.fromTopicName,
                   this.consumerName,
@@ -84,7 +79,7 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
                 );
               }
 
-              return swapDto;
+              return swapDb;
             }),
             // infinite retry if data is not indexed
             retry({
@@ -102,7 +97,7 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
               },
             }),
             // Filter out non root swap
-            filter((swapDto) => swapDto.isRoot),
+            filter((swapDb) => swapDb.isRoot),
             concatMap(async (swap) => {
               const target = swap.from as Hash;
               const copyContracts = await getCopyContracts(target);
@@ -120,68 +115,17 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
               );
             }),
             // start copy trading
-            // TODO: Fix this, not finished yet
             concatMap(async ({ swap, copyContracts }) => {
+              const copyTradingDEX = getCopyTradingDex(swap.dex);
+
               const copyResults: CopyTradeMessagePayload[] = await Promise.all(
                 copyContracts.map(async (copyContract) => {
-                  const client = await rpcRequest.getWalletClient();
-                  if (!client.chain) {
-                    throw new Error("No wallet client chain");
-                  }
-
-                  const copyContractAddress = copyContract.contractAddress;
-                  const contract = getContract({
-                    address: copyContractAddress,
-                    abi: BeraCopyAbi,
-                    client,
+                  return copyTradingDEX.execute({
+                    copyContractAddress: copyContract.contractAddress,
+                    swap: toSwapDto(swap),
+                    transaction: toTransactionDto(swap.transaction),
+                    account: this.account,
                   });
-
-                  // TODO: Make factory for each DEX
-                  try {
-                    const txHash = await contract.write.multiSwap(
-                      [
-                        this.dexAddress,
-                        [
-                          {
-                            poolIdx: 36000n,
-                            base: swap.from,
-                            quote: swap.to,
-                            isBuy: true,
-                          },
-                        ],
-                        swap.fromAmount, // Exact copy for now
-                        0n, // 0 for now, will be added to the contract slippage
-                      ],
-                      {
-                        chain: client.chain,
-                        account: this.account,
-                        value: swap.from === ETH_ADDRESS ? swap.fromAmount : 0n,
-                      },
-                    );
-                    this.serviceLogger.info(
-                      `Copy trade sent. SwapHash: ${swap.hash} | TxHash: ${txHash}`,
-                    );
-                    return {
-                      swapHash: swap.hash,
-                      isSuccess: true,
-                      transactionHash: txHash,
-                      error: null,
-                    } as CopyTradeMessagePayload<true>;
-                  } catch (e: unknown) {
-                    this.serviceLogger.error(
-                      `Error on processing copy trading on SwapHash: ${swap.hash}`,
-                    );
-
-                    if (e instanceof Error && e.stack) {
-                      return {
-                        swapHash: swap.hash,
-                        isSuccess: false,
-                        transactionHash: null,
-                        error: e.stack,
-                      } as CopyTradeMessagePayload<false>;
-                    }
-                    throw e;
-                  }
                 }),
               );
 

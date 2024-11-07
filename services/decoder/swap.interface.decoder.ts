@@ -20,8 +20,8 @@ export type DecodeArg<DecodedInputType = any> = {
   dex: string;
 };
 
-export interface ISwapDecoder<DecodedInputType = any>
-  extends ITransactionDecoder<DecodedInputType> {
+export interface ISwapDecoder<DecodedFunctionName = any, DecodedInputType = any>
+  extends ITransactionDecoder<DecodedFunctionName, DecodedInputType> {
   decodeSwaps(transaction: TransactionDto): SwapChildrenDto[];
 
   decodeETHToToken(args: DecodeArg<DecodedInputType>): SwapChildrenDto[];

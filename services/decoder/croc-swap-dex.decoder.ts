@@ -203,7 +203,7 @@ function decodeMultiStepSwaps(args: {
 
 export class CrocSwapDexDecoder
   extends AbstractInjectLogger
-  implements ISwapDecoder<DecodedInputType>
+  implements ISwapDecoder<"multiSwap", DecodedInputType>
 {
   constructor() {
     super({
@@ -212,7 +212,7 @@ export class CrocSwapDexDecoder
   }
 
   decodeTx(transaction: TransactionDto): {
-    functionName: string;
+    functionName: "multiSwap";
     decoded: DecodedInputType;
   } {
     try {

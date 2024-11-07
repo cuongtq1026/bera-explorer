@@ -1,5 +1,6 @@
 import { AbstractConnectable } from "@interfaces/connectable.abstract.ts";
 import {
+  type Chain,
   createClient,
   createPublicClient,
   createWalletClient,
@@ -22,7 +23,9 @@ const BLACKLIST_KEY = "rpc_url:blacklist";
 export class RpcRequest extends AbstractConnectable {
   private publicClients: RpcClient[];
   private debugClients: RpcDebugClient[];
-  private walletClient: WalletClient;
+  private walletClient: Omit<WalletClient, "chain"> & {
+    chain: Chain;
+  };
   private nextClientIndex = 0;
 
   constructor() {

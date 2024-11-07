@@ -1,8 +1,8 @@
 import type { TransactionDto } from "@database/dto.ts";
 
-export interface ITransactionDecoder<DecodedInputType> {
+export interface ITransactionDecoder<DecodedFunctionName, DecodedInputType> {
   decodeTx(transaction: TransactionDto): {
-    functionName: string;
+    functionName: DecodedFunctionName;
     decoded: DecodedInputType;
   };
 }

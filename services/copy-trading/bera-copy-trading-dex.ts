@@ -39,6 +39,7 @@ export class BeraCopyTradingDex extends CopyTradingDEX {
         client,
       });
 
+      // TODO: Support token to token, token to eth
       const txHash = await contract.write.multiSwap(
         [
           this.dexAddress,

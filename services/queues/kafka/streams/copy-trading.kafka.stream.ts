@@ -1,8 +1,6 @@
-import { toSwapDto } from "@database/dto.ts";
-import prisma from "@database/prisma.ts";
 import { getCopyContracts } from "@database/repositories/copy-contract.repository.ts";
 import { getSwap } from "@database/repositories/swap.repository.ts";
-import { concatMap, filter, interval, of, retry, tap } from "rxjs";
+import { concatMap, filter, finalize, interval, of, retry, tap } from "rxjs";
 import { type Account, getContract, type Hash, isHash } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -11,7 +9,6 @@ import { ETH_ADDRESS } from "../../../config/constants.ts";
 import rpcRequest from "../../../data-source/rpc-request";
 import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
 import { appLogger } from "../../../monitor/app.logger.ts";
-import { parseToBigInt } from "../../../utils.ts";
 import kafkaConnection from "../kafka.connection.ts";
 import { CopyTradeMessagePayload } from "../producers";
 import { sendKafkaMessageByTopic } from "../producers/default.kafka.producer.ts";
@@ -104,7 +101,8 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
                 throw error;
               },
             }),
-            // TODO: Filter out swap doesn't get target and finish if no swaps found
+            // Filter out non root swap
+            filter((swapDto) => swapDto.isRoot),
             concatMap(async (swap) => {
               const target = swap.from as Hash;
               const copyContracts = await getCopyContracts(target);
@@ -113,6 +111,8 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
                 copyContracts,
               };
             }),
+            // Filter out swap which doesn't have any target
+            filter((result) => result.copyContracts.length > 0),
             // log out
             tap((result) => {
               this.serviceLogger.info(
@@ -137,7 +137,6 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
                   });
 
                   // TODO: Make factory for each DEX
-                  // TODO: Store swap root
                   try {
                     const txHash = await contract.write.multiSwap(
                       [
@@ -240,7 +239,7 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
             }),
           ),
         ),
-        tap(() => this.decreaseUncommitted()),
+        finalize(() => this.decreaseUncommitted()),
       );
 
     stream$.subscribe({

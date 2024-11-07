@@ -144,11 +144,11 @@ export class KafkaConnection extends AbstractConnectable {
         });
         this.schemaMap.set("LOG", logSchemaId);
 
-        const { id: swapId } = await this.registry.register({
+        const { id: swapSchemaId } = await this.registry.register({
           type: SchemaType.AVRO,
           schema: JSON.stringify(swapSchema),
         });
-        this.schemaMap.set("SWAP", swapId);
+        this.schemaMap.set("SWAP", swapSchemaId);
 
         const { id: transactionSchemaId } = await this.registry.register({
           type: SchemaType.AVRO,

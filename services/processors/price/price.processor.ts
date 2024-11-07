@@ -17,7 +17,7 @@ import { AbstractProcessor } from "../abstract.processor.ts";
 const serviceLogger = appLogger.namespace("PriceProcessor");
 
 export class PriceProcessor extends AbstractProcessor<
-  number | bigint,
+  string,
   SwapDto,
   PriceCreateInput[],
   PriceDto[]
@@ -28,10 +28,10 @@ export class PriceProcessor extends AbstractProcessor<
     });
   }
 
-  async get(swapId: number | bigint): Promise<SwapDto> {
-    const swapDto = await getSwap(swapId);
+  async get(swapHash: string): Promise<SwapDto> {
+    const swapDto = await getSwap(swapHash);
     if (swapDto == null) {
-      throw new NoGetResult(swapId.toString());
+      throw new NoGetResult(swapHash.toString());
     }
     return swapDto;
   }
@@ -49,25 +49,25 @@ export class PriceProcessor extends AbstractProcessor<
     return calculatePrices(swapDto);
   }
 
-  async deleteFromDb(swapId: number | bigint): Promise<void> {
-    await deletePrices(swapId);
+  async deleteFromDb(swapHash: string): Promise<void> {
+    await deletePrices(swapHash);
   }
 
   async createInDb(inputs: PriceCreateInput[]): Promise<PriceDto[]> {
     return await createPricesAndReturn(inputs);
   }
 
-  async process(swapId: number | bigint): Promise<PriceDto[]> {
-    serviceLogger.info("[PriceProcessor] processing: " + swapId);
+  async process(swapHash: string): Promise<PriceDto[]> {
+    serviceLogger.info("[PriceProcessor] processing: " + swapHash);
 
-    const obj = await this.get(swapId);
+    const obj = await this.get(swapHash);
 
     const inputs = this.toInput(obj);
 
-    await this.deleteFromDb(swapId);
-    serviceLogger.info(`[PriceProcessor] deleted prices swapId ${swapId}`);
+    await this.deleteFromDb(swapHash);
+    serviceLogger.info(`[PriceProcessor] deleted prices swapHash ${swapHash}`);
     const prices = await this.createInDb(inputs);
-    serviceLogger.info(`[PriceProcessor] created prices swapId ${swapId}`);
+    serviceLogger.info(`[PriceProcessor] created prices swapHash ${swapHash}`);
 
     return prices;
   }

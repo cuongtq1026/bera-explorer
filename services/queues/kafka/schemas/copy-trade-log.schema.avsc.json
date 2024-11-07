@@ -11,7 +11,7 @@
             "doc": "Hash of the transaction, null if isSuccess is false"
         },
         {
-            "name": "swapId",
+            "name": "swapHash",
             "type": "string",
             "doc": "Identifier for the swap"
         },

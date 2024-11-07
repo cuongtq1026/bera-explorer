@@ -5,7 +5,6 @@ import type { EachMessagePayload } from "kafkajs";
 
 import { KafkaReachedEndIndexedOffset } from "../../../exceptions/consumer.exception.ts";
 import { appLogger } from "../../../monitor/app.logger.ts";
-import { parseToBigInt } from "../../../utils.ts";
 import { SwapMessagePayload } from "../producers";
 import { AbstractKafkaConsumer } from "./kafka.consumer.abstract.ts";
 
@@ -29,22 +28,21 @@ export class PriceKafkaConsumer extends AbstractKafkaConsumer {
       JSON.parse(rawDecodedContent.toString()),
     );
 
-    const { swapId: rawSwapId } = contentInstance;
-    const swapId = parseToBigInt(rawSwapId);
+    const { swapHash } = contentInstance;
 
-    const swap = await getSwap(swapId);
+    const swap = await getSwap(swapHash);
 
     if (swap == null) {
       // TODO: Wait until data indexed
       throw new KafkaReachedEndIndexedOffset(
         eachMessagePayload.topic,
         this.consumerName,
-        rawSwapId,
+        swapHash,
       );
     }
 
     const processor = new PriceProcessor();
-    await processor.process(swapId);
+    await processor.process(swapHash);
 
     await this.onFinish(eachMessagePayload, null);
   }

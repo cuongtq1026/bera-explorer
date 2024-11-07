@@ -6,6 +6,7 @@ import { topics } from "../index.ts";
 import kafkaConnection from "../kafka.connection.ts";
 import { KafkaDecodeConsumer } from "../kafka.interface.ts";
 
+// TODO: Support parallel consuming
 export abstract class AbstractKafkaConsumer
   extends KafkaDecodeConsumer
   implements IConsumer<void, EachMessagePayload>

@@ -13,7 +13,6 @@ import { concatMap, interval, of, retry, tap } from "rxjs";
 
 import { KafkaReachedEndIndexedOffset } from "../../../../exceptions/consumer.exception.ts";
 import { appLogger } from "../../../../monitor/app.logger.ts";
-import { parseToBigInt } from "../../../../utils.ts";
 import kafkaConnection from "../../kafka.connection.ts";
 import type { PriceMessagePayload } from "../../producers";
 import { sendKafkaMessageByTopic } from "../../producers/default.kafka.producer.ts";
@@ -61,12 +60,12 @@ export class PriceKafkaStream extends AbstractKafkaStream {
               const rawDecodedContent =
                 await this.getRawDecodedData<typeof this.fromTopic>(message);
 
-              const { swapId: rawSwapId } = rawDecodedContent;
-              return parseToBigInt(rawSwapId);
+              const { swapHash } = rawDecodedContent;
+              return swapHash;
             }),
             // start querying
-            concatMap(async (swapId) => {
-              const swapDb = await getSwap(swapId);
+            concatMap(async (swapHash) => {
+              const swapDb = await getSwap(swapHash);
 
               if (!swapDb) {
                 throw new KafkaReachedEndIndexedOffset(
@@ -92,12 +91,12 @@ export class PriceKafkaStream extends AbstractKafkaStream {
                 throw error;
               },
             }),
-            // process prices from swapId
+            // process prices from swapHash
             concatMap(async (swapDto) => {
-              const { id: swapId, blockNumber } = swapDto;
+              const { hash: swapHash, blockNumber } = swapDto;
 
               const processor = new PriceProcessor();
-              const prices = await processor.process(swapId);
+              const prices = await processor.process(swapHash);
 
               return { blockNumber, insertedPrices: prices };
             }),

@@ -30,8 +30,8 @@ export function checkAndGetUndeterminedPrice(
   if (!isFromStableCoin && !isToStableCoin && !isFromETH && !isToETH) {
     return [
       {
-        hash: `${swap.id}-1`,
-        swapId: swap.id,
+        hash: `${swap.hash}-1`,
+        swapHash: swap.hash,
         blockNumber: swap.blockNumber,
         tokenAddress: swap.from,
         transactionHash: swap.transactionHash,
@@ -42,8 +42,8 @@ export function checkAndGetUndeterminedPrice(
         createdAt: swap.createdAt,
       },
       {
-        hash: `${swap.id}-2`,
-        swapId: swap.id,
+        hash: `${swap.hash}-2`,
+        swapHash: swap.hash,
         blockNumber: swap.blockNumber,
         tokenAddress: swap.to,
         transactionHash: swap.transactionHash,
@@ -124,8 +124,8 @@ function getBtcPrice(
 
 export function calculatePrices(swap: SwapDto) {
   const fromTokenPrice: PriceCreateInput = {
-    hash: `${swap.id}-1`,
-    swapId: swap.id,
+    hash: `${swap.hash}-1`,
+    swapHash: swap.hash,
     blockNumber: swap.blockNumber,
     tokenAddress: swap.from,
     transactionHash: swap.transactionHash,
@@ -151,8 +151,8 @@ export function calculatePrices(swap: SwapDto) {
     createdAt: swap.createdAt,
   };
   const toTokenPrice: PriceCreateInput = {
-    hash: `${swap.id}-2`,
-    swapId: swap.id,
+    hash: `${swap.hash}-2`,
+    swapHash: swap.hash,
     blockNumber: swap.blockNumber,
     tokenAddress: swap.to,
     transactionHash: swap.transactionHash,

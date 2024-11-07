@@ -22,7 +22,7 @@ export class TransferMessagePayload {
 
 export class SwapMessagePayload {
   @IsNotEmpty()
-  swapId: string;
+  swapHash: string;
 }
 
 export class PriceMessagePayload {
@@ -33,7 +33,7 @@ export class PriceMessagePayload {
 export class CopyTradeMessagePayload<success extends boolean = boolean> {
   transactionHash: success extends true ? string : null;
   @IsNotEmpty()
-  swapId: string;
+  swapHash: string;
   @IsNotEmpty()
   isSuccess: success;
   error: success extends false ? string : null;

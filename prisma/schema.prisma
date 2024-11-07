@@ -233,7 +233,7 @@ model Contract {
 }
 
 model Swap {
-  id               BigInt   @id @default(autoincrement())
+  hash             String   @id
   blockNumber      BigInt
   transactionHash  String
   transactionIndex Int
@@ -242,11 +242,15 @@ model Swap {
   dex              String
   fromAmount       Decimal  @db.Decimal(78, 0)
   toAmount         Decimal  @db.Decimal(78, 0)
+  isRoot           Boolean
+  parentHash       String?
   createdAt        DateTime
 
   block       Block        @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
   transaction Transaction  @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
   Erc20Price  Erc20Price[]
+  parent      Swap?        @relation("SwapRef", fields: [parentHash], references: [hash], onDelete: Cascade)
+  children    Swap[]       @relation("SwapRef")
 
   @@index([dex])
   @@index([from])
@@ -260,7 +264,7 @@ model Erc20Price {
   blockNumber      BigInt
   transactionHash  String
   transactionIndex Int
-  swapId           BigInt
+  swapHash         String
   usdPrice         Decimal  @db.Decimal(78, 0)
   ethPrice         Decimal  @db.Decimal(78, 0)
   btcPrice         Decimal  @db.Decimal(78, 0)
@@ -269,7 +273,7 @@ model Erc20Price {
   ethPriceRefHash  String?
   btcPriceRefHash  String?
 
-  swap        Swap        @relation(fields: [swapId], references: [id], onDelete: Cascade)
+  swap        Swap        @relation(fields: [swapHash], references: [hash], onDelete: Cascade)
   block       Block       @relation(fields: [blockNumber], references: [number], onDelete: Cascade)
   transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade)
 
@@ -282,7 +286,6 @@ model Erc20Price {
   btcPriceRef Erc20Price?  @relation("Erc20BtcPriceRef", fields: [btcPriceRefHash], references: [hash], onDelete: Cascade)
   btcRefList  Erc20Price[] @relation("Erc20BtcPriceRef")
 
-  @@index([swapId])
   @@index([blockNumber, transactionIndex, hash])
   @@index([transactionHash])
   @@index([tokenAddress, createdAt])

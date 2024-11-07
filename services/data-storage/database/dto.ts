@@ -1,5 +1,5 @@
 import type { PriceCreateInput } from "@database/repositories/price.repository.ts";
-import type { SwapCreateInput } from "@database/repositories/swap.repository.ts";
+import type { SwapCreateChildrenInput } from "@database/repositories/swap.repository.ts";
 import type { TransferCreateInput } from "@database/repositories/transfer.repository.ts";
 import type {
   Balance,
@@ -174,7 +174,7 @@ export type PriceDto = {
   tokenAddress: string;
   transactionHash: string;
   transactionIndex: number;
-  swapId: bigint | number;
+  swapHash: string;
   usdPrice: bigint;
   ethPrice: bigint;
   btcPrice: bigint;
@@ -187,7 +187,7 @@ export type PriceDto = {
 };
 
 export type SwapDto = {
-  id: bigint | number;
+  hash: string;
   blockNumber: bigint | number;
   transactionHash: string;
   transactionIndex: number;
@@ -196,12 +196,14 @@ export type SwapDto = {
   to: Hash;
   fromAmount: bigint;
   toAmount: bigint;
+  isRoot: boolean;
+  parentHash: string | null;
   createdAt: Date;
 
   prices?: PriceDto[];
 };
 
-export type SwapDtoNoId = Omit<SwapDto, "id">;
+export type SwapChildrenDto = Omit<SwapDto, "isRoot" | "parentHash" | "hash">;
 
 export type CopyContractDto = {
   contractAddress: Hash;
@@ -532,7 +534,9 @@ export function toBalanceHistoryDto(
   };
 }
 
-export function dtoToSwapCreateInput(swapDto: SwapDtoNoId): SwapCreateInput {
+export function dtoToSwapCreateInput(
+  swapDto: SwapChildrenDto,
+): SwapCreateChildrenInput {
   return {
     blockNumber: swapDto.blockNumber,
     transactionHash: swapDto.transactionHash,
@@ -548,7 +552,7 @@ export function dtoToSwapCreateInput(swapDto: SwapDtoNoId): SwapCreateInput {
 
 export function toSwapDto(swap: Swap): SwapDto {
   return {
-    id: swap.id,
+    hash: swap.hash,
     blockNumber: swap.blockNumber,
     transactionHash: swap.transactionHash as Hash,
     transactionIndex: swap.transactionIndex,
@@ -557,6 +561,8 @@ export function toSwapDto(swap: Swap): SwapDto {
     to: swap.to as Hash,
     fromAmount: parseDecimalToBigInt(swap.fromAmount),
     toAmount: parseDecimalToBigInt(swap.toAmount),
+    isRoot: swap.isRoot,
+    parentHash: swap.parentHash,
     createdAt: swap.createdAt,
   };
 }
@@ -569,7 +575,7 @@ export function toPriceDto(
   const dto: PriceDto = {
     hash: price.hash,
     blockNumber: price.blockNumber,
-    swapId: price.swapId,
+    swapHash: price.swapHash,
     transactionIndex: price.transactionIndex,
     tokenAddress: price.tokenAddress,
     usdPrice: parseDecimalToBigInt(price.usdPrice),
@@ -593,7 +599,7 @@ export function dtoToPriceCreateInput(priceDto: PriceDto): PriceCreateInput {
     hash: priceDto.hash,
     blockNumber: priceDto.blockNumber,
     transactionIndex: priceDto.transactionIndex,
-    swapId: priceDto.swapId,
+    swapHash: priceDto.swapHash,
     tokenAddress: priceDto.tokenAddress,
     usdPrice: priceDto.usdPrice.toString(),
     ethPrice: priceDto.ethPrice.toString(),

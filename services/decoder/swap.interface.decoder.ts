@@ -1,7 +1,7 @@
 import type {
   LogDto,
   LogTopicDto,
-  SwapDtoNoId,
+  SwapChildrenDto,
   TransactionDto,
   TransactionReceiptDto,
 } from "@database/dto.ts";
@@ -22,11 +22,11 @@ export type DecodeArg<DecodedInputType = any> = {
 
 export interface ISwapDecoder<DecodedInputType = any>
   extends ITransactionDecoder<DecodedInputType> {
-  decodeSwaps(transaction: TransactionDto): SwapDtoNoId[];
+  decodeSwaps(transaction: TransactionDto): SwapChildrenDto[];
 
-  decodeETHToToken(args: DecodeArg<DecodedInputType>): SwapDtoNoId[];
+  decodeETHToToken(args: DecodeArg<DecodedInputType>): SwapChildrenDto[];
 
-  decodeTokenToETH(args: DecodeArg<DecodedInputType>): SwapDtoNoId[];
+  decodeTokenToETH(args: DecodeArg<DecodedInputType>): SwapChildrenDto[];
 
-  decodeTokenToToken(args: DecodeArg<DecodedInputType>): SwapDtoNoId[];
+  decodeTokenToToken(args: DecodeArg<DecodedInputType>): SwapChildrenDto[];
 }

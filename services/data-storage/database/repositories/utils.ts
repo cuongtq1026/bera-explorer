@@ -185,7 +185,7 @@ export function toPriceCreateInput(priceDto: PriceDto): PriceCreateInput {
     ethPrice: priceDto.ethPrice.toString(),
     btcPrice: priceDto.btcPrice.toString(),
     createdAt: priceDto.createdAt,
-    swapId: priceDto.swapId,
+    swapHash: priceDto.swapHash,
     blockNumber: priceDto.blockNumber,
     transactionIndex: priceDto.transactionIndex,
   };

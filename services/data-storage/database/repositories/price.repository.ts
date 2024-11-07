@@ -12,7 +12,7 @@ export type PriceCreateInput = {
   ethPrice: string;
   btcPrice: string;
   createdAt: Date | string;
-  swapId: bigint | number;
+  swapHash: string;
   usdPriceRefHash?: string | null;
   ethPriceRefHash?: string | null;
   btcPriceRefHash?: string | null;
@@ -33,10 +33,10 @@ export async function createPrices(priceCreateInputs: PriceCreateInput[]) {
   });
 }
 
-export async function deletePrices(swapId: number | bigint) {
+export async function deletePrices(swapHash: string) {
   return prisma.erc20Price.deleteMany({
     where: {
-      swapId,
+      swapHash,
     },
   });
 }

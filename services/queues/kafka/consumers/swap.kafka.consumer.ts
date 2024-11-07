@@ -47,37 +47,37 @@ export class SwapKafkaConsumer extends AbstractKafkaConsumer {
 
     // ignore failed transaction
     if (!transaction.receipt.status) {
-      await this.onFinish(eachMessagePayload, { swapIds: null });
+      await this.onFinish(eachMessagePayload, { swapHashes: null });
       return;
     }
 
     const processor = new SwapProcessor();
-    const swapIds = await processor.process(transaction.hash);
+    const swapHashes = await processor.process(transaction.hash);
 
-    await this.onFinish(eachMessagePayload, { swapIds });
+    await this.onFinish(eachMessagePayload, { swapHashes });
   }
 
   public async onFinish(
     eachMessagePayload: EachMessagePayload,
     data: {
-      swapIds: (bigint | number)[] | null;
+      swapHashes: string[] | null;
     },
   ): Promise<void> {
-    const { swapIds } = data;
+    const { swapHashes } = data;
 
-    if (!swapIds) {
+    if (!swapHashes) {
       return super.onFinish(eachMessagePayload, data);
     }
     const messageId = `${this.consumerName}-${eachMessagePayload.topic}-${eachMessagePayload.partition}-${eachMessagePayload.message.offset}`;
 
     // Send to swap topic
     await sendToSwapTopic(
-      swapIds.map((swapId) => ({
-        swapId: swapId.toString(),
+      swapHashes.map((swapHash) => ({
+        swapHash: swapHash.toString(),
       })),
     );
     this.serviceLogger.info(
-      `[MessageId: ${messageId}] Sent ${swapIds.length} messages to swap topic.`,
+      `[MessageId: ${messageId}] Sent ${swapHashes.length} messages to swap topic.`,
     );
 
     return super.onFinish(eachMessagePayload, data);

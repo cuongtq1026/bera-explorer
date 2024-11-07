@@ -3,7 +3,7 @@ import {
   decodeWithdrawalLog,
   type LogDto,
   type LogTopicDto,
-  type SwapDtoNoId,
+  type SwapChildrenDto,
   type TransactionDto,
   type TransactionReceiptDto,
 } from "@database/dto.ts";
@@ -130,7 +130,7 @@ function decodeMultiStepSwaps(args: {
   receipt: TransactionReceiptDto;
   dex: string;
   fromAndToIndex: [number, number];
-}): SwapDtoNoId[] {
+}): SwapChildrenDto[] {
   const {
     serviceLogger,
     expectedRoutes,
@@ -143,7 +143,7 @@ function decodeMultiStepSwaps(args: {
   const [f, t] = fromAndToIndex;
   return expectedRoutes
     .slice(f, t)
-    .map<SwapDtoNoId | null>((_route, index) => {
+    .map<SwapChildrenDto | null>((_route, index) => {
       const routeFromToken = expectedRoutes[index + f];
       const routeToToken = expectedRoutes[index + f + 1];
 
@@ -198,7 +198,7 @@ function decodeMultiStepSwaps(args: {
         createdAt: receipt.createdAt,
       };
     })
-    .filter((swapDto): swapDto is SwapDtoNoId => swapDto != null);
+    .filter((swapDto): swapDto is SwapChildrenDto => swapDto != null);
 }
 
 export class CrocSwapDexDecoder
@@ -249,101 +249,72 @@ export class CrocSwapDexDecoder
     }
   }
 
-  decodeSwaps(transaction: TransactionDto): SwapDtoNoId[] {
-    /**
-         find routes
-         */
-    try {
-      const { decoded } = this.decodeTx(transaction);
-      const { steps } = decoded;
-      const expectedRouteSet = steps
-        // take out "base" and "quote"
-        .map((step) =>
-          step.isBuy ? [step.base, step.quote] : [step.quote, step.base],
-        )
-        .flat()
-        // remove duplicated address
-        .reduce((routeSet, route) => {
-          routeSet.add(route);
+  decodeSwaps(transaction: TransactionDto): SwapChildrenDto[] {
+    const { decoded } = this.decodeTx(transaction);
+    const { steps } = decoded;
+    const expectedRouteSet = steps
+      // take out "base" and "quote"
+      .map((step) =>
+        step.isBuy ? [step.base, step.quote] : [step.quote, step.base],
+      )
+      .flat()
+      // remove duplicated address
+      .reduce((routeSet, route) => {
+        routeSet.add(route);
 
-          return routeSet;
-        }, new Set<Hash>());
-      const expectedRoutes = [...expectedRouteSet];
+        return routeSet;
+      }, new Set<Hash>());
+    const expectedRoutes = [...expectedRouteSet];
 
-      // expectedRoutes [ "0x7507c1dc16935B82698e4C63f2746A2fCf994dF8", "0x0E4aaF1351de4c0264C5c7056Ef3777b41BD8e03" ]
-      /*
-                                    validate routes by transfers
-                                    need to check "tokenAddress", "from", "to", "amount", "minOut"
-                                    */
-
-      // undefined check
-      if (!transaction.to) {
-        throw new InvalidSwapException(
-          CrocSwapDexDecoder.name,
-          `[${transaction.hash}] No transaction.to found.`,
-        );
-      }
-      const receipt = transaction.receipt;
-      if (!receipt) {
-        throw new InvalidSwapException(
-          CrocSwapDexDecoder.name,
-          `[${transaction.hash}] No receipt found.`,
-        );
-      }
-      const logs = transaction.receipt?.logs;
-      if (!logs) {
-        throw new InvalidSwapException(
-          CrocSwapDexDecoder.name,
-          `[${transaction.hash}] No logs found.`,
-        );
-      }
-
-      const validLogs = logs.filter(
-        (
-          log,
-        ): log is LogDto & {
-          topics: LogTopicDto[];
-        } => {
-          if (!log) {
-            throw new InvalidSwapException(
-              CrocSwapDexDecoder.name,
-              `[${transaction.hash}] No log found.`,
-            );
-          }
-          if (!log.topics) {
-            throw new InvalidSwapException(
-              CrocSwapDexDecoder.name,
-              `[${log.logHash}] No log topic found.`,
-            );
-          }
-
-          return true;
-        },
+    // undefined check
+    if (!transaction.to) {
+      throw new InvalidSwapException(
+        CrocSwapDexDecoder.name,
+        `[${transaction.hash}] No transaction.to found.`,
       );
-      const fromToken = expectedRoutes[0];
-      const toToken = expectedRoutes[expectedRoutes.length - 1];
+    }
+    const receipt = transaction.receipt;
+    if (!receipt) {
+      throw new InvalidSwapException(
+        CrocSwapDexDecoder.name,
+        `[${transaction.hash}] No receipt found.`,
+      );
+    }
+    const logs = transaction.receipt?.logs;
+    if (!logs) {
+      throw new InvalidSwapException(
+        CrocSwapDexDecoder.name,
+        `[${transaction.hash}] No logs found.`,
+      );
+    }
 
-      if (fromToken === ETH_ADDRESS) {
-        return this.decodeETHToToken({
-          transaction,
-          logs: validLogs,
-          receipt,
-          decoded,
-          expectedRoutes,
-          dex: transaction.to,
-        });
-      }
-      if (toToken === ETH_ADDRESS) {
-        return this.decodeTokenToETH({
-          transaction,
-          logs: validLogs,
-          receipt,
-          decoded,
-          expectedRoutes,
-          dex: transaction.to,
-        });
-      }
-      return this.decodeTokenToToken({
+    const validLogs = logs.filter(
+      (
+        log,
+      ): log is LogDto & {
+        topics: LogTopicDto[];
+      } => {
+        if (!log) {
+          throw new InvalidSwapException(
+            CrocSwapDexDecoder.name,
+            `[${transaction.hash}] No log found.`,
+          );
+        }
+        if (!log.topics) {
+          throw new InvalidSwapException(
+            CrocSwapDexDecoder.name,
+            `[${log.logHash}] No log topic found.`,
+          );
+        }
+
+        return true;
+      },
+    );
+    const fromToken = expectedRoutes[0];
+    const toToken = expectedRoutes[expectedRoutes.length - 1];
+
+    if (fromToken === ETH_ADDRESS) {
+      return this.decodeETHToToken({
         transaction,
         logs: validLogs,
         receipt,
@@ -351,18 +322,30 @@ export class CrocSwapDexDecoder
         expectedRoutes,
         dex: transaction.to,
       });
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        this.serviceLogger.error(`Failed on decodeSwaps: ${transaction.hash}`);
-      }
-
-      throw e;
     }
+    if (toToken === ETH_ADDRESS) {
+      return this.decodeTokenToETH({
+        transaction,
+        logs: validLogs,
+        receipt,
+        decoded,
+        expectedRoutes,
+        dex: transaction.to,
+      });
+    }
+    return this.decodeTokenToToken({
+      transaction,
+      logs: validLogs,
+      receipt,
+      decoded,
+      expectedRoutes,
+      dex: transaction.to,
+    });
   }
 
   // 0xbe6c65cf89e2c42171467fd69c3c8214d7618bf36aeb00743fded75415892420
   // 0xbccbf7ddcb291d1b599450677ba1707894149fe6b0dcd91038b2e191bcc86e17 - multi steps
-  decodeETHToToken(args: DecodeArg<DecodedInputType>): SwapDtoNoId[] {
+  decodeETHToToken(args: DecodeArg<DecodedInputType>): SwapChildrenDto[] {
     const { transaction, logs, receipt, decoded, expectedRoutes, dex } = args;
     const { amount } = decoded;
     const fromToken = expectedRoutes[0];
@@ -400,7 +383,7 @@ export class CrocSwapDexDecoder
     }
 
     // check if there are enough routes' swaps (3 routes = 3 swaps)
-    const swaps: SwapDtoNoId[] = decodeMultiStepSwaps({
+    const swaps: SwapChildrenDto[] = decodeMultiStepSwaps({
       serviceLogger: this.serviceLogger,
       expectedRoutes,
       transaction,
@@ -421,7 +404,7 @@ export class CrocSwapDexDecoder
       );
     }
 
-    const firstSwap: SwapDtoNoId = {
+    const firstSwap: SwapChildrenDto = {
       blockNumber: transaction.blockNumber,
       transactionHash: transaction.hash,
       transactionIndex: receipt.transactionIndex,
@@ -438,7 +421,7 @@ export class CrocSwapDexDecoder
 
   // 0x60eb24bfb70978656e780988324d6082db6b28b0757671d7a09ada462545fb3b
   // 0x3d0472309aa88ddb31d30e012c31be33b302bc56c3e09fc97df277a0fbc66287 - multi steps
-  decodeTokenToETH(args: DecodeArg<DecodedInputType>): SwapDtoNoId[] {
+  decodeTokenToETH(args: DecodeArg<DecodedInputType>): SwapChildrenDto[] {
     const { transaction, logs, receipt, decoded, expectedRoutes, dex } = args;
     const { amount, minOut } = decoded;
     const fromToken = expectedRoutes[0];
@@ -502,7 +485,7 @@ export class CrocSwapDexDecoder
     }
 
     // check if there are enough routes' swaps (3 routes = 3 swaps)
-    const swaps: SwapDtoNoId[] = decodeMultiStepSwaps({
+    const swaps: SwapChildrenDto[] = decodeMultiStepSwaps({
       serviceLogger: this.serviceLogger,
       expectedRoutes,
       transaction,
@@ -555,7 +538,7 @@ export class CrocSwapDexDecoder
       );
     }
 
-    const lastSwap: SwapDtoNoId = {
+    const lastSwap: SwapChildrenDto = {
       blockNumber: transaction.blockNumber,
       transactionHash: transaction.hash,
       transactionIndex: receipt.transactionIndex,
@@ -572,7 +555,7 @@ export class CrocSwapDexDecoder
 
   // 0xc3dbae551ebcf7bf3d54817e228b451a585e583262a263e1e1cc4c81b5d4fd1d
   // 0x6814caa14d45596a32c04de1b10064839c0155f7b1c960d5ade5312111f81c3d - multiple steps
-  decodeTokenToToken(args: DecodeArg<DecodedInputType>): SwapDtoNoId[] {
+  decodeTokenToToken(args: DecodeArg<DecodedInputType>): SwapChildrenDto[] {
     const { transaction, logs, receipt, decoded, expectedRoutes, dex } = args;
     const { amount, minOut } = decoded;
     const fromToken = expectedRoutes[0];

@@ -1,8 +1,8 @@
 import { dtoToSwapCreateInput, type TransactionDto } from "@database/dto.ts";
 import {
-  createSwaps,
+  createAllSwapChildren,
   deleteSwaps,
-  type SwapCreateInput,
+  type SwapCreateChildrenInput,
 } from "@database/repositories/swap.repository.ts";
 import { findTransaction } from "@database/repositories/transaction.repository.ts";
 import { AbstractProcessor } from "@processors/abstract.processor.ts";
@@ -13,10 +13,11 @@ import { NoGetResult } from "../exceptions/processor.exception.ts";
 import { appLogger } from "../monitor/app.logger.ts";
 import { getSignature } from "../utils.ts";
 
-const serviceLogger = appLogger.namespace("SwapProcessor");
-
-type CreateArgType = SwapCreateInput[];
-type CreateReturnType = (bigint | number)[];
+type CreateArgType = {
+  transactionHash: Hash;
+  inputs: SwapCreateChildrenInput[];
+};
+type CreateReturnType = string[];
 type InputType = Promise<CreateArgType | null>;
 
 export class SwapProcessor extends AbstractProcessor<
@@ -46,26 +47,39 @@ export class SwapProcessor extends AbstractProcessor<
   }
 
   async toInput(transactionDto: TransactionDto): InputType {
-    const signature = getSignature(transactionDto.input);
-    const decoder = getDecoder(signature);
-    if (decoder == null) {
-      return null;
-    }
+    try {
+      const signature = getSignature(transactionDto.input);
+      const decoder = getDecoder(signature);
+      if (decoder == null) {
+        return null;
+      }
 
-    return decoder
-      .decodeSwaps(transactionDto)
-      .map((swapDto) => dtoToSwapCreateInput(swapDto));
+      return {
+        transactionHash: transactionDto.hash,
+        inputs: decoder
+          .decodeSwaps(transactionDto)
+          .map((swapDto) => dtoToSwapCreateInput(swapDto)),
+      };
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        this.serviceLogger.error(
+          `Failed on create input: ${transactionDto.hash}`,
+        );
+      }
+
+      throw e;
+    }
   }
 
   async deleteFromDb(transactionHash: Hash): Promise<void> {
     await deleteSwaps(transactionHash);
   }
 
-  async createInDb(inputs: SwapCreateInput[]): Promise<(bigint | number)[]> {
-    return createSwaps(inputs);
+  async createInDb(args: CreateArgType): Promise<string[]> {
+    return createAllSwapChildren(args.transactionHash, args.inputs);
   }
 
-  async process(transactionHash: Hash): Promise<(bigint | number)[] | null> {
+  async process(transactionHash: Hash): Promise<string[] | null> {
     // get
     const transaction = await this.get(transactionHash);
 
@@ -77,9 +91,9 @@ export class SwapProcessor extends AbstractProcessor<
 
     // store to database
     await this.deleteFromDb(transactionHash);
-    serviceLogger.info(`deleted ${transactionHash}`);
-    const swapId = await this.createInDb(input);
-    serviceLogger.info(`created ${transactionHash}`);
-    return swapId;
+    this.serviceLogger.info(`deleted ${transactionHash}`);
+    const swapHashes = await this.createInDb(input);
+    this.serviceLogger.info(`created ${transactionHash}`);
+    return swapHashes;
   }
 }

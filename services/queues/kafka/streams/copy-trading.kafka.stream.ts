@@ -1,6 +1,7 @@
 import { toSwapDto } from "@database/dto.ts";
 import prisma from "@database/prisma.ts";
 import { getCopyContracts } from "@database/repositories/copy-contract.repository.ts";
+import { getSwap } from "@database/repositories/swap.repository.ts";
 import { concatMap, filter, interval, of, retry, tap } from "rxjs";
 import { type Account, getContract, type Hash, isHash } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
@@ -71,18 +72,14 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
               const rawDecodedContent =
                 await this.getRawDecodedData<typeof this.fromTopic>(message);
 
-              const { swapId } = rawDecodedContent;
-              return parseToBigInt(swapId);
+              const { swapHash } = rawDecodedContent;
+              return swapHash;
             }),
             // start querying
-            concatMap(async (swapId) => {
-              const dbSwap = await prisma.swap.findUnique({
-                where: {
-                  id: swapId,
-                },
-              });
+            concatMap(async (swapHash) => {
+              const swapDto = await getSwap(swapHash);
 
-              if (!dbSwap) {
+              if (!swapDto) {
                 throw new KafkaReachedEndIndexedOffset(
                   this.fromTopicName,
                   this.consumerName,
@@ -90,7 +87,7 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
                 );
               }
 
-              return toSwapDto(dbSwap);
+              return swapDto;
             }),
             // infinite retry if data is not indexed
             retry({
@@ -119,7 +116,7 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
             // log out
             tap((result) => {
               this.serviceLogger.info(
-                `SwapID: ${result.swap.id} has ${result.copyContracts} follower(s).`,
+                `SwapHash: ${result.swap.hash} has ${result.copyContracts} follower(s).`,
               );
             }),
             // start copy trading
@@ -140,6 +137,7 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
                   });
 
                   // TODO: Make factory for each DEX
+                  // TODO: Store swap root
                   try {
                     const txHash = await contract.write.multiSwap(
                       [
@@ -162,22 +160,22 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
                       },
                     );
                     this.serviceLogger.info(
-                      `Copy trade sent. SwapID: ${swap.id} | TxHash: ${txHash}`,
+                      `Copy trade sent. SwapHash: ${swap.hash} | TxHash: ${txHash}`,
                     );
                     return {
-                      swapId: swap.id.toString(),
+                      swapHash: swap.hash,
                       isSuccess: true,
                       transactionHash: txHash,
                       error: null,
                     } as CopyTradeMessagePayload<true>;
                   } catch (e: unknown) {
                     this.serviceLogger.error(
-                      `Error on processing copy trading on swapId: ${swap.id}`,
+                      `Error on processing copy trading on SwapHash: ${swap.hash}`,
                     );
 
                     if (e instanceof Error && e.stack) {
                       return {
-                        swapId: swap.id.toString(),
+                        swapHash: swap.hash,
                         isSuccess: false,
                         transactionHash: null,
                         error: e.stack,
@@ -200,7 +198,7 @@ export class CopyTradingKafkaStream extends AbstractKafkaStream {
                 (result) => result.isSuccess,
               ).length;
               this.serviceLogger.info(
-                `Sending to topic ${this.toTopicName}. SwapID: ${result.swap.id} | Total: ${total} | Success: ${totalProcessed} | Failed: ${total - totalProcessed}`,
+                `Sending to topic ${this.toTopicName}. SwapHash: ${result.swap.hash} | Total: ${total} | Success: ${totalProcessed} | Failed: ${total - totalProcessed}`,
               );
             }),
             // send to the topic

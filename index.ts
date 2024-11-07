@@ -179,14 +179,15 @@ switch (command) {
     break;
   }
   case "price": {
-    const swapId = parseToBigInt(restArgs[0]);
-    if (swapId == null) {
-      serviceLogger.info("Invalid swapId number.");
+    const swapHash = restArgs[0];
+
+    if (swapHash == null) {
+      serviceLogger.info("Invalid swap hash.");
       break;
     }
     const processor = new PriceProcessor();
 
-    await processor.process(swapId);
+    await processor.process(swapHash);
     break;
   }
   case "copy-trading-created": {
